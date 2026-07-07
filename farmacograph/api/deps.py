@@ -14,6 +14,7 @@ from farmacograph.services.drugs import DrugService
 from farmacograph.services.explain import ExplainService
 from farmacograph.services.health import HealthService
 from farmacograph.services.learning import LearningService
+from farmacograph.services.curriculum import CurriculumService
 from farmacograph.services.modules import ModuleService
 from farmacograph.services.search import SearchService
 from farmacograph.services.statistics import StatisticsService
@@ -49,6 +50,10 @@ def get_search_service(container: Annotated[Container, Depends(get_app_container
 
 def get_module_service(container: Annotated[Container, Depends(get_app_container)]) -> ModuleService:
     return container.module_service
+
+
+def get_curriculum_service(container: Annotated[Container, Depends(get_app_container)]) -> CurriculumService:
+    return container.curriculum_service
 
 
 def get_statistics_service(container: Annotated[Container, Depends(get_app_container)]) -> StatisticsService:

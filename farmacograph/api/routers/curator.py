@@ -12,6 +12,7 @@ from farmacograph.api.schemas.curator import CreateWorkflowRequest, PublishReque
 from farmacograph.auth.models import AuthContext
 from farmacograph.core.container import Container
 from farmacograph.core.exceptions import FarmacoGraphError, NotFoundError, ValidationError
+from farmacograph.curator.publish_validator import validate_publish_package
 from farmacograph.curator.structural_stub import (
     CV_STUB_DRUG_ID,
     build_cardiovascular_publish_package,
@@ -22,6 +23,26 @@ router = APIRouter(prefix="/curator", tags=["Curator"])
 
 def get_curator_service(container: Annotated[Container, Depends(get_app_container)]):
     return container.curator_service
+
+
+@router.post("/validate")
+async def validate_package(
+    body: PublishRequest,
+    _auth: Annotated[AuthContext, Depends(require_scope("curator:write"))] = None,
+) -> dict:
+    """Dry-run validation — no Neo4j write."""
+    result = validate_publish_package(
+        body.entity_payload,
+        related_entities=body.related_entities,
+        relationships=body.relationships,
+    )
+    return {
+        "data": {
+            "valid": result.valid,
+            "issues": [i.model_dump() for i in result.issues],
+        },
+        "meta": {"api_version": "v1", "error_count": len(result.errors)},
+    }
 
 
 @router.get("/stubs/cardiovascular")

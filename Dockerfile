@@ -12,6 +12,7 @@ COPY ontology ./ontology
 COPY openapi ./openapi
 COPY configs ./configs
 COPY architecture ./architecture
+COPY staging ./staging
 
 RUN pip install --no-cache-dir -e ".[api,graph,db,auth,observability]"
 

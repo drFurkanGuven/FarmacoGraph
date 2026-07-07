@@ -27,6 +27,7 @@ from farmacograph.services.learning import LearningService
 from farmacograph.services.modules import ModuleService
 from farmacograph.services.reasoning import ReasoningService
 from farmacograph.services.search import SearchService
+from farmacograph.services.curriculum import CurriculumService
 from farmacograph.services.snapshot import SnapshotService
 from farmacograph.services.statistics import StatisticsService
 from farmacograph.workers.graph_validation import GraphValidationWorker
@@ -60,6 +61,7 @@ class Container:
     reasoning_service: ReasoningService = field(init=False)
     search_service: SearchService = field(init=False)
     module_service: ModuleService = field(init=False)
+    curriculum_service: CurriculumService = field(init=False)
     statistics_service: StatisticsService = field(init=False)
     curator_service: CuratorService = field(init=False)
     snapshot_service: SnapshotService = field(init=False)
@@ -97,6 +99,7 @@ class Container:
             graph_repo=self.graph_repo,
             snapshot_repo=self.snapshot_repo,
         )
+        self.curriculum_service = CurriculumService(graph_repo=self.graph_repo)
         self.statistics_service = StatisticsService(
             snapshot_repo=self.snapshot_repo,
             graph_repo=self.graph_repo,

@@ -7,12 +7,14 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query
 
 from farmacograph.api.deps import (
+    get_curriculum_service,
     get_module_service,
     get_search_service,
     get_statistics_service,
     require_scope,
 )
 from farmacograph.auth.models import AuthContext
+from farmacograph.services.curriculum import CurriculumService
 from farmacograph.services.modules import ModuleService
 from farmacograph.services.search import SearchService
 from farmacograph.services.statistics import StatisticsService
@@ -40,6 +42,16 @@ async def list_modules(
 ) -> dict:
     data, meta = await service.list_modules()
     return {"data": data, "meta": meta.model_dump()}
+
+
+@modules_router.get("/modules/{module_slug}/curriculum")
+async def get_module_curriculum(
+    module_slug: str,
+    service: Annotated[CurriculumService, Depends(get_curriculum_service)],
+    _auth: Annotated[AuthContext, Depends(require_scope("knowledge:read"))],
+) -> dict:
+    data = await service.get_module_curriculum(module_slug)
+    return {"data": data, "meta": {"api_version": "v1", "module": module_slug}}
 
 
 @stats_router.get("/statistics")

@@ -1,0 +1,118 @@
+# Cardiovascular module — curation queue
+# Slugs only. No pharmacology content. Curator fills drug-entry JSON per slug.
+
+module: cardiovascular
+dataset_version: "2026.1.0"
+target_count: 63
+
+categories:
+  - slug: ace-inhibitors
+    name: ACE Inhibitors
+    drugs:
+      - { slug: ramipril, status: pending }
+      - { slug: enalapril, status: pending }
+      - { slug: lisinopril, status: pending }
+      - { slug: captopril, status: pending }
+      - { slug: perindopril, status: pending }
+      - { slug: quinapril, status: pending }
+
+  - slug: arbs
+    name: ARBs
+    drugs:
+      - { slug: losartan, status: pending }
+      - { slug: valsartan, status: pending }
+      - { slug: candesartan, status: pending }
+      - { slug: irbesartan, status: pending }
+      - { slug: telmisartan, status: pending }
+      - { slug: olmesartan, status: pending }
+
+  - slug: beta-blockers
+    name: Beta-blockers
+    drugs:
+      - { slug: metoprolol, status: pending }
+      - { slug: propranolol, status: pending }
+      - { slug: atenolol, status: pending }
+      - { slug: bisoprolol, status: pending }
+      - { slug: carvedilol, status: pending }
+      - { slug: nebivolol, status: pending }
+      - { slug: labetalol, status: pending }
+
+  - slug: calcium-channel-blockers
+    name: Calcium Channel Blockers
+    drugs:
+      - { slug: amlodipine, status: pending }
+      - { slug: diltiazem, status: pending }
+      - { slug: verapamil, status: pending }
+      - { slug: nifedipine, status: pending }
+      - { slug: felodipine, status: pending }
+
+  - slug: diuretics
+    name: Diuretics
+    drugs:
+      - { slug: furosemide, status: pending }
+      - { slug: hydrochlorothiazide, status: pending }
+      - { slug: chlorthalidone, status: pending }
+      - { slug: spironolactone, status: pending }
+      - { slug: eplerenone, status: pending }
+      - { slug: torsemide, status: pending }
+      - { slug: bumetanide, status: pending }
+
+  - slug: antiarrhythmics
+    name: Antiarrhythmics
+    drugs:
+      - { slug: amiodarone, status: pending }
+      - { slug: adenosine, status: pending }
+      - { slug: flecainide, status: pending }
+      - { slug: sotalol, status: pending }
+      - { slug: digoxin, status: pending }
+
+  - slug: anticoagulants
+    name: Anticoagulants
+    drugs:
+      - { slug: warfarin, status: pending }
+      - { slug: heparin, status: pending }
+      - { slug: enoxaparin, status: pending }
+      - { slug: apixaban, status: pending }
+      - { slug: rivaroxaban, status: pending }
+      - { slug: dabigatran, status: pending }
+      - { slug: edoxaban, status: pending }
+
+  - slug: antiplatelets
+    name: Antiplatelets
+    drugs:
+      - { slug: aspirin, status: pending }
+      - { slug: clopidogrel, status: pending }
+      - { slug: ticagrelor, status: pending }
+      - { slug: prasugrel, status: pending }
+
+  - slug: statins
+    name: Statins
+    drugs:
+      - { slug: atorvastatin, status: pending }
+      - { slug: simvastatin, status: pending }
+      - { slug: rosuvastatin, status: pending }
+      - { slug: pravastatin, status: pending }
+
+  - slug: nitrates
+    name: Nitrates
+    drugs:
+      - { slug: nitroglycerin, status: pending }
+      - { slug: isosorbide-mononitrate, status: pending }
+      - { slug: isosorbide-dinitrate, status: pending }
+
+  - slug: inotropes-vasodilators
+    name: Inotropes & Vasodilators
+    drugs:
+      - { slug: dobutamine, status: pending }
+      - { slug: dopamine, status: pending }
+      - { slug: milrinone, status: pending }
+      - { slug: hydralazine, status: pending }
+      - { slug: nitroprusside, status: pending }
+
+  - slug: other-cardiovascular
+    name: Other Cardiovascular
+    drugs:
+      - { slug: ivabradine, status: pending }
+      - { slug: ranolazine, status: pending }
+      - { slug: sacubitril-valsartan, status: pending }
+      - { slug: aliskiren, status: pending }

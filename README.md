@@ -13,7 +13,8 @@ FarmacoGraph is not a pharmacology database. It is a **long-term biomedical know
 | Platform Architecture Review | **Complete** |
 | **Phase 3 — Infrastructure** | **Complete** |
 | **Phase 4 — Curator & Dev Environment** | **Complete** |
-| Phase 4.4 — Cardiovascular structural stub | **Ready** |
+| Phase 4.4 — Cardiovascular structural stub | **Complete** |
+| **Phase 4.5 — CV curation tooling** | **Ready** |
 
 ## Core Principle
 

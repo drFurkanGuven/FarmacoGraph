@@ -1,26 +1,19 @@
-# Cardiovascular Module — Phase 4.4
+# Cardiovascular Module — Phase 4.4 / 4.5
 
-Structural stub only. **No real pharmacology content.**
+Structural stub (4.4) + real curation queue (4.5). **No pharmacology in repo until curator fills JSON files.**
 
-## Bootstrap publish
+## Phase 4.4 — Structural stub bootstrap
 
-1. Fetch stub template:
-   ```bash
-   curl -s https://farmacograph.furkanguven.space/api/v1/curator/stubs/cardiovascular | jq
-   ```
+See commands below for one-time platform test.
 
-2. Create workflow with `entity_id` from stub (`00000000-0000-4000-8000-000000000001`)
+## Phase 4.5 — Real drug curation
 
-3. `submit` → `approve` → `publish` with full package body
+- **Queue:** `curriculum.yaml` — 63 slugs, all `pending`
+- **Template:** `drug-entry.template.json`
+- **Guide:** `docs/phase4-curation.md`
+- **Per-drug files:** `drugs/{slug}.json` (curator creates)
 
-4. Verify:
-   ```bash
-   curl -s 'https://farmacograph.furkanguven.space/api/v1/drugs?module=cardiovascular'
-   curl -s https://farmacograph.furkanguven.space/api/v1/health
-   curl -s https://farmacograph.furkanguven.space/api/v1/modules
-   ```
-
-Expected after publish:
-- `dataset_version`: `2026.1.0`
-- cardiovascular module: `status: in_progress`, `drug_count: 1`
-- health `latest_snapshot`: `2026.1.0`
+```bash
+curl -s .../api/v1/modules/cardiovascular/curriculum
+farmacograph validate-package -i staging/cardiovascular/drugs/SLUG.json
+```
