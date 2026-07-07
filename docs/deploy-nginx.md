@@ -36,6 +36,9 @@ Script:
 - **Fedora/RHEL** → `/etc/nginx/conf.d/farmacograph.conf`
 - **Debian/Ubuntu** → `/etc/nginx/sites-available/` + `sites-enabled/`
 
+**Önemli:** Sadece `listen 80` bloğu yetmez. HTTPS (`443`) bloğunda da `proxy_pass` olmalı.
+Tam şablon: `deploy/nginx/farmacograph.conf` (HTTP redirect + HTTPS proxy).
+
 HTTP test:
 
 ```bash
@@ -56,11 +59,22 @@ sudo nginx -t && sudo systemctl reload nginx
 ## 4. SSL
 
 ```bash
-sudo certbot --nginx -d farmacograph.furkanguven.space
-curl -s https://farmacograph.furkanguven.space/api/v1/health
+# Sertifika yoksa önce:
+sudo certbot certonly --nginx -d farmacograph.furkanguven.space
+
+# Tam config (HTTP redirect + HTTPS proxy):
+cd /opt/FarmacoGraph
+API_PORT=$(grep -E '^FG_HOST_API_PORT=' .env 2>/dev/null | cut -d= -f2)
+API_PORT=${API_PORT:-8001}
+sudo cp deploy/nginx/farmacograph.conf /etc/nginx/conf.d/farmacograph.conf
+sudo sed -i "s/127.0.0.1:8001/127.0.0.1:${API_PORT}/" /etc/nginx/conf.d/farmacograph.conf
+sudo nginx -t && sudo systemctl reload nginx
 ```
 
-- Docs: https://farmacograph.furkanguven.space/docs
+```bash
+curl -s https://farmacograph.furkanguven.space/api/v1/health
+curl -I https://farmacograph.furkanguven.space/docs
+```
 
 ## Sorun giderme
 
