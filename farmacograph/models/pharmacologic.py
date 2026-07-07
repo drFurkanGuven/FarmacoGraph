@@ -37,6 +37,7 @@ class Drug(BiomedicalEntity):
     has_black_box_warning: bool = False
     black_box_text: str | None = None
     is_high_alert: bool = False
+    module: str | None = Field(default=None, description="Curriculum module slug, e.g. cardiovascular")
 
 
 class DrugClass(BiomedicalEntity):

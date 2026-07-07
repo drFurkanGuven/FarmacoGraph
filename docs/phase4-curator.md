@@ -81,11 +81,26 @@ Only called from `CuratorService.publish()` — never from API controllers direc
 ./scripts/dev.sh health    # Health check
 ```
 
-## Next: Phase 4.4 — Cardiovascular Module Curation
+## Phase 4.4 — Cardiovascular structural stub
 
-First real drug entries require:
-1. Neo4j running (`FG_NEO4J_ENABLED=true`)
-2. Curator workflow per drug
-3. Validated entity payloads through 4-level validators
-4. Mechanism DAG fragments
-5. First snapshot `2026.1.0`
+End-to-end bootstrap with **structural stub only** (no real pharmacology):
+
+```bash
+# 1. Get publish package template
+curl -s https://farmacograph.furkanguven.space/api/v1/curator/stubs/cardiovascular
+
+# 2. Workflow (use entity_id from stub)
+curl -X POST .../curator/workflows -d '{"entity_id":"00000000-0000-4000-8000-000000000001","entity_type":"Drug"}'
+# submit → approve → publish with full package from step 1
+
+# 3. Verify
+curl -s .../api/v1/drugs?module=cardiovascular
+curl -s .../api/v1/health   # latest_snapshot: 2026.1.0
+curl -s .../api/v1/modules  # cardiovascular: in_progress, drug_count: 1
+```
+
+Publish now runs **4-level validation** before Neo4j write. See `staging/cardiovascular/README.md`.
+
+## Next: Phase 4.5 — Real cardiovascular curation
+
+First real drug entries require curator-authored payloads through full validators.

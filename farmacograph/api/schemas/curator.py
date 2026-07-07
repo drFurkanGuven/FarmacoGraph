@@ -15,7 +15,11 @@ class CreateWorkflowRequest(BaseModel):
 
 class PublishRequest(BaseModel):
     entity_payload: dict = Field(description="Validated entity properties for Neo4j MERGE")
+    related_entities: list[dict] = Field(default_factory=list)
+    relationships: list[dict] = Field(default_factory=list)
     dataset_version: str = "2026.1.0"
+    module: str | None = None
+    create_snapshot: bool = False
 
 
 class WorkflowResponse(BaseModel):

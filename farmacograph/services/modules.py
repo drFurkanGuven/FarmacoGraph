@@ -6,8 +6,9 @@ from typing import Any
 
 from farmacograph.api.schemas.responses import ResponseMeta
 from farmacograph.models.enums import ContentLayer
+from farmacograph.repositories.graph import GraphRepository
+from farmacograph.repositories.snapshots import SnapshotRepository
 
-# Static module registry — no drug data, only module definitions
 MODULE_REGISTRY: list[dict[str, Any]] = [
     {"slug": "cardiovascular", "name": "Cardiovascular", "status": "planned", "drug_count": 0},
     {"slug": "endocrinology", "name": "Endocrinology", "status": "planned", "drug_count": 0},
@@ -18,10 +19,29 @@ MODULE_REGISTRY: list[dict[str, Any]] = [
 
 
 class ModuleService:
+    def __init__(
+        self,
+        graph_repo: GraphRepository,
+        snapshot_repo: SnapshotRepository,
+    ) -> None:
+        self._graph = graph_repo
+        self._snapshots = snapshot_repo
+
     async def list_modules(self) -> tuple[list[dict[str, Any]], ResponseMeta]:
+        snapshot = await self._snapshots.get_latest_published()
+        dataset_version = snapshot.version_tag if snapshot else "unpublished"
+
+        modules: list[dict[str, Any]] = []
+        for entry in MODULE_REGISTRY:
+            mod = dict(entry)
+            mod["drug_count"] = await self._graph.count_drugs(module=mod["slug"])
+            if mod["slug"] == "cardiovascular" and mod["drug_count"] > 0:
+                mod["status"] = "in_progress"
+            modules.append(mod)
+
         meta = ResponseMeta(
-            dataset_version="unpublished",
+            dataset_version=dataset_version,
             ontology_version="1.0.0",
             content_layers=[ContentLayer.BIOMEDICAL],
         )
-        return MODULE_REGISTRY, meta
+        return modules, meta

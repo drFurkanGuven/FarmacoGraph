@@ -75,6 +75,33 @@ class GraphRepository:
             "relationships": rel_result[0]["count"] if rel_result else 0,
         }
 
+    async def count_drugs(self, *, module: str | None = None) -> int:
+        if not self.is_available:
+            return 0
+        results = await self._driver.run_query(
+            """
+            MATCH (d:Drug)
+            WHERE d.status = 'published'
+              AND ($module IS NULL OR d.module = $module)
+            RETURN count(d) AS count
+            """,
+            {"module": module},
+        )
+        return int(results[0]["count"]) if results else 0
+
+    async def get_published_drug_graph_stats(self, entity_id: str) -> dict[str, Any] | None:
+        if not self.is_available:
+            return None
+        results = await self._driver.run_query(
+            """
+            MATCH (d:Drug {id: $id})
+            OPTIONAL MATCH (d)-[r]->()
+            RETURN d.slug AS slug, count(r) AS rel_count
+            """,
+            {"id": entity_id},
+        )
+        return results[0] if results else None
+
     async def find_explain_path(
         self,
         drug_slug: str,

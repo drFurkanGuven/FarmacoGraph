@@ -12,12 +12,32 @@ from farmacograph.api.schemas.curator import CreateWorkflowRequest, PublishReque
 from farmacograph.auth.models import AuthContext
 from farmacograph.core.container import Container
 from farmacograph.core.exceptions import FarmacoGraphError, NotFoundError, ValidationError
+from farmacograph.curator.structural_stub import (
+    CV_STUB_DRUG_ID,
+    build_cardiovascular_publish_package,
+)
 
 router = APIRouter(prefix="/curator", tags=["Curator"])
 
 
 def get_curator_service(container: Annotated[Container, Depends(get_app_container)]):
     return container.curator_service
+
+
+@router.get("/stubs/cardiovascular")
+async def get_cardiovascular_stub(
+    _auth: Annotated[AuthContext, Depends(require_scope("curator:write"))] = None,
+) -> dict:
+    """Structural stub template for Phase 4.4 bootstrap — not real pharmacology."""
+    package = build_cardiovascular_publish_package()
+    return {
+        "data": package,
+        "meta": {
+            "api_version": "v1",
+            "entity_id": CV_STUB_DRUG_ID,
+            "note": "Structural stub only. Replace before real curation.",
+        },
+    }
 
 
 @router.post("/workflows", status_code=201)
@@ -91,6 +111,10 @@ async def publish_workflow(
             workflow_id,
             body.entity_payload,
             dataset_version=body.dataset_version,
+            related_entities=body.related_entities,
+            relationships=body.relationships,
+            module=body.module,
+            create_snapshot=body.create_snapshot,
         )
         return {"data": WorkflowResponse.from_model(workflow).model_dump(), "meta": {"api_version": "v1"}}
     except (ValidationError, NotFoundError, FarmacoGraphError) as exc:

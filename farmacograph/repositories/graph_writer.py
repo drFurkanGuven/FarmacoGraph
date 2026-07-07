@@ -37,6 +37,38 @@ class GraphWriter:
         )
         return results[0]["node"] if results else {}
 
+    async def publish_package(
+        self,
+        entity_payload: dict[str, Any],
+        *,
+        related_entities: list[dict[str, Any]] | None = None,
+        relationships: list[dict[str, Any]] | None = None,
+    ) -> dict[str, Any]:
+        """MERGE related entities, primary entity, then relationships."""
+        if not self.is_available:
+            raise RuntimeError("Neo4j not connected")
+
+        for related in related_entities or []:
+            label = related.get("entity_type")
+            if not label:
+                raise ValueError("related entity must include entity_type")
+            await self.merge_entity(label, related)
+
+        label = entity_payload.get("entity_type", "BiomedicalEntity")
+        node = await self.merge_entity(label, entity_payload)
+
+        for rel in relationships or []:
+            await self.merge_relationship(
+                rel["relationship_type"],
+                rel["source_id"],
+                rel["target_id"],
+                rel["source_type"],
+                rel["target_type"],
+                rel.get("properties"),
+            )
+
+        return node
+
     async def merge_relationship(
         self,
         rel_type: str,

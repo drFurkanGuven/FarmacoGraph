@@ -27,7 +27,9 @@ from farmacograph.services.learning import LearningService
 from farmacograph.services.modules import ModuleService
 from farmacograph.services.reasoning import ReasoningService
 from farmacograph.services.search import SearchService
+from farmacograph.services.snapshot import SnapshotService
 from farmacograph.services.statistics import StatisticsService
+from farmacograph.workers.graph_validation import GraphValidationWorker
 
 
 @dataclass
@@ -60,6 +62,8 @@ class Container:
     module_service: ModuleService = field(init=False)
     statistics_service: StatisticsService = field(init=False)
     curator_service: CuratorService = field(init=False)
+    snapshot_service: SnapshotService = field(init=False)
+    graph_validation_worker: GraphValidationWorker = field(init=False)
 
     def __post_init__(self) -> None:
         self.session_factory, self._engine = create_session_factory(self.settings)
@@ -89,10 +93,21 @@ class Container:
             graph_repo=self.graph_repo,
         )
         self.search_service = SearchService()
-        self.module_service = ModuleService()
+        self.module_service = ModuleService(
+            graph_repo=self.graph_repo,
+            snapshot_repo=self.snapshot_repo,
+        )
         self.statistics_service = StatisticsService(
             snapshot_repo=self.snapshot_repo,
             graph_repo=self.graph_repo,
+        )
+        self.snapshot_service = SnapshotService(
+            snapshot_repo=self.snapshot_repo,
+            graph_repo=self.graph_repo,
+        )
+        self.graph_validation_worker = GraphValidationWorker(
+            self.job_repo,
+            self.graph_repo,
         )
         self.curator_service = CuratorService(
             curator_repo=self.curator_repo,
@@ -101,6 +116,8 @@ class Container:
             job_repo=self.job_repo,
             audit_repo=self.audit_repo,
             event_bus=self.event_bus,
+            snapshot_service=self.snapshot_service,
+            graph_validation_worker=self.graph_validation_worker,
         )
 
     async def startup(self) -> None:
