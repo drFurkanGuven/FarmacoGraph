@@ -13,7 +13,7 @@ COPY openapi ./openapi
 COPY configs ./configs
 COPY architecture ./architecture
 
-RUN pip install --no-cache-dir -e ".[api,db,auth,observability]"
+RUN pip install --no-cache-dir -e ".[api,graph,db,auth,observability]"
 
 ENV FG_ENVIRONMENT=production
 ENV FG_HOST=0.0.0.0
