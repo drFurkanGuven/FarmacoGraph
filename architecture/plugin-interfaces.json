@@ -1,0 +1,90 @@
+{
+  "$schema": "https://farmacograph.org/schemas/plugin-interfaces.schema.json",
+  "version": "1.0.0",
+  "description": "FarmacoGraph plugin system. All external dependencies are plugins — never tightly coupled.",
+  "discovery": {
+    "entry_point_group": "farmacograph.plugins",
+    "registry_path": "configs/plugins.yaml",
+    "manifest_required_fields": ["name", "version", "plugin_type", "entry_point", "enabled"]
+  },
+  "plugin_types": [
+    {
+      "type": "collector",
+      "interface": "farmacograph.plugins.collector.CollectorPlugin",
+      "description": "Ingest data from external sources (DrugBank, PubMed, FDA...)",
+      "methods": ["fetch", "get_supported_entities", "health_check"],
+      "config_schema": "configs/plugins/collector.schema.json"
+    },
+    {
+      "type": "validator",
+      "interface": "farmacograph.plugins.validator.ValidatorPlugin",
+      "description": "Custom validation rules beyond core FG-C constraints",
+      "methods": ["validate_entity", "validate_relationship", "validate_batch"],
+      "config_schema": "configs/plugins/validator.schema.json"
+    },
+    {
+      "type": "exporter",
+      "interface": "farmacograph.plugins.exporter.ExporterPlugin",
+      "description": "Export knowledge to external formats",
+      "methods": ["export", "supported_formats", "validate_output"],
+      "supported_formats": ["json", "json-ld", "csv", "owl", "rdf", "graphml", "neo4j-dump"]
+    },
+    {
+      "type": "importer",
+      "interface": "farmacograph.plugins.importer.ImporterPlugin",
+      "description": "Import knowledge from external formats",
+      "methods": ["import", "supported_formats", "dry_run"],
+      "supported_formats": ["json", "json-ld", "csv", "owl", "rdf", "graphml"]
+    },
+    {
+      "type": "reasoner",
+      "interface": "farmacograph.plugins.reasoner.ReasonerPlugin",
+      "description": "Graph traversal and explainability extensions",
+      "methods": ["explain", "find_paths", "compare"],
+      "config_schema": "configs/plugins/reasoner.schema.json"
+    },
+    {
+      "type": "search_provider",
+      "interface": "farmacograph.plugins.search.SearchProviderPlugin",
+      "description": "Pluggable search backends (Meilisearch, Elasticsearch, pg_fts)",
+      "methods": ["index", "search", "autocomplete", "delete", "health_check"],
+      "config_schema": "configs/plugins/search.schema.json"
+    },
+    {
+      "type": "llm_provider",
+      "interface": "farmacograph.plugins.llm.LLMProviderPlugin",
+      "description": "LLM synthesis layer — read-only graph access only",
+      "methods": ["synthesize", "health_check"],
+      "constraints": ["must_not_write_graph", "must_include_citations"]
+    },
+    {
+      "type": "visualization_provider",
+      "interface": "farmacograph.plugins.visualization.VisualizationProviderPlugin",
+      "description": "Graph layout and diagram generation",
+      "methods": ["project", "supported_formats"],
+      "supported_formats": ["react_flow", "cytoscape", "mermaid", "graphml"]
+    },
+    {
+      "type": "terminology_provider",
+      "interface": "farmacograph.plugins.terminology.TerminologyProviderPlugin",
+      "description": "Licensed terminology plugins (SNOMED CT, MedDRA)",
+      "methods": ["resolve", "expand", "map_code"],
+      "optional": true
+    },
+    {
+      "type": "embedding_provider",
+      "interface": "farmacograph.plugins.embedding.EmbeddingProviderPlugin",
+      "description": "Vector embedding generation for semantic search",
+      "methods": ["embed", "embed_batch", "model_info"]
+    }
+  ],
+  "lifecycle": {
+    "states": ["registered", "enabled", "disabled", "failed"],
+    "hot_reload": false,
+    "version_pinning": true
+  },
+  "isolation": {
+    "rule": "Plugins access graph only through internal service layer — never direct Neo4j from plugin code in production",
+    "sandbox": "future — WASM or subprocess isolation for untrusted plugins"
+  }
+}

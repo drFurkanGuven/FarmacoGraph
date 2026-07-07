@@ -1,0 +1,215 @@
+@prefix fg: <https://farmacograph.org/ontology/> .
+@prefix fgcore: <https://farmacograph.org/ontology/core/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# FarmacoGraph Core Ontology
+# Version: 1.0.0
+# Status: Canonical formal specification — no instance data
+
+<https://farmacograph.org/ontology/farmacograph-core> a owl:Ontology ;
+    rdfs:label "FarmacoGraph Core Ontology" ;
+    owl:versionInfo "1.0.0" ;
+    rdfs:comment "Explainable biomedical knowledge graph ontology for medical education." .
+
+# --- Root Entity ---
+
+fgcore:BiomedicalEntity a owl:Class ;
+    rdfs:label "Biomedical Entity" ;
+    rdfs:comment "Root type for all versioned, provenance-tracked knowledge objects." .
+
+# --- Abstract Groupings ---
+
+fg:PharmacologicEntity a owl:Class ;
+    rdfs:subClassOf fgcore:BiomedicalEntity .
+
+fg:MolecularEntity a owl:Class ;
+    rdfs:subClassOf fgcore:BiomedicalEntity .
+
+fg:PhysiologicEntity a owl:Class ;
+    rdfs:subClassOf fgcore:BiomedicalEntity .
+
+fg:ClinicalEntity a owl:Class ;
+    rdfs:subClassOf fgcore:BiomedicalEntity .
+
+fg:MechanisticEntity a owl:Class ;
+    rdfs:subClassOf fgcore:BiomedicalEntity .
+
+fg:EvidenceEntity a owl:Class ;
+    rdfs:subClassOf fgcore:BiomedicalEntity .
+
+fgcore:EducationResource a owl:Class ;
+    rdfs:subClassOf fgcore:BiomedicalEntity ;
+    rdfs:comment "Pedagogical content. Never a source of biomedical truth." .
+
+fgcore:LearningEntity a owl:Class ;
+    rdfs:subClassOf fgcore:BiomedicalEntity ;
+    rdfs:comment "Prerequisite knowledge graph for AI tutors." .
+
+# --- Pharmacologic ---
+
+fg:Drug a owl:Class ;
+    rdfs:subClassOf fg:PharmacologicEntity .
+
+fg:DrugClass a owl:Class ;
+    rdfs:subClassOf fg:PharmacologicEntity .
+
+fg:TradeName a owl:Class ;
+    rdfs:subClassOf fg:PharmacologicEntity .
+
+fg:Dose a owl:Class ;
+    rdfs:subClassOf fg:PharmacologicEntity .
+
+fg:PregnancyRisk a owl:Class ;
+    rdfs:subClassOf fg:PharmacologicEntity .
+
+fg:MonitoringPlan a owl:Class ;
+    rdfs:subClassOf fg:PharmacologicEntity .
+
+# --- Molecular ---
+
+fg:TargetProtein a owl:Class ;
+    rdfs:subClassOf fg:MolecularEntity .
+
+fgcore:Gene a owl:Class ;
+    rdfs:subClassOf fg:MolecularEntity .
+
+fg:Receptor a owl:Class ;
+    rdfs:subClassOf fg:MolecularEntity .
+
+fg:Enzyme a owl:Class ;
+    rdfs:subClassOf fg:MolecularEntity .
+
+fg:Transporter a owl:Class ;
+    rdfs:subClassOf fg:MolecularEntity .
+
+fg:Pathway a owl:Class ;
+    rdfs:subClassOf fg:MolecularEntity .
+
+# --- Physiologic ---
+
+fg:PhysiologicalProcess a owl:Class ;
+    rdfs:subClassOf fg:PhysiologicEntity .
+
+fgcore:Organ a owl:Class ;
+    rdfs:subClassOf fg:PhysiologicEntity .
+
+fgcore:CellType a owl:Class ;
+    rdfs:subClassOf fg:PhysiologicEntity .
+
+# --- Clinical ---
+
+fgcore:Disease a owl:Class ;
+    rdfs:subClassOf fg:ClinicalEntity .
+
+fg:SideEffect a owl:Class ;
+    rdfs:subClassOf fg:ClinicalEntity .
+
+fg:Contraindication a owl:Class ;
+    rdfs:subClassOf fg:ClinicalEntity .
+
+fg:Interaction a owl:Class ;
+    rdfs:subClassOf fg:ClinicalEntity .
+
+fgcore:LaboratoryTest a owl:Class ;
+    rdfs:subClassOf fg:ClinicalEntity .
+
+fg:Microorganism a owl:Class ;
+    rdfs:subClassOf fg:ClinicalEntity .
+
+fg:ClinicalOutcome a owl:Class ;
+    rdfs:subClassOf fg:ClinicalEntity .
+
+fg:ClinicalScenario a owl:Class ;
+    rdfs:subClassOf fg:ClinicalEntity .
+
+# --- Mechanistic ---
+
+fg:MechanismFragment a owl:Class ;
+    rdfs:subClassOf fg:MechanisticEntity .
+
+fg:MechanismStep a owl:Class ;
+    rdfs:subClassOf fg:MechanisticEntity .
+
+# --- Evidence ---
+
+fgcore:Evidence a owl:Class ;
+    rdfs:subClassOf fg:EvidenceEntity .
+
+fgcore:Reference a owl:Class ;
+    rdfs:subClassOf fg:EvidenceEntity .
+
+fgcore:Guideline a owl:Class ;
+    rdfs:subClassOf fg:EvidenceEntity .
+
+# --- Learning ---
+
+fgcore:KnowledgeTopic a owl:Class ;
+    rdfs:subClassOf fgcore:LearningEntity .
+
+fgcore:Prerequisite a owl:Class ;
+    rdfs:subClassOf fgcore:LearningEntity .
+
+# --- Object Properties (Relationships) ---
+
+fg:targets a owl:ObjectProperty ;
+    rdfs:domain fg:Drug ;
+    rdfs:range fg:MolecularEntity ;
+    rdfs:comment "FG-C001: Must not range over Disease." .
+
+fg:treats a owl:ObjectProperty ;
+    rdfs:domain fg:Drug ;
+    rdfs:range fgcore:Disease .
+
+fg:causes a owl:ObjectProperty ;
+    rdfs:domain fg:Drug ;
+    rdfs:range fg:SideEffect .
+
+fg:interactsWith a owl:ObjectProperty, owl:SymmetricProperty ;
+    rdfs:domain fg:Drug ;
+    rdfs:range fg:Drug .
+
+fg:hasMechanismRoot a owl:ObjectProperty ;
+    rdfs:domain fg:Drug ;
+    rdfs:range fg:MechanismFragment .
+
+fg:precedes a owl:ObjectProperty ;
+    rdfs:domain fg:MechanismFragment ;
+    rdfs:range fg:MechanismFragment .
+
+fgcore:supportedBy a owl:ObjectProperty ;
+    rdfs:range fgcore:Evidence .
+
+fgcore:requires a owl:ObjectProperty ;
+    rdfs:range fgcore:KnowledgeTopic ;
+    rdfs:comment "Learning prerequisite graph. Must be acyclic (FG-C007)." .
+
+fgcore:hasEducation a owl:ObjectProperty ;
+    rdfs:range fgcore:EducationResource .
+
+fgcore:illustrates a owl:ObjectProperty ;
+    rdfs:domain fgcore:EducationResource ;
+    rdfs:range fgcore:BiomedicalEntity .
+
+# --- Datatype Properties (Metadata) ---
+
+fgcore:confidenceScore a owl:DatatypeProperty ;
+    rdfs:domain fgcore:BiomedicalEntity ;
+    rdfs:range xsd:decimal .
+
+fgcore:evidenceLevel a owl:DatatypeProperty ;
+    rdfs:domain fgcore:BiomedicalEntity ;
+    rdfs:range xsd:string .
+
+fgcore:datasetVersion a owl:DatatypeProperty ;
+    rdfs:domain fgcore:BiomedicalEntity ;
+    rdfs:range xsd:string .
+
+fgcore:approvalStatus a owl:DatatypeProperty ;
+    rdfs:domain fgcore:BiomedicalEntity ;
+    rdfs:range xsd:string .
+
+fgcore:contentLayer a owl:DatatypeProperty ;
+    rdfs:domain fgcore:EducationResource ;
+    rdfs:range xsd:string .

@@ -1,0 +1,41 @@
+"""Curator workflow state machine — FG-C023 enforced."""
+
+from __future__ import annotations
+
+from enum import Enum
+
+
+class WorkflowState(str, Enum):
+    DRAFT = "draft"
+    REVIEW = "review"
+    APPROVED = "approved"
+    PUBLISHED = "published"
+    DEPRECATED = "deprecated"
+
+
+# Valid transitions: from_state -> set of allowed to_states
+VALID_TRANSITIONS: dict[WorkflowState, set[WorkflowState]] = {
+    WorkflowState.DRAFT: {WorkflowState.REVIEW},
+    WorkflowState.REVIEW: {WorkflowState.DRAFT, WorkflowState.APPROVED},
+    WorkflowState.APPROVED: {WorkflowState.PUBLISHED, WorkflowState.DRAFT},
+    WorkflowState.PUBLISHED: {WorkflowState.DEPRECATED},
+    WorkflowState.DEPRECATED: set(),
+}
+
+
+class InvalidTransitionError(Exception):
+    def __init__(self, from_state: str, to_state: str) -> None:
+        super().__init__(f"Invalid transition: {from_state} → {to_state}")
+        self.from_state = from_state
+        self.to_state = to_state
+
+
+def validate_transition(from_state: str, to_state: str) -> None:
+    try:
+        from_ws = WorkflowState(from_state)
+        to_ws = WorkflowState(to_state)
+    except ValueError as exc:
+        raise InvalidTransitionError(from_state, to_state) from exc
+    allowed = VALID_TRANSITIONS.get(from_ws, set())
+    if to_ws not in allowed:
+        raise InvalidTransitionError(from_state, to_state)

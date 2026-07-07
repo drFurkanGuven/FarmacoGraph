@@ -1,0 +1,793 @@
+openapi: 3.1.0
+info:
+  title: FarmacoGraph API
+  version: 1.0.0
+  description: |
+    **The API is the product.** FarmacoGraph never exposes Neo4j or PostgreSQL directly.
+
+    Universal interface for medical education apps, simulators, flashcard generators,
+    AI assistants, and third-party developers.
+
+    ## Content Layers
+    - `biomedical` — validated facts
+    - `education` — pedagogical content
+    - `learning` — prerequisite knowledge graph
+
+    ## Response Modes
+    - `minimal` — IDs and labels only
+    - `summary` — default
+    - `full` — all properties
+    - `graph` — subgraph projection
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+  contact:
+    name: FarmacoGraph
+    url: https://farmacograph.org
+
+servers:
+  - url: /api/v1
+    description: API v1
+
+tags:
+  - name: Health
+  - name: Drugs
+  - name: Entities
+  - name: Clinical
+  - name: Education
+  - name: Learning
+  - name: Evidence
+  - name: Graph
+  - name: Explain
+  - name: Search
+  - name: Modules
+  - name: Future
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      operationId: healthCheck
+      responses:
+        "200":
+          description: Service healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /drugs:
+    get:
+      tags: [Drugs]
+      summary: List drugs
+      operationId: listDrugs
+      parameters:
+        - $ref: "#/components/parameters/PageLimit"
+        - $ref: "#/components/parameters/PageOffset"
+        - name: class
+          in: query
+          schema: { type: string }
+        - name: module
+          in: query
+          schema: { type: string }
+        - $ref: "#/components/parameters/ContentLayers"
+        - $ref: "#/components/parameters/ResponseMode"
+      responses:
+        "200":
+          description: Drug list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DrugListResponse"
+
+  /drugs/{id}:
+    get:
+      tags: [Drugs]
+      summary: Get drug by ID
+      operationId: getDrug
+      parameters:
+        - $ref: "#/components/parameters/EntityId"
+        - $ref: "#/components/parameters/ContentLayers"
+        - $ref: "#/components/parameters/ResponseMode"
+      responses:
+        "200":
+          description: Drug detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DrugDetailResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /drugs/{id}/graph:
+    get:
+      tags: [Graph, Drugs]
+      summary: Drug neighborhood subgraph
+      operationId: getDrugGraph
+      parameters:
+        - $ref: "#/components/parameters/EntityId"
+        - name: depth
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 3, default: 2 }
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [native, react_flow, cytoscape, mermaid]
+      responses:
+        "200":
+          description: Graph projection
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GraphResponse"
+
+  /drugs/{id}/mechanism:
+    get:
+      tags: [Graph, Drugs]
+      summary: Mechanism DAG
+      operationId: getDrugMechanism
+      parameters:
+        - $ref: "#/components/parameters/EntityId"
+      responses:
+        "200":
+          description: Mechanism DAG
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MechanismDAGResponse"
+
+  /drugs/{id}/education:
+    get:
+      tags: [Education, Drugs]
+      summary: Education layer content
+      operationId: getDrugEducation
+      parameters:
+        - $ref: "#/components/parameters/EntityId"
+        - name: types
+          in: query
+          schema:
+            type: array
+            items: { type: string }
+      responses:
+        "200":
+          description: Education content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EducationListResponse"
+
+  /drugs/{id}/prerequisites:
+    get:
+      tags: [Learning, Drugs]
+      summary: Learning prerequisite graph
+      operationId: getDrugPrerequisites
+      parameters:
+        - $ref: "#/components/parameters/EntityId"
+      responses:
+        "200":
+          description: Prerequisite graph
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LearningGraphResponse"
+
+  /drug-classes:
+    get:
+      tags: [Entities]
+      summary: Drug class taxonomy
+      operationId: listDrugClasses
+      responses:
+        "200":
+          description: Class tree
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EntityListResponse"
+
+  /diseases:
+    get:
+      tags: [Entities]
+      summary: List diseases
+      operationId: listDiseases
+      parameters:
+        - $ref: "#/components/parameters/PageLimit"
+        - $ref: "#/components/parameters/PageOffset"
+      responses:
+        "200":
+          description: Disease list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EntityListResponse"
+
+  /pathways/{id}:
+    get:
+      tags: [Entities]
+      summary: Get pathway
+      operationId: getPathway
+      parameters:
+        - $ref: "#/components/parameters/EntityId"
+      responses:
+        "200":
+          description: Pathway detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EntityDetailResponse"
+
+  /proteins/{id}:
+    get:
+      tags: [Entities]
+      summary: Get protein target
+      operationId: getProtein
+      parameters:
+        - $ref: "#/components/parameters/EntityId"
+      responses:
+        "200":
+          description: Protein detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EntityDetailResponse"
+
+  /receptors/{id}:
+    get:
+      tags: [Entities]
+      summary: Get receptor
+      operationId: getReceptor
+      parameters:
+        - $ref: "#/components/parameters/EntityId"
+      responses:
+        "200":
+          description: Receptor detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EntityDetailResponse"
+
+  /enzymes/{id}:
+    get:
+      tags: [Entities]
+      summary: Get enzyme
+      operationId: getEnzyme
+      parameters:
+        - $ref: "#/components/parameters/EntityId"
+      responses:
+        "200":
+          description: Enzyme detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EntityDetailResponse"
+
+  /interactions:
+    get:
+      tags: [Clinical]
+      summary: Query drug interactions
+      operationId: listInteractions
+      parameters:
+        - name: drug
+          in: query
+          required: true
+          schema: { type: string }
+        - name: severity
+          in: query
+          schema:
+            type: string
+            enum: [minor, moderate, major, contraindicated]
+      responses:
+        "200":
+          description: Interactions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InteractionListResponse"
+
+  /mechanisms/{drug_id}:
+    get:
+      tags: [Graph]
+      summary: Mechanism DAG by drug ID
+      operationId: getMechanism
+      parameters:
+        - name: drug_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Mechanism DAG
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MechanismDAGResponse"
+
+  /evidence/{id}:
+    get:
+      tags: [Evidence]
+      summary: Get evidence node
+      operationId: getEvidence
+      parameters:
+        - $ref: "#/components/parameters/EntityId"
+      responses:
+        "200":
+          description: Evidence detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvidenceDetailResponse"
+
+  /laboratory-tests:
+    get:
+      tags: [Clinical]
+      summary: List laboratory tests
+      operationId: listLaboratoryTests
+      responses:
+        "200":
+          description: Lab tests
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EntityListResponse"
+
+  /education/{id}:
+    get:
+      tags: [Education]
+      summary: Get education resource
+      operationId: getEducation
+      parameters:
+        - $ref: "#/components/parameters/EntityId"
+      responses:
+        "200":
+          description: Education resource
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EducationDetailResponse"
+
+  /flashcards:
+    get:
+      tags: [Education]
+      summary: List flashcards
+      operationId: listFlashcards
+      parameters:
+        - name: drug
+          in: query
+          schema: { type: string }
+        - name: module
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Flashcards
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlashcardListResponse"
+
+  /cases:
+    get:
+      tags: [Education]
+      summary: List clinical cases
+      operationId: listCases
+      parameters:
+        - name: module
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Clinical cases
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CaseListResponse"
+
+  /compare:
+    post:
+      tags: [Explain]
+      summary: Compare multiple drugs
+      operationId: compareDrugs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompareRequest"
+      responses:
+        "200":
+          description: Comparison result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompareResponse"
+
+  /explain:
+    get:
+      tags: [Explain]
+      summary: Structured reasoning chain
+      operationId: explain
+      parameters:
+        - name: drug
+          in: query
+          required: true
+          schema: { type: string }
+        - name: effect
+          in: query
+          schema: { type: string }
+        - name: question_type
+          in: query
+          schema:
+            type: string
+            enum: [mechanism, interaction, indication, monitoring, prerequisite]
+      responses:
+        "200":
+          description: Explainability response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExplainResponse"
+        "404":
+          description: No path in knowledge base
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /search:
+    get:
+      tags: [Search]
+      summary: Full-text entity search
+      operationId: search
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string, minLength: 2 }
+        - name: types
+          in: query
+          schema:
+            type: array
+            items: { type: string }
+        - $ref: "#/components/parameters/PageLimit"
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponse"
+
+  /graph/query:
+    post:
+      tags: [Graph]
+      summary: Parameterized read-only graph query
+      operationId: graphQuery
+      description: Whitelisted Cypher templates only. No arbitrary queries.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GraphQueryRequest"
+      responses:
+        "200":
+          description: Query result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GraphResponse"
+
+  /modules:
+    get:
+      tags: [Modules]
+      summary: List curriculum modules
+      operationId: listModules
+      responses:
+        "200":
+          description: Module list with completion status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModuleListResponse"
+
+  /statistics:
+    get:
+      tags: [Modules]
+      summary: Dataset statistics
+      operationId: getStatistics
+      responses:
+        "200":
+          description: Entity and relationship counts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatisticsResponse"
+
+  /rag:
+    post:
+      tags: [Future]
+      summary: RAG query (future)
+      operationId: ragQuery
+      deprecated: true
+      description: Future — Retrieval-Augmented Generation over validated graph
+      responses:
+        "501":
+          description: Not implemented
+
+  /tutor:
+    post:
+      tags: [Future]
+      summary: AI tutor with prerequisite detection (future)
+      operationId: tutorQuery
+      deprecated: true
+      responses:
+        "501":
+          description: Not implemented
+
+components:
+  parameters:
+    EntityId:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    PageLimit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+    PageOffset:
+      name: offset
+      in: query
+      schema: { type: integer, minimum: 0, default: 0 }
+    ContentLayers:
+      name: layers
+      in: query
+      description: Comma-separated content layers
+      schema:
+        type: string
+        example: biomedical,education
+    ResponseMode:
+      name: mode
+      in: query
+      schema:
+        type: string
+        enum: [minimal, summary, full, graph]
+        default: summary
+
+  responses:
+    NotFound:
+      description: Entity not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+    ResponseMeta:
+      type: object
+      required: [dataset_version, api_version]
+      properties:
+        dataset_version: { type: string, example: "2026.1.0" }
+        ontology_version: { type: string, example: "1.0.0" }
+        query_time_ms: { type: integer }
+        content_layers:
+          type: array
+          items:
+            type: string
+            enum: [biomedical, education, learning]
+        language: { type: string, default: en }
+        api_version: { type: string, example: v1 }
+
+    EntitySummary:
+      type: object
+      required: [id, type, slug, label]
+      properties:
+        id: { type: string, format: uuid }
+        type: { type: string }
+        slug: { type: string }
+        label: { type: string }
+        status: { type: string }
+        confidence_score: { type: number, minimum: 0, maximum: 1 }
+        content_layer:
+          type: string
+          enum: [biomedical, education, learning]
+        external_ids: { type: object, additionalProperties: true }
+
+    HealthResponse:
+      type: object
+      properties:
+        status: { type: string, example: ok }
+        dataset_version: { type: string, nullable: true }
+        neo4j: { type: string, example: connected }
+        postgresql: { type: string, example: connected }
+
+    DrugListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/EntitySummary" }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    DrugDetailResponse:
+      type: object
+      properties:
+        data: { type: object, additionalProperties: true }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    EntityListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/EntitySummary" }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    EntityDetailResponse:
+      type: object
+      properties:
+        data: { type: object }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    GraphResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            nodes: { type: array, items: { type: object } }
+            edges: { type: array, items: { type: object } }
+            layout_hint: { type: string }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    MechanismDAGResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            drug_id: { type: string, format: uuid }
+            root_fragment_id: { type: string, format: uuid }
+            nodes: { type: array, items: { type: object } }
+            edges: { type: array, items: { type: object } }
+            is_acyclic: { type: boolean }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    LearningGraphResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            entity_id: { type: string, format: uuid }
+            prerequisites: { type: array, items: { type: object } }
+            missing_topics: { type: array, items: { type: string, format: uuid } }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    ExplainResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            question: { type: string }
+            answer_summary: { type: string }
+            reasoning_chain: { type: array, items: { type: object } }
+            confidence: { type: number }
+            evidence_level: { type: string }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    CompareRequest:
+      type: object
+      required: [drug_ids]
+      properties:
+        drug_ids:
+          type: array
+          items: { type: string, format: uuid }
+          minItems: 2
+          maxItems: 10
+        dimensions:
+          type: array
+          items: { type: string }
+        include_education: { type: boolean, default: false }
+        response_mode:
+          type: string
+          enum: [minimal, summary, full, graph]
+
+    CompareResponse:
+      type: object
+      properties:
+        data: { type: object }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    GraphQueryRequest:
+      type: object
+      required: [template, params]
+      properties:
+        template: { type: string }
+        params: { type: object }
+
+    SearchResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              entity: { $ref: "#/components/schemas/EntitySummary" }
+              score: { type: number }
+              snippet: { type: string }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    EducationListResponse:
+      type: object
+      properties:
+        data: { type: array, items: { type: object } }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    EducationDetailResponse:
+      type: object
+      properties:
+        data: { type: object }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    EvidenceDetailResponse:
+      type: object
+      properties:
+        data: { type: object }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    FlashcardListResponse:
+      type: object
+      properties:
+        data: { type: array, items: { type: object } }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    CaseListResponse:
+      type: object
+      properties:
+        data: { type: array, items: { type: object } }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    InteractionListResponse:
+      type: object
+      properties:
+        data: { type: array, items: { type: object } }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    ModuleListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              slug: { type: string }
+              name: { type: string }
+              status: { type: string, enum: [planned, in_progress, complete] }
+              drug_count: { type: integer }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    StatisticsResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            entity_count: { type: integer }
+            relationship_count: { type: integer }
+            evidence_count: { type: integer }
+            module_stats: { type: object }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code: { type: string }
+            message: { type: string }

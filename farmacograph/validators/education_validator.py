@@ -1,0 +1,70 @@
+"""Educational layer validation."""
+
+from __future__ import annotations
+
+from farmacograph.models.enums import ContentLayer
+from farmacograph.validators.base import (
+    BaseValidator,
+    ValidationIssue,
+    ValidationLevel,
+    ValidationResult,
+    ValidationSeverity,
+)
+
+CLINICAL_RELATIONSHIP_TYPES = {
+    "TREATS", "CAUSES", "INHIBITS", "TARGETS", "INTERACTS_WITH",
+    "CONTRAINDICATED_IN", "METABOLIZED_BY", "COVERS", "FIRST_LINE_FOR",
+}
+
+
+class EducationValidator(BaseValidator):
+    level = ValidationLevel.EDUCATIONAL
+    name = "education_validator"
+
+    def validate_education_entity(self, entity: dict) -> ValidationResult:
+        issues: list[ValidationIssue] = []
+
+        if entity.get("content_layer") != ContentLayer.EDUCATION:
+            issues.append(
+                ValidationIssue(
+                    constraint_id="FG-C029",
+                    level=self.level,
+                    severity=ValidationSeverity.ERROR,
+                    message="Education entities must have content_layer=education",
+                    entity_id=str(entity.get("id")),
+                )
+            )
+
+        outgoing = entity.get("outgoing_relationships", [])
+        for rel in outgoing:
+            if rel.get("type") in CLINICAL_RELATIONSHIP_TYPES:
+                issues.append(
+                    ValidationIssue(
+                        constraint_id="FG-C013",
+                        level=self.level,
+                        severity=ValidationSeverity.ERROR,
+                        message=f"Education node cannot have clinical relationship: {rel.get('type')}",
+                        entity_id=str(entity.get("id")),
+                        relationship_type=rel.get("type"),
+                    )
+                )
+
+        allowed_outgoing = {"ILLUSTRATES", "COMPARES", "HAS_EDUCATION"}
+        for rel in outgoing:
+            if rel.get("type") not in allowed_outgoing and rel.get("direction") == "outgoing":
+                issues.append(
+                    ValidationIssue(
+                        constraint_id="FG-C014",
+                        level=self.level,
+                        severity=ValidationSeverity.ERROR,
+                        message=f"Education node forbidden outgoing relationship: {rel.get('type')}",
+                        entity_id=str(entity.get("id")),
+                    )
+                )
+
+        return ValidationResult(valid=len(issues) == 0, issues=issues)
+
+    def validate(self, data: object) -> ValidationResult:
+        if isinstance(data, dict) and data.get("content_layer") == ContentLayer.EDUCATION:
+            return self.validate_education_entity(data)
+        return ValidationResult(valid=True, issues=[])

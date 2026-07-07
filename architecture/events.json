@@ -1,0 +1,199 @@
+{
+  "$schema": "https://farmacograph.org/schemas/domain-events.schema.json",
+  "version": "1.0.0",
+  "description": "FarmacoGraph domain event catalog. Events enable automation, integrations, and async processing.",
+  "envelope": {
+    "event_id": "UUID",
+    "event_type": "string",
+    "event_version": "semver",
+    "occurred_at": "ISO8601",
+    "aggregate_type": "string",
+    "aggregate_id": "UUID",
+    "dataset_version": "string | null",
+    "tenant_id": "UUID | null",
+    "workspace_id": "UUID | null",
+    "actor_id": "UUID | null",
+    "correlation_id": "UUID",
+    "causation_id": "UUID | null",
+    "payload": "object",
+    "metadata": {
+      "source_service": "string",
+      "trace_id": "string | null"
+    }
+  },
+  "events": [
+    {
+      "type": "DrugPublished",
+      "version": "1.0.0",
+      "aggregate": "Drug",
+      "description": "A drug transitioned to published status within a dataset version.",
+      "payload_schema": {
+        "drug_id": "UUID",
+        "slug": "string",
+        "module": "string",
+        "dataset_version": "string"
+      },
+      "consumers": ["search-indexer", "flashcard-generator", "analytics", "webhook-dispatcher"]
+    },
+    {
+      "type": "DrugDeprecated",
+      "version": "1.0.0",
+      "aggregate": "Drug",
+      "description": "A published drug was deprecated and optionally superseded.",
+      "payload_schema": {
+        "drug_id": "UUID",
+        "superseded_by": "UUID | null",
+        "dataset_version": "string"
+      },
+      "consumers": ["search-indexer", "analytics"]
+    },
+    {
+      "type": "MechanismUpdated",
+      "version": "1.0.0",
+      "aggregate": "MechanismFragment",
+      "description": "Mechanism DAG structure changed for a drug or shared fragment.",
+      "payload_schema": {
+        "drug_id": "UUID | null",
+        "fragment_id": "UUID",
+        "change_type": "created | updated | deprecated",
+        "dataset_version": "string"
+      },
+      "consumers": ["graph-validator", "visualization-cache", "embedding-generator"]
+    },
+    {
+      "type": "EvidenceAdded",
+      "version": "1.0.0",
+      "aggregate": "Evidence",
+      "description": "New evidence node linked to biomedical assertions.",
+      "payload_schema": {
+        "evidence_id": "UUID",
+        "evidence_type": "string",
+        "linked_entity_ids": ["UUID"],
+        "quality_score": "float"
+      },
+      "consumers": ["confidence-scorer", "analytics"]
+    },
+    {
+      "type": "EvidenceDeprecated",
+      "version": "1.0.0",
+      "aggregate": "Evidence",
+      "description": "Evidence node deprecated; dependent assertions may need re-validation.",
+      "payload_schema": {
+        "evidence_id": "UUID",
+        "reason": "string",
+        "superseded_by": "UUID | null"
+      },
+      "consumers": ["validation-worker", "confidence-scorer", "curator-notifier"]
+    },
+    {
+      "type": "GuidelineUpdated",
+      "version": "1.0.0",
+      "aggregate": "Guideline",
+      "description": "Clinical guideline reference or recommendation changed.",
+      "payload_schema": {
+        "guideline_id": "UUID",
+        "source": "string",
+        "affected_drug_ids": ["UUID"]
+      },
+      "consumers": ["validation-worker", "search-indexer"]
+    },
+    {
+      "type": "ModuleReleased",
+      "version": "1.0.0",
+      "aggregate": "DatasetModule",
+      "description": "An organ-system module completed validation and was released.",
+      "payload_schema": {
+        "module": "string",
+        "dataset_version": "string",
+        "drug_count": "int",
+        "snapshot_id": "UUID"
+      },
+      "consumers": ["snapshot-builder", "search-indexer", "analytics", "billing-hooks"]
+    },
+    {
+      "type": "KnowledgeValidated",
+      "version": "1.0.0",
+      "aggregate": "ValidationRun",
+      "description": "A validation run completed for an entity, batch, or module.",
+      "payload_schema": {
+        "validation_run_id": "UUID",
+        "scope": "entity | batch | module",
+        "scope_id": "string",
+        "passed": "boolean",
+        "error_count": "int",
+        "warning_count": "int"
+      },
+      "consumers": ["curator-workflow", "analytics", "publish-gate"]
+    },
+    {
+      "type": "KnowledgeSnapshotCreated",
+      "version": "1.0.0",
+      "aggregate": "KnowledgeSnapshot",
+      "description": "Immutable dataset snapshot was created and registered.",
+      "payload_schema": {
+        "snapshot_id": "UUID",
+        "version_tag": "string",
+        "manifest_hash": "string",
+        "entity_count": "int",
+        "relationship_count": "int"
+      },
+      "consumers": ["cdn-publisher", "analytics", "sdk-version-notifier"]
+    },
+    {
+      "type": "FlashcardsGenerated",
+      "version": "1.0.0",
+      "aggregate": "EducationResource",
+      "description": "Flashcard set generated for a drug or module.",
+      "payload_schema": {
+        "drug_id": "UUID | null",
+        "module": "string | null",
+        "flashcard_count": "int",
+        "export_format": "json | anki"
+      },
+      "consumers": ["analytics", "webhook-dispatcher"]
+    },
+    {
+      "type": "SearchIndexUpdated",
+      "version": "1.0.0",
+      "aggregate": "SearchIndex",
+      "description": "Search index refreshed for a dataset version or module.",
+      "payload_schema": {
+        "index_name": "string",
+        "dataset_version": "string",
+        "document_count": "int"
+      },
+      "consumers": ["analytics", "health-monitor"]
+    },
+    {
+      "type": "CollectorSyncCompleted",
+      "version": "1.0.0",
+      "aggregate": "CollectorRun",
+      "description": "External data collector finished a sync run.",
+      "payload_schema": {
+        "collector": "string",
+        "records_fetched": "int",
+        "status": "success | partial | failed"
+      },
+      "consumers": ["pipeline-orchestrator", "analytics"]
+    },
+    {
+      "type": "EmbeddingBatchCompleted",
+      "version": "1.0.0",
+      "aggregate": "EmbeddingJob",
+      "description": "Vector embeddings generated for semantic search.",
+      "payload_schema": {
+        "job_id": "UUID",
+        "entity_type": "string",
+        "vectors_created": "int",
+        "model": "string"
+      },
+      "consumers": ["search-indexer", "analytics"]
+    }
+  ],
+  "transport": {
+    "phase_3": "in-process event bus (Python)",
+    "phase_4": "PostgreSQL outbox table + worker polling",
+    "phase_5": "Redis Streams or NATS (optional scale-out)",
+    "never": "direct Neo4j triggers to external systems"
+  }
+}

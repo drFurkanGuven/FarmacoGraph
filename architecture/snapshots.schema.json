@@ -1,0 +1,68 @@
+{
+  "$schema": "https://farmacograph.org/schemas/knowledge-snapshot.schema.json",
+  "version": "1.0.0",
+  "description": "Immutable knowledge release manifest. Every published dataset version is reproducible.",
+  "example_version_tags": ["2027.1.0", "2027.2.0", "2028.1.0"],
+  "snapshot_manifest": {
+    "snapshot_id": "UUID",
+    "version_tag": "string",
+    "module": "string | null",
+    "ontology_version": "string",
+    "api_version": "string",
+    "created_at": "ISO8601",
+    "released_by": "UUID",
+    "status": "staged | published | archived",
+    "immutable": true,
+    "counts": {
+      "entities": "int",
+      "relationships": "int",
+      "evidence_nodes": "int",
+      "education_nodes": "int"
+    },
+    "artifacts": {
+      "neo4j_dump": {
+        "path": "string",
+        "sha256": "string",
+        "size_bytes": "int"
+      },
+      "json_export": {
+        "path": "string",
+        "sha256": "string"
+      },
+      "json_ld_export": {
+        "path": "string",
+        "sha256": "string"
+      },
+      "search_index": {
+        "provider": "string",
+        "index_name": "string",
+        "document_count": "int"
+      },
+      "embedding_index": {
+        "provider": "string",
+        "model": "string",
+        "vector_count": "int"
+      },
+      "validation_report": {
+        "path": "string",
+        "sha256": "string",
+        "error_count": 0,
+        "warning_count": "int"
+      },
+      "attribution_manifest": {
+        "path": "string"
+      }
+    },
+    "reproducibility": {
+      "source_git_tag": "string",
+      "pipeline_version": "string",
+      "config_hash": "string",
+      "build_command": "farmacograph pipeline publish --version {version_tag}"
+    }
+  },
+  "query_rules": {
+    "default": "latest published snapshot",
+    "explicit": "client may request ?dataset_version=2027.1.0",
+    "immutable": "published snapshots are never modified — only superseded by new versions"
+  }
+}

@@ -1,0 +1,97 @@
+"""Curator workflow API — draft → review → approved → published."""
+
+from __future__ import annotations
+
+from typing import Annotated
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException
+
+from farmacograph.api.deps import get_app_container, require_scope
+from farmacograph.api.schemas.curator import CreateWorkflowRequest, PublishRequest, WorkflowResponse
+from farmacograph.auth.models import AuthContext
+from farmacograph.core.container import Container
+from farmacograph.core.exceptions import FarmacoGraphError, NotFoundError, ValidationError
+
+router = APIRouter(prefix="/curator", tags=["Curator"])
+
+
+def get_curator_service(container: Annotated[Container, Depends(get_app_container)]):
+    return container.curator_service
+
+
+@router.post("/workflows", status_code=201)
+async def create_workflow(
+    body: CreateWorkflowRequest,
+    service=Depends(get_curator_service),
+    _auth: Annotated[AuthContext, Depends(require_scope("curator:write"))] = None,
+) -> dict:
+    workflow = await service.create_draft(body.entity_id, body.entity_type, notes=body.notes)
+    return {"data": WorkflowResponse.from_model(workflow).model_dump(), "meta": {"api_version": "v1"}}
+
+
+@router.get("/workflows/{workflow_id}")
+async def get_workflow(
+    workflow_id: UUID,
+    service=Depends(get_curator_service),
+    _auth: Annotated[AuthContext, Depends(require_scope("curator:write"))] = None,
+) -> dict:
+    workflow = await service.get_workflow(workflow_id)
+    return {"data": WorkflowResponse.from_model(workflow).model_dump(), "meta": {"api_version": "v1"}}
+
+
+@router.get("/queue")
+async def get_review_queue(
+    state: str = "review",
+    service=Depends(get_curator_service),
+    _auth: Annotated[AuthContext, Depends(require_scope("curator:write"))] = None,
+) -> dict:
+    items = await service.get_queue(state)
+    return {
+        "data": [WorkflowResponse.from_model(w).model_dump() for w in items],
+        "meta": {"api_version": "v1", "count": len(items)},
+    }
+
+
+@router.post("/workflows/{workflow_id}/submit")
+async def submit_for_review(
+    workflow_id: UUID,
+    service=Depends(get_curator_service),
+    _auth: Annotated[AuthContext, Depends(require_scope("curator:write"))] = None,
+) -> dict:
+    try:
+        workflow = await service.submit_for_review(workflow_id)
+        return {"data": WorkflowResponse.from_model(workflow).model_dump(), "meta": {"api_version": "v1"}}
+    except (ValidationError, NotFoundError) as exc:
+        raise HTTPException(status_code=400, detail=exc.message) from exc
+
+
+@router.post("/workflows/{workflow_id}/approve")
+async def approve_workflow(
+    workflow_id: UUID,
+    service=Depends(get_curator_service),
+    _auth: Annotated[AuthContext, Depends(require_scope("curator:publish"))] = None,
+) -> dict:
+    try:
+        workflow = await service.approve(workflow_id)
+        return {"data": WorkflowResponse.from_model(workflow).model_dump(), "meta": {"api_version": "v1"}}
+    except (ValidationError, NotFoundError) as exc:
+        raise HTTPException(status_code=400, detail=exc.message) from exc
+
+
+@router.post("/workflows/{workflow_id}/publish")
+async def publish_workflow(
+    workflow_id: UUID,
+    body: PublishRequest,
+    service=Depends(get_curator_service),
+    _auth: Annotated[AuthContext, Depends(require_scope("curator:publish"))] = None,
+) -> dict:
+    try:
+        workflow = await service.publish(
+            workflow_id,
+            body.entity_payload,
+            dataset_version=body.dataset_version,
+        )
+        return {"data": WorkflowResponse.from_model(workflow).model_dump(), "meta": {"api_version": "v1"}}
+    except (ValidationError, NotFoundError, FarmacoGraphError) as exc:
+        raise HTTPException(status_code=400, detail=exc.message) from exc

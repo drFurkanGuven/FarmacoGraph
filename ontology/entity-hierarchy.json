@@ -1,0 +1,134 @@
+{
+  "$schema": "https://farmacograph.org/schemas/entity-hierarchy.schema.json",
+  "version": "1.0.0",
+  "namespace": "https://farmacograph.org/ontology/",
+  "core_namespace": "https://farmacograph.org/ontology/core/",
+  "description": "FarmacoGraph entity inheritance hierarchy. All biomedical entities inherit from BiomedicalEntity.",
+  "root": {
+    "label": "BiomedicalEntity",
+    "uri": "fgcore:BiomedicalEntity",
+    "abstract": true,
+    "description": "Root type for all versioned, provenance-tracked biomedical knowledge objects.",
+    "children": [
+      {
+        "label": "PharmacologicEntity",
+        "uri": "fg:PharmacologicEntity",
+        "abstract": true,
+        "children": [
+          {"label": "Drug", "uri": "fg:Drug"},
+          {"label": "DrugClass", "uri": "fg:DrugClass"},
+          {"label": "TradeName", "uri": "fg:TradeName"},
+          {"label": "Dose", "uri": "fg:Dose"},
+          {"label": "PregnancyRisk", "uri": "fg:PregnancyRisk"},
+          {"label": "MonitoringPlan", "uri": "fg:MonitoringPlan"}
+        ]
+      },
+      {
+        "label": "MolecularEntity",
+        "uri": "fg:MolecularEntity",
+        "abstract": true,
+        "children": [
+          {"label": "TargetProtein", "uri": "fg:TargetProtein"},
+          {"label": "Gene", "uri": "fgcore:Gene"},
+          {"label": "Receptor", "uri": "fg:Receptor"},
+          {"label": "Enzyme", "uri": "fg:Enzyme"},
+          {"label": "Transporter", "uri": "fg:Transporter"},
+          {"label": "Pathway", "uri": "fg:Pathway"}
+        ]
+      },
+      {
+        "label": "PhysiologicEntity",
+        "uri": "fg:PhysiologicEntity",
+        "abstract": true,
+        "children": [
+          {"label": "PhysiologicalProcess", "uri": "fg:PhysiologicalProcess"},
+          {"label": "Organ", "uri": "fgcore:Organ"},
+          {"label": "CellType", "uri": "fgcore:CellType"}
+        ]
+      },
+      {
+        "label": "ClinicalEntity",
+        "uri": "fg:ClinicalEntity",
+        "abstract": true,
+        "children": [
+          {"label": "Disease", "uri": "fgcore:Disease"},
+          {"label": "SideEffect", "uri": "fg:SideEffect"},
+          {"label": "Contraindication", "uri": "fg:Contraindication"},
+          {"label": "Interaction", "uri": "fg:Interaction"},
+          {"label": "LaboratoryTest", "uri": "fgcore:LaboratoryTest"},
+          {"label": "Microorganism", "uri": "fg:Microorganism"},
+          {"label": "ClinicalOutcome", "uri": "fg:ClinicalOutcome"},
+          {"label": "ClinicalScenario", "uri": "fg:ClinicalScenario"}
+        ]
+      },
+      {
+        "label": "MechanisticEntity",
+        "uri": "fg:MechanisticEntity",
+        "abstract": true,
+        "children": [
+          {"label": "MechanismFragment", "uri": "fg:MechanismFragment"},
+          {"label": "MechanismStep", "uri": "fg:MechanismStep"}
+        ]
+      },
+      {
+        "label": "EvidenceEntity",
+        "uri": "fg:EvidenceEntity",
+        "abstract": true,
+        "children": [
+          {"label": "Evidence", "uri": "fgcore:Evidence"},
+          {"label": "Reference", "uri": "fgcore:Reference"},
+          {"label": "Guideline", "uri": "fgcore:Guideline"}
+        ]
+      },
+      {
+        "label": "EducationResource",
+        "uri": "fgcore:EducationResource",
+        "abstract": true,
+        "description": "Pedagogical content. Never a source of biomedical truth.",
+        "children": [
+          {"label": "FiveSecondSummary", "uri": "fg:FiveSecondSummary"},
+          {"label": "ThirtySecondSummary", "uri": "fg:ThirtySecondSummary"},
+          {"label": "FiveMinuteExplanation", "uri": "fg:FiveMinuteExplanation"},
+          {"label": "HighYieldReview", "uri": "fg:HighYieldReview"},
+          {"label": "BoardExamPearl", "uri": "fg:BoardExamPearl"},
+          {"label": "CommonMistake", "uri": "fg:CommonMistake"},
+          {"label": "Mnemonic", "uri": "fg:Mnemonic"},
+          {"label": "Flashcard", "uri": "fg:Flashcard"},
+          {"label": "ComparisonTable", "uri": "fg:ComparisonTable"},
+          {"label": "ClinicalCase", "uri": "fg:ClinicalCase"},
+          {"label": "LearningObjective", "uri": "fg:LearningObjective"},
+          {"label": "RevisionChecklist", "uri": "fg:RevisionChecklist"},
+          {"label": "FAQ", "uri": "fg:FAQ"},
+          {"label": "VisualExplanation", "uri": "fg:VisualExplanation"}
+        ]
+      },
+      {
+        "label": "LearningEntity",
+        "uri": "fgcore:LearningEntity",
+        "abstract": true,
+        "description": "Prerequisite knowledge graph nodes for AI tutors.",
+        "children": [
+          {"label": "KnowledgeTopic", "uri": "fgcore:KnowledgeTopic"},
+          {"label": "Prerequisite", "uri": "fgcore:Prerequisite"}
+        ]
+      }
+    ]
+  },
+  "cross_module_entities": {
+    "description": "Entities shared across FarmacoGraph and future *Graph modules",
+    "entities": [
+      "BiomedicalEntity",
+      "Gene",
+      "Organ",
+      "CellType",
+      "Disease",
+      "LaboratoryTest",
+      "Evidence",
+      "Reference",
+      "Guideline",
+      "EducationResource",
+      "LearningEntity",
+      "KnowledgeTopic"
+    ]
+  }
+}

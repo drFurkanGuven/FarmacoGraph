@@ -1,0 +1,247 @@
+{
+  "$schema": "https://farmacograph.org/schemas/constraints.schema.json",
+  "version": "1.0.0",
+  "description": "FarmacoGraph graph integrity constraints. Each constraint has a unique FG-C identifier.",
+  "constraints": [
+    {
+      "id": "FG-C001",
+      "name": "drug_must_not_target_disease",
+      "severity": "error",
+      "category": "ontology",
+      "description": "Drug must never TARGET Disease. Use TREATS for therapeutic indications.",
+      "applies_to": {"relationship": "TARGETS", "forbidden_target": "Disease"}
+    },
+    {
+      "id": "FG-C002",
+      "name": "drug_must_not_is_a_disease",
+      "severity": "error",
+      "category": "ontology",
+      "description": "Drug must never IS_A Disease.",
+      "applies_to": {"relationship": "IS_A", "forbidden_source": "Drug", "forbidden_target": "Disease"}
+    },
+    {
+      "id": "FG-C003",
+      "name": "mechanism_dag_acyclic",
+      "severity": "error",
+      "category": "mechanistic",
+      "description": "Mechanism subgraphs (PRECEDES, BRANCHES_TO, MERGES_INTO) must not contain cycles.",
+      "applies_to": {"subgraph": ["PRECEDES", "BRANCHES_TO", "MERGES_INTO"]}
+    },
+    {
+      "id": "FG-C004",
+      "name": "interaction_symmetric",
+      "severity": "error",
+      "category": "clinical",
+      "description": "INTERACTS_WITH and AVOID_WITH must exist in both directions with matching metadata.",
+      "applies_to": {"relationships": ["INTERACTS_WITH", "AVOID_WITH"], "symmetric": true}
+    },
+    {
+      "id": "FG-C005",
+      "name": "no_self_interaction",
+      "severity": "error",
+      "category": "clinical",
+      "description": "Drug must not INTERACTS_WITH itself.",
+      "applies_to": {"relationship": "INTERACTS_WITH", "same_node_forbidden": true}
+    },
+    {
+      "id": "FG-C006",
+      "name": "is_a_dag_acyclic",
+      "severity": "error",
+      "category": "taxonomic",
+      "description": "IS_A and PART_OF hierarchies must not contain cycles.",
+      "applies_to": {"subgraph": ["IS_A", "PART_OF"]}
+    },
+    {
+      "id": "FG-C007",
+      "name": "learning_graph_acyclic",
+      "severity": "error",
+      "category": "learning",
+      "description": "REQUIRES prerequisite graph must not contain cycles.",
+      "applies_to": {"subgraph": ["REQUIRES"]}
+    },
+    {
+      "id": "FG-C008",
+      "name": "published_drug_has_class",
+      "severity": "error",
+      "category": "biomedical",
+      "description": "Published Drug must have at least one IS_A or BELONGS_TO DrugClass.",
+      "applies_to": {"entity": "Drug", "status": "published", "min_relationships": {"IS_A": 1}}
+    },
+    {
+      "id": "FG-C009",
+      "name": "published_drug_has_indication",
+      "severity": "error",
+      "category": "biomedical",
+      "description": "Published Drug must have at least one TREATS or PREVENTS relationship.",
+      "applies_to": {"entity": "Drug", "status": "published", "min_relationships": {"TREATS": 1}}
+    },
+    {
+      "id": "FG-C010",
+      "name": "evidence_cannot_treat_disease",
+      "severity": "error",
+      "category": "evidence",
+      "description": "Evidence nodes cannot directly TREAT diseases.",
+      "applies_to": {"forbidden_source": "Evidence", "forbidden_relationships": ["TREATS", "CAUSES", "INHIBITS"]}
+    },
+    {
+      "id": "FG-C011",
+      "name": "references_via_evidence_only",
+      "severity": "error",
+      "category": "evidence",
+      "description": "References must never replace Evidence. Clinical edges link to Evidence, not Reference directly.",
+      "applies_to": {"forbidden_direct": {"clinical_edges_to": "Reference"}}
+    },
+    {
+      "id": "FG-C012",
+      "name": "published_clinical_edge_requires_evidence",
+      "severity": "error",
+      "category": "evidence",
+      "description": "Published clinical/mechanistic edges require at least one SUPPORTED_BY Evidence link.",
+      "applies_to": {"status": "published", "requires_supported_by": true, "categories": ["clinical", "pharmacodynamic", "mechanistic"]}
+    },
+    {
+      "id": "FG-C013",
+      "name": "education_no_clinical_edges",
+      "severity": "error",
+      "category": "education",
+      "description": "Education nodes must never be source or target of clinical relationship types.",
+      "applies_to": {"forbidden_entities": ["EducationResource"], "forbidden_categories": ["clinical", "pharmacodynamic", "pharmacokinetic"]}
+    },
+    {
+      "id": "FG-C014",
+      "name": "education_no_biomedical_assertions",
+      "severity": "error",
+      "category": "education",
+      "description": "Education content must not modify biomedical truth. Only ILLUSTRATES edges to facts.",
+      "applies_to": {"entity": "EducationResource", "allowed_outgoing": ["ILLUSTRATES", "COMPARES"]}
+    },
+    {
+      "id": "FG-C015",
+      "name": "published_mechanism_has_root",
+      "severity": "error",
+      "category": "mechanistic",
+      "description": "Published Drug must have HAS_MECHANISM_ROOT to at least one MechanismFragment.",
+      "applies_to": {"entity": "Drug", "status": "published", "min_relationships": {"HAS_MECHANISM_ROOT": 1}}
+    },
+    {
+      "id": "FG-C016",
+      "name": "mechanism_terminal_outcome",
+      "severity": "warning",
+      "category": "mechanistic",
+      "description": "Mechanism DAG leaf nodes should RESULTS_IN a ClinicalOutcome, SideEffect, or PhysiologicalProcess.",
+      "applies_to": {"entity": "MechanismFragment", "leaf_requires": "RESULTS_IN"}
+    },
+    {
+      "id": "FG-C017",
+      "name": "no_orphan_mechanism_fragments",
+      "severity": "error",
+      "category": "mechanistic",
+      "description": "Published MechanismFragments must be reachable from at least one Drug HAS_MECHANISM_ROOT.",
+      "applies_to": {"entity": "MechanismFragment", "status": "published", "requires_reachability_from": "Drug"}
+    },
+    {
+      "id": "FG-C018",
+      "name": "provenance_required",
+      "severity": "error",
+      "category": "provenance",
+      "description": "No biomedical entity or relationship may exist without provenance metadata.",
+      "applies_to": {"required_fields": ["created_at", "source", "dataset_version", "created_by"]}
+    },
+    {
+      "id": "FG-C019",
+      "name": "confidence_metadata_required",
+      "severity": "error",
+      "category": "confidence",
+      "description": "Published clinical relationships must include confidence_score and evidence_level.",
+      "applies_to": {"status": "published", "required_metadata": ["confidence_score", "evidence_level"]}
+    },
+    {
+      "id": "FG-C020",
+      "name": "explanation_required_published",
+      "severity": "error",
+      "category": "explainability",
+      "description": "Published clinical and mechanistic edges require explanation property.",
+      "applies_to": {"status": "published", "required_metadata": ["explanation"], "categories": ["clinical", "mechanistic", "pharmacodynamic"]}
+    },
+    {
+      "id": "FG-C021",
+      "name": "no_duplicate_external_id",
+      "severity": "error",
+      "category": "biomedical",
+      "description": "No two published entities may share the same external ID within a vocabulary.",
+      "applies_to": {"unique_per_vocabulary": ["rxnorm", "uniprot", "loinc", "icd10"]}
+    },
+    {
+      "id": "FG-C022",
+      "name": "atc_class_consistency",
+      "severity": "warning",
+      "category": "biomedical",
+      "description": "Drug ATC prefix should match DrugClass ATC prefix.",
+      "applies_to": {"entity": "Drug", "cross_check": "DrugClass.atc_prefix"}
+    },
+    {
+      "id": "FG-C023",
+      "name": "workflow_no_direct_publish",
+      "severity": "error",
+      "category": "workflow",
+      "description": "Entities cannot transition directly from draft to published. Must pass review and approved states.",
+      "applies_to": {"forbidden_transitions": [["draft", "published"]]}
+    },
+    {
+      "id": "FG-C024",
+      "name": "deprecated_has_successor",
+      "severity": "warning",
+      "category": "versioning",
+      "description": "Deprecated entities should have superseded_by pointer.",
+      "applies_to": {"status": "deprecated", "recommended_field": "superseded_by"}
+    },
+    {
+      "id": "FG-C025",
+      "name": "causes_requires_mechanism_path",
+      "severity": "warning",
+      "category": "mechanistic",
+      "description": "CAUSES edges should have RESULTS_FROM path to MechanismFragment or mechanism_summary in metadata.",
+      "applies_to": {"relationship": "CAUSES", "requires": ["RESULTS_FROM_or_mechanism_summary"]}
+    },
+    {
+      "id": "FG-C026",
+      "name": "first_line_requires_guideline",
+      "severity": "warning",
+      "category": "evidence",
+      "description": "FIRST_LINE_FOR should have RECOMMENDED_BY Guideline or SUPPORTED_BY Evidence.",
+      "applies_to": {"relationship": "FIRST_LINE_FOR", "requires": ["RECOMMENDED_BY", "SUPPORTED_BY"]}
+    },
+    {
+      "id": "FG-C027",
+      "name": "broken_link_detection",
+      "severity": "error",
+      "category": "graph_integrity",
+      "description": "All relationship targets must reference existing nodes.",
+      "applies_to": {"all_relationships": true}
+    },
+    {
+      "id": "FG-C028",
+      "name": "ai_draft_not_publishable",
+      "severity": "error",
+      "category": "workflow",
+      "description": "AI-assisted drafts (source=ai_assisted_draft) cannot be published without curator attestation.",
+      "applies_to": {"source": "ai_assisted_draft", "requires": ["curator_attestation"]}
+    },
+    {
+      "id": "FG-C029",
+      "name": "education_layer_flag",
+      "severity": "error",
+      "category": "education",
+      "description": "All EducationResource nodes must have content_layer=education.",
+      "applies_to": {"entity": "EducationResource", "required_property": {"content_layer": "education"}}
+    },
+    {
+      "id": "FG-C030",
+      "name": "postgres_no_biomedical_duplication",
+      "severity": "error",
+      "category": "architecture",
+      "description": "PostgreSQL must not store biomedical entity content. Only operational metadata.",
+      "applies_to": {"storage": "postgresql", "forbidden_tables": ["drugs", "diseases", "pathways"]}
+    }
+  ]
+}

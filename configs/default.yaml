@@ -1,0 +1,40 @@
+# FarmacoGraph Application Configuration
+# Biomedical knowledge lives in Neo4j — never duplicated here.
+
+app:
+  name: farmacograph
+  environment: development
+  debug: false
+  api_version: v1
+
+neo4j:
+  uri: bolt://localhost:7687
+  database: neo4j
+  # Credentials via environment: NEO4J_USER, NEO4J_PASSWORD
+
+postgresql:
+  # Operational metadata only — users, audit, versions, workflow
+  dsn: postgresql+asyncpg://localhost:5432/farmacograph
+  # Credentials via environment: DATABASE_URL
+
+api:
+  host: 0.0.0.0
+  port: 8000
+  cors_origins: ["*"]
+  default_page_size: 50
+  max_page_size: 200
+  graph_query_max_depth: 3
+  rate_limit_per_minute: 100
+
+dataset:
+  current_version: null  # Set on publish, e.g. 2026.1.0
+  default_language: en
+
+validation:
+  fail_on_error: true
+  allow_warnings_on_publish: true
+
+ontology:
+  relationships_registry: ontology/relationships.json
+  constraints_registry: ontology/constraints.json
+  entity_hierarchy: ontology/entity-hierarchy.json
