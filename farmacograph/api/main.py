@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from collections.abc import AsyncGenerator
 
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse, Response
 from prometheus_client import make_asgi_app
 
 from farmacograph.api.middleware import CorrelationMiddleware
@@ -44,6 +44,14 @@ def create_app() -> FastAPI:
     )
 
     app.add_middleware(CorrelationMiddleware)
+
+    @app.get("/", include_in_schema=False)
+    async def root() -> RedirectResponse:
+        return RedirectResponse(url="/docs")
+
+    @app.get("/favicon.ico", include_in_schema=False)
+    async def favicon() -> Response:
+        return Response(status_code=204)
 
     @app.exception_handler(FarmacoGraphError)
     async def farmacograph_error_handler(request: Request, exc: FarmacoGraphError) -> JSONResponse:
