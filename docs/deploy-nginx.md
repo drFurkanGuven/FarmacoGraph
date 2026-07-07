@@ -77,4 +77,29 @@ sudo tail -20 /var/log/nginx/error.log
 | `sites-available` yok | Fedora — `conf.d` kullan (script otomatik yapar) |
 | `~/FarmacoGraph` yok | Proje `/opt/FarmacoGraph` altında |
 | 502 Bad Gateway | API down — `docker compose up -d` |
+| **404 `/docs` (HTTPS)** | Certbot SSL bloğunda `proxy_pass` eksik — aşağıya bak |
 | klinikiq server name warn | Başka site config çakışması; farmacograph etkilenmeyebilir |
+
+### `/docs` 404 ama API localhost'ta çalışıyor
+
+```bash
+curl -I http://127.0.0.1:8001/docs          # 200 olmalı
+curl -I https://farmacograph.furkanguven.space/docs
+sudo nginx -T 2>/dev/null | grep -A35 "farmacograph.furkanguven.space"
+```
+
+HTTPS `server { listen 443 ssl; ...}` içinde **mutlaka**:
+
+```nginx
+location / {
+    proxy_pass http://farmacograph_api;   # upstream 127.0.0.1:8001
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+```
+
+Certbot bazen sadece HTTP bloğunu günceller. SSL bloğuna aynı `location /` ekleyip:
+
+```bash
+sudo nginx -t && sudo systemctl reload nginx
+```
