@@ -13,8 +13,10 @@ case "$cmd" in
     echo "✓ Installed. Add to PATH: export PATH=\"\$HOME/Library/Python/3.9/bin:\$PATH\""
     ;;
   up)
+    chmod +x scripts/find-ports.sh 2>/dev/null || true
+    ./scripts/find-ports.sh --apply
     docker compose up -d postgres neo4j
-    echo "✓ Postgres: localhost:5432  Neo4j: localhost:7474"
+    echo "✓ Run: docker compose up -d api  (or ./scripts/find-ports.sh --up for full stack)"
     ;;
   down)
     docker compose down
@@ -34,7 +36,8 @@ case "$cmd" in
   help|*)
     echo "FarmacoGraph dev commands:"
     echo "  ./scripts/dev.sh install   — pip install dependencies"
-    echo "  ./scripts/dev.sh up        — start Postgres + Neo4j (Docker)"
+    echo "  ./scripts/dev.sh up        — scan ports + start Postgres + Neo4j"
+    echo "  ./scripts/find-ports.sh    — scan host ports (see --apply --up)"
     echo "  ./scripts/dev.sh down      — stop Docker services"
     echo "  ./scripts/dev.sh api       — run API server locally"
     echo "  ./scripts/dev.sh test      — run pytest"
