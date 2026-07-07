@@ -5,8 +5,10 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 from collections.abc import AsyncGenerator
 
+from pathlib import Path
+
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse, RedirectResponse, Response
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from prometheus_client import make_asgi_app
 
 from farmacograph.api.middleware import CorrelationMiddleware
@@ -17,6 +19,7 @@ from farmacograph.core.exceptions import FarmacoGraphError
 from farmacograph.core.logging import configure_logging, get_logger
 
 logger = get_logger(__name__)
+SEARCH_PAGE = Path(__file__).resolve().parent / "static" / "search.html"
 
 
 @asynccontextmanager
@@ -60,7 +63,11 @@ def create_app() -> FastAPI:
 
     @app.get("/", include_in_schema=False)
     async def root() -> RedirectResponse:
-        return RedirectResponse(url="/docs")
+        return RedirectResponse(url="/search")
+
+    @app.get("/search", include_in_schema=False)
+    async def search_page() -> HTMLResponse:
+        return HTMLResponse(SEARCH_PAGE.read_text(encoding="utf-8"))
 
     @app.get("/favicon.ico", include_in_schema=False)
     async def favicon() -> Response:

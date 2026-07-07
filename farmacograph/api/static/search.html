@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FarmacoGraph — Search</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --card: #1a2332;
+      --text: #e8eef4;
+      --muted: #8b9cb3;
+      --accent: #3d8bfd;
+      --border: #2a3544;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .wrap { max-width: 640px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+    h1 { font-size: 1.5rem; font-weight: 600; margin: 0 0 0.25rem; }
+    .sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+    form { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+    input[type="search"] {
+      flex: 1;
+      padding: 0.65rem 0.85rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--card);
+      color: var(--text);
+      font-size: 1rem;
+    }
+    button {
+      padding: 0.65rem 1.1rem;
+      border: none;
+      border-radius: 8px;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .meta { font-size: 0.8rem; color: var(--muted); margin-bottom: 1rem; }
+    ul { list-style: none; padding: 0; margin: 0; }
+    li {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.85rem 1rem;
+      margin-bottom: 0.5rem;
+    }
+    li strong { display: block; }
+    li span { font-size: 0.85rem; color: var(--muted); }
+    .empty, .err { color: var(--muted); padding: 1rem 0; }
+    .err { color: #f87171; }
+    footer { margin-top: 2rem; font-size: 0.8rem; color: var(--muted); }
+    footer a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>FarmacoGraph</h1>
+    <p class="sub">Explainable biomedical knowledge — search published drugs</p>
+
+    <form id="form" role="search">
+      <input type="search" id="q" name="q" placeholder="İlaç adı (ör. metoprolol)" minlength="2" required autofocus />
+      <button type="submit" id="btn">Ara</button>
+    </form>
+
+    <div class="meta" id="meta" hidden></div>
+    <ul id="results"></ul>
+    <p class="empty" id="empty" hidden>Sonuç yok. Veri seti henüz küçük olabilir.</p>
+    <p class="err" id="err" hidden></p>
+
+    <footer>
+      <a href="/docs">API Docs</a> ·
+      <a href="/api/v1/info">API Info</a> ·
+      <a href="https://github.com/drFurkanGuven/FarmacoGraph/blob/main/docs/getting-started.md">Getting Started</a>
+    </footer>
+  </div>
+  <script>
+    const form = document.getElementById("form");
+    const q = document.getElementById("q");
+    const results = document.getElementById("results");
+    const meta = document.getElementById("meta");
+    const empty = document.getElementById("empty");
+    const err = document.getElementById("err");
+    const btn = document.getElementById("btn");
+
+    async function runSearch(query) {
+      btn.disabled = true;
+      results.innerHTML = "";
+      empty.hidden = true;
+      err.hidden = true;
+      meta.hidden = true;
+      try {
+        const res = await fetch("/api/v1/search?q=" + encodeURIComponent(query));
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const json = await res.json();
+        const items = json.data || [];
+        if (json.meta) {
+          meta.textContent = "dataset: " + (json.meta.dataset_version || "—") + " · " + items.length + " sonuç";
+          meta.hidden = false;
+        }
+        if (!items.length) {
+          empty.hidden = false;
+          return;
+        }
+        for (const item of items) {
+          const li = document.createElement("li");
+          li.innerHTML = "<strong>" + escapeHtml(item.label || item.slug) + "</strong>"
+            + "<span>" + escapeHtml(item.slug || "") + (item.module ? " · " + escapeHtml(item.module) : "") + "</span>";
+          results.appendChild(li);
+        }
+      } catch (e) {
+        err.textContent = "Arama başarısız: " + e.message;
+        err.hidden = false;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    }
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const query = q.value.trim();
+      if (query.length >= 2) runSearch(query);
+    });
+
+    const params = new URLSearchParams(location.search);
+    if (params.get("q")) {
+      q.value = params.get("q");
+      runSearch(q.value);
+    }
+  </script>
+</body>
+</html>

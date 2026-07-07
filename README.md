@@ -31,6 +31,7 @@ No client — including first-party apps — accesses Neo4j or PostgreSQL direct
 | **Erişim rehberi** | [docs/getting-started.md](docs/getting-started.md) |
 | **API yol haritası** | [docs/api-roadmap.md](docs/api-roadmap.md) |
 | **Discovery** | `GET /api/v1/info` |
+| **Search UI** | https://farmacograph.furkanguven.space/search |
 
 Early access: okuma endpoint’leri API key olmadan denenebilir. Key ve kurumsal erişim → getting-started rehberi.
 

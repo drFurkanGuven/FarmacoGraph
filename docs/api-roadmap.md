@@ -23,9 +23,10 @@
 
 | # | Deliverable | Yük |
 |---|-------------|-----|
-| 5.1.1 | `GET /api/v1/info` — API meta, auth bilgisi, dataset sürümü | Düşük |
-| 5.1.2 | Neo4j üzerinde basit ilaç araması (`GraphSearchProvider`) | Düşük |
-| 5.1.3 | Search meta → snapshot `dataset_version` | Düşük |
+| 5.1.1 | `GET /api/v1/info` | Düşük |
+| 5.1.2 | Neo4j `GraphSearchProvider` | Düşük |
+| 5.1.3 | **`GET /search` — public arama sayfası** | Düşük |
+| 5.1.4 | `scripts/publish-stub.sh` — ilk test verisi | Düşük |
 
 **Deploy:** `git pull && docker compose up -d --build`
 
