@@ -1,0 +1,162 @@
+{
+  "module": "cardiovascular",
+  "dataset_version": "2026.1.0",
+  "create_snapshot": false,
+  "entity_payload": {
+    "id": "a1000001-0000-4000-8000-000000000001",
+    "entity_type": "Drug",
+    "slug": "metoprolol",
+    "label": "Metoprolol",
+    "generic_name": "Metoprolol",
+    "module": "cardiovascular",
+    "routes": ["FILL_BY_CURATOR"],
+    "half_life": "FILL_BY_CURATOR",
+    "protein_binding": "FILL_BY_CURATOR",
+    "bioavailability": "FILL_BY_CURATOR",
+    "onset": "FILL_BY_CURATOR",
+    "duration": "FILL_BY_CURATOR",
+    "has_black_box_warning": false,
+    "is_high_alert": false,
+    "status": "published",
+    "dataset_version": "2026.1.0",
+    "external_ids": {
+      "rxnorm": "FILL_BY_CURATOR",
+      "atc": ["FILL_BY_CURATOR"]
+    },
+    "provenance": {
+      "created_at": "FILL_BY_CURATOR",
+      "updated_at": "FILL_BY_CURATOR",
+      "created_by": "FILL_CURATOR_USER_ID",
+      "source": "ai_assisted_draft",
+      "imported_from": "FILL_BY_CURATOR",
+      "curator_attestation": false
+    },
+    "versioning": {
+      "dataset_version": "2026.1.0",
+      "ontology_version": "1.0.0",
+      "valid_from": "2026-07-07",
+      "status": "published"
+    },
+    "relationships": {
+      "BELONGS_TO": ["b1000001-0000-4000-8010-000000000001"],
+      "TREATS": [
+        "d1000001-0000-4000-8010-000000000001",
+        "d1000001-0000-4000-8010-000000000002"
+      ],
+      "HAS_MECHANISM_ROOT": ["m1000001-0000-4000-8010-000000000001"]
+    }
+  },
+  "related_entities": [
+    {
+      "id": "b1000001-0000-4000-8010-000000000001",
+      "entity_type": "DrugClass",
+      "slug": "beta-blockers",
+      "label": "Beta-blockers",
+      "description": "FILL_BY_CURATOR",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "organ_system": "cardiovascular",
+      "provenance": {
+        "created_at": "FILL_BY_CURATOR",
+        "updated_at": "FILL_BY_CURATOR",
+        "created_by": "FILL_CURATOR_USER_ID",
+        "source": "ai_assisted_draft"
+      },
+      "versioning": {
+        "dataset_version": "2026.1.0",
+        "valid_from": "2026-07-07",
+        "status": "published"
+      }
+    },
+    {
+      "id": "d1000001-0000-4000-8010-000000000001",
+      "entity_type": "Disease",
+      "slug": "hypertension",
+      "label": "Hypertension",
+      "description": "FILL_BY_CURATOR",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "provenance": {
+        "created_at": "FILL_BY_CURATOR",
+        "updated_at": "FILL_BY_CURATOR",
+        "created_by": "FILL_CURATOR_USER_ID",
+        "source": "ai_assisted_draft"
+      },
+      "versioning": {
+        "dataset_version": "2026.1.0",
+        "valid_from": "2026-07-07",
+        "status": "published"
+      }
+    },
+    {
+      "id": "d1000001-0000-4000-8010-000000000002",
+      "entity_type": "Disease",
+      "slug": "angina-pectoris",
+      "label": "Angina pectoris",
+      "description": "FILL_BY_CURATOR",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "provenance": {
+        "created_at": "FILL_BY_CURATOR",
+        "updated_at": "FILL_BY_CURATOR",
+        "created_by": "FILL_CURATOR_USER_ID",
+        "source": "ai_assisted_draft"
+      },
+      "versioning": {
+        "dataset_version": "2026.1.0",
+        "valid_from": "2026-07-07",
+        "status": "published"
+      }
+    },
+    {
+      "id": "m1000001-0000-4000-8010-000000000001",
+      "entity_type": "MechanismFragment",
+      "slug": "beta-adrenergic-blockade",
+      "label": "Beta-adrenergic blockade",
+      "description": "FILL_BY_CURATOR",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "provenance": {
+        "created_at": "FILL_BY_CURATOR",
+        "updated_at": "FILL_BY_CURATOR",
+        "created_by": "FILL_CURATOR_USER_ID",
+        "source": "ai_assisted_draft"
+      },
+      "versioning": {
+        "dataset_version": "2026.1.0",
+        "valid_from": "2026-07-07",
+        "status": "published"
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "relationship_type": "BELONGS_TO",
+      "source_type": "Drug",
+      "target_type": "DrugClass",
+      "source_id": "a1000001-0000-4000-8000-000000000001",
+      "target_id": "b1000001-0000-4000-8010-000000000001"
+    },
+    {
+      "relationship_type": "TREATS",
+      "source_type": "Drug",
+      "target_type": "Disease",
+      "source_id": "a1000001-0000-4000-8000-000000000001",
+      "target_id": "d1000001-0000-4000-8010-000000000001"
+    },
+    {
+      "relationship_type": "TREATS",
+      "source_type": "Drug",
+      "target_type": "Disease",
+      "source_id": "a1000001-0000-4000-8000-000000000001",
+      "target_id": "d1000001-0000-4000-8010-000000000002"
+    },
+    {
+      "relationship_type": "HAS_MECHANISM_ROOT",
+      "source_type": "Drug",
+      "target_type": "MechanismFragment",
+      "source_id": "a1000001-0000-4000-8000-000000000001",
+      "target_id": "m1000001-0000-4000-8010-000000000001"
+    }
+  ]
+}

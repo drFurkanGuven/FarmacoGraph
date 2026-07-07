@@ -22,6 +22,16 @@ FarmacoGraph is not a pharmacology database. It is a **long-term biomedical know
 
 No client — including first-party apps — accesses Neo4j or PostgreSQL directly.
 
+## API (canlı)
+
+| | |
+|---|---|
+| **Docs (Swagger)** | https://farmacograph.furkanguven.space/docs |
+| **Health** | https://farmacograph.furkanguven.space/api/v1/health |
+| **Erişim rehberi** | [docs/getting-started.md](docs/getting-started.md) |
+
+Early access: okuma endpoint’leri API key olmadan denenebilir. Key ve kurumsal erişim → getting-started rehberi.
+
 ## Quick Start
 
 macOS'ta `pip` ve `uvicorn` PATH'te olmayabilir. `python3 -m` kullanın:

@@ -1,0 +1,24 @@
+{
+  "entities": [
+    {
+      "id": "b1000001-0000-4000-8010-000000000001",
+      "entity_type": "DrugClass",
+      "slug": "beta-blockers",
+      "label": "Beta-blockers",
+      "description": "FILL_BY_CURATOR",
+      "organ_system": "cardiovascular"
+    },
+    {
+      "id": "d1000001-0000-4000-8010-000000000001",
+      "entity_type": "Disease",
+      "slug": "hypertension",
+      "label": "Hypertension"
+    },
+    {
+      "id": "m1000001-0000-4000-8010-000000000001",
+      "entity_type": "MechanismFragment",
+      "slug": "beta-adrenergic-blockade",
+      "label": "Beta-adrenergic blockade"
+    }
+  ]
+}

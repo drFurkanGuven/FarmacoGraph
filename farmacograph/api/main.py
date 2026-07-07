@@ -36,7 +36,19 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="FarmacoGraph API",
         version="1.0.0",
-        description="Explainable biomedical knowledge platform. The API is the product.",
+        description=(
+            "Explainable biomedical knowledge platform for medical education. "
+            "**The API is the product.**\n\n"
+            "### Links\n"
+            "- [Getting Started / API Access](https://github.com/drFurkanGuven/FarmacoGraph/blob/main/docs/getting-started.md)\n"
+            "- [OpenAPI spec](https://github.com/drFurkanGuven/FarmacoGraph/blob/main/openapi/openapi.yaml)\n\n"
+            "### Base URL\n"
+            "`/api/v1`\n\n"
+            "### Authentication\n"
+            "Early access: read endpoints work without a key. "
+            "For API keys and higher rate limits, see **Getting Started**. "
+            "Use `Authorization: Bearer <token>` in Swagger **Authorize**."
+        ),
         lifespan=lifespan,
         docs_url="/docs",
         redoc_url="/redoc",

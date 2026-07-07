@@ -11,11 +11,13 @@
 |----------|-------|
 | Base URL | `/api/v1` |
 | Format | JSON |
-| Auth | JWT (future) — PostgreSQL-backed |
+| Auth | Bearer JWT or API key — see [Getting Started](getting-started.md) |
 | Graph backend | Neo4j (read queries) |
 | Metadata backend | PostgreSQL (versions, audit) |
 
 OpenAPI documentation auto-generated via FastAPI at `/docs`.
+
+**New to the API?** Read [Getting Started](getting-started.md) — how to access the service, authentication, scopes, and examples.
 
 ---
 

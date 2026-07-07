@@ -14,6 +14,14 @@ curl -s https://farmacograph.furkanguven.space/api/v1/modules/cardiovascular/cur
 farmacograph curriculum-stats --module cardiovascular
 ```
 
+## AI-assisted curation
+
+- **Prompt:** `staging/cardiovascular/prompts/curator-ai-prompt.md`
+- **Metoprolol örneği:** `prompts/metoprolol.prompt.md` + `drugs/metoprolol.json` (iskelet)
+- **Paylaşılan node index:** `shared/nodes.index.json`
+
+AI çıktısı → curator doğrular → `curator_attestation: true` → validate → publish.
+
 ## Per-drug workflow
 
 ### 1. Copy template
