@@ -43,6 +43,7 @@ def create_app() -> FastAPI:
             "Explainable biomedical knowledge platform for medical education. "
             "**The API is the product.**\n\n"
             "### Links\n"
+            "- [Search UI](/search) — public drug search\n"
             "- [Getting Started / API Access](https://github.com/drFurkanGuven/FarmacoGraph/blob/main/docs/getting-started.md)\n"
             "- [API Roadmap (phased)](https://github.com/drFurkanGuven/FarmacoGraph/blob/main/docs/api-roadmap.md)\n"
             "- [OpenAPI spec](https://github.com/drFurkanGuven/FarmacoGraph/blob/main/openapi/openapi.yaml)\n\n"
@@ -63,7 +64,7 @@ def create_app() -> FastAPI:
 
     @app.get("/", include_in_schema=False)
     async def root() -> RedirectResponse:
-        return RedirectResponse(url="/search")
+        return RedirectResponse(url="/docs")
 
     @app.get("/search", include_in_schema=False)
     async def search_page() -> HTMLResponse:

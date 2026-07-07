@@ -37,10 +37,10 @@ async def client():
 
 
 @pytest.mark.asyncio
-async def test_root_redirects_to_search(client: AsyncClient):
+async def test_root_redirects_to_docs(client: AsyncClient):
     r = await client.get("/")
     assert r.status_code == 307
-    assert r.headers["location"] == "/search"
+    assert r.headers["location"] == "/docs"
 
 
 @pytest.mark.asyncio
