@@ -13,6 +13,7 @@ from farmacograph.services.compare import CompareService
 from farmacograph.services.drugs import DrugService
 from farmacograph.services.explain import ExplainService
 from farmacograph.services.health import HealthService
+from farmacograph.services.info import InfoService
 from farmacograph.services.learning import LearningService
 from farmacograph.services.curriculum import CurriculumService
 from farmacograph.services.modules import ModuleService
@@ -26,6 +27,10 @@ def get_app_container() -> Container:
 
 def get_health_service(container: Annotated[Container, Depends(get_app_container)]) -> HealthService:
     return container.health_service
+
+
+def get_info_service(container: Annotated[Container, Depends(get_app_container)]) -> InfoService:
+    return container.info_service
 
 
 def get_drug_service(container: Annotated[Container, Depends(get_app_container)]) -> DrugService:

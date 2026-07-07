@@ -18,15 +18,17 @@ from farmacograph.repositories.graph_writer import GraphWriter
 from farmacograph.repositories.jobs import JobRepository
 from farmacograph.repositories.outbox import OutboxRepository
 from farmacograph.repositories.snapshots import SnapshotRepository
+from farmacograph.search.graph_provider import GraphSearchProvider
 from farmacograph.services.compare import CompareService
 from farmacograph.services.curator import CuratorService
 from farmacograph.services.drugs import DrugService
 from farmacograph.services.explain import ExplainService
 from farmacograph.services.health import HealthService
+from farmacograph.services.info import InfoService
 from farmacograph.services.learning import LearningService
 from farmacograph.services.modules import ModuleService
 from farmacograph.services.reasoning import ReasoningService
-from farmacograph.services.search import SearchService
+from farmacograph.services.search import NullSearchProvider, SearchService
 from farmacograph.services.curriculum import CurriculumService
 from farmacograph.services.snapshot import SnapshotService
 from farmacograph.services.statistics import StatisticsService
@@ -54,6 +56,7 @@ class Container:
 
     # Services
     health_service: HealthService = field(init=False)
+    info_service: InfoService = field(init=False)
     drug_service: DrugService = field(init=False)
     explain_service: ExplainService = field(init=False)
     compare_service: CompareService = field(init=False)
@@ -86,6 +89,7 @@ class Container:
             session_factory=self.session_factory,
             snapshot_repo=self.snapshot_repo,
         )
+        self.info_service = InfoService(self.settings, self.snapshot_repo)
         self.drug_service = DrugService(graph_repo=self.graph_repo, settings=self.settings)
         self.explain_service = ExplainService(graph_repo=self.graph_repo)
         self.compare_service = CompareService(graph_repo=self.graph_repo)
@@ -94,7 +98,16 @@ class Container:
             explain_service=self.explain_service,
             graph_repo=self.graph_repo,
         )
-        self.search_service = SearchService()
+        search_provider = (
+            GraphSearchProvider(self.graph_repo)
+            if self.settings.neo4j_enabled
+            else NullSearchProvider()
+        )
+        self.search_service = SearchService(
+            search_provider,
+            snapshot_repo=self.snapshot_repo,
+            ontology_version=self.settings.ontology_version,
+        )
         self.module_service = ModuleService(
             graph_repo=self.graph_repo,
             snapshot_repo=self.snapshot_repo,

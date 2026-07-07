@@ -61,6 +61,29 @@ class GraphRepository:
         )
         return results[0] if results else None
 
+    async def search_drugs(self, query: str, *, limit: int = 20) -> list[dict[str, Any]]:
+        if not self.is_available:
+            return []
+        q = query.strip().lower()
+        if len(q) < 2:
+            return []
+        return await self._driver.run_query(
+            """
+            MATCH (d:Drug)
+            WHERE d.status = 'published'
+              AND (
+                toLower(d.slug) CONTAINS $q
+                OR toLower(d.generic_name) CONTAINS $q
+                OR toLower(d.label) CONTAINS $q
+              )
+            RETURN d.id AS id, d.slug AS slug, d.generic_name AS label,
+                   d.module AS module, d.status AS status, 'Drug' AS type
+            ORDER BY d.generic_name
+            LIMIT $limit
+            """,
+            {"q": q, "limit": limit},
+        )
+
     async def count_entities(self) -> dict[str, int]:
         if not self.is_available:
             return {"entities": 0, "relationships": 0}

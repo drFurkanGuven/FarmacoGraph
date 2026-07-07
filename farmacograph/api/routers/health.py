@@ -6,11 +6,27 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
-from farmacograph.api.deps import get_health_service
+from farmacograph.api.deps import get_health_service, get_info_service
 from farmacograph.api.schemas.responses import APIResponse
 from farmacograph.services.health import HealthService
+from farmacograph.services.info import InfoService
 
 router = APIRouter(tags=["Health"])
+
+
+@router.get("/info")
+async def api_info(
+    service: Annotated[InfoService, Depends(get_info_service)],
+) -> dict:
+    """Public API discovery — auth, versions, documentation links."""
+    data = await service.get_info()
+    return {
+        "data": data,
+        "meta": {
+            "api_version": "v1",
+            "dataset_version": data.get("dataset_version"),
+        },
+    }
 
 
 @router.get("/health")
