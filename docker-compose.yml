@@ -10,7 +10,7 @@ services:
       POSTGRES_PASSWORD: farmacograph
       POSTGRES_DB: farmacograph
     ports:
-      - "5432:5432"
+      - "5433:5432"   # host 5432 often taken by system PostgreSQL
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -54,7 +54,7 @@ services:
       FG_LOG_JSON: "false"
       FG_JWT_SECRET_KEY: dev-secret-change-in-production-32chars
     ports:
-      - "8000:8000"
+      - "8001:8000"   # host 8000 often taken by other apps
     volumes:
       - ./farmacograph:/app/farmacograph:ro
       - ./ontology:/app/ontology:ro
