@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  isLoginLoopLocation,
   isLoginPath,
   isProtectedPath,
   loginRedirectUrl,
@@ -22,6 +23,7 @@ describe("normalizePathname", () => {
     expect(normalizePathname("/studio/login/")).toBe("/login");
     expect(normalizePathname("/studio/")).toBe("/");
     expect(normalizePathname("/studio/settings/")).toBe("/settings");
+    expect(normalizePathname("/studio/dashboard/")).toBe("/dashboard");
     if (previous === undefined) delete process.env.NEXT_PUBLIC_BASE_PATH;
     else process.env.NEXT_PUBLIC_BASE_PATH = previous;
   });
@@ -68,26 +70,39 @@ describe("isProtectedPath", () => {
   it("protects studio shell and knowledge paths", () => {
     expect(isProtectedPath("/")).toBe(true);
     expect(isProtectedPath("/settings/")).toBe(true);
+    expect(isProtectedPath("/dashboard/")).toBe(true);
     expect(isProtectedPath("/knowledge/drugs")).toBe(true);
     expect(isProtectedPath("/login")).toBe(false);
     expect(isProtectedPath("/login/")).toBe(false);
   });
 });
 
-describe("loginRedirectUrl / safeReturnTo", () => {
+describe("safeReturnTo open-redirect + login rejection", () => {
   it("does not set returnTo to login itself", () => {
     expect(loginRedirectUrl("/login/")).toBe("/login?returnTo=%2F");
     expect(isLoginPath("/login/")).toBe(true);
     expect(safeReturnTo("/login/")).toBe("/");
     expect(safeReturnTo("/login")).toBe("/");
+    expect(safeReturnTo("%2Flogin%2F")).toBe("/");
     expect(safeReturnTo(null)).toBe("/");
+  });
+
+  it("allows in-app destinations", () => {
+    expect(safeReturnTo("/")).toBe("/");
+    expect(safeReturnTo("/dashboard/")).toBe("/dashboard");
+    expect(safeReturnTo("/knowledge/drugs/ramipril")).toBe("/knowledge/drugs/ramipril");
+  });
+
+  it("rejects external and protocol-relative URLs", () => {
+    expect(safeReturnTo("https://evil.com")).toBe("/");
+    expect(safeReturnTo("//evil.com")).toBe("/");
+    expect(safeReturnTo("javascript:alert(1)")).toBe("/");
+    expect(safeReturnTo("../escape")).toBe("/");
   });
 });
 
-describe("resolveAuthMiddleware (TASK C redirect-loop regression)", () => {
+describe("resolveAuthMiddleware (login-loop regression)", () => {
   it("never redirects /login or /login/ (production loop signature)", () => {
-    // Classic failure: middleware treated /login/ as protected →
-    // Location: /login/?returnTo=/login/ forever (curl: 307 × ∞).
     expect(resolveAuthMiddleware("/login/", false)).toEqual({ action: "next" });
     expect(resolveAuthMiddleware("/login", false)).toEqual({ action: "next" });
   });
@@ -97,11 +112,14 @@ describe("resolveAuthMiddleware (TASK C redirect-loop regression)", () => {
       const decision = resolveAuthMiddleware(path, false);
       if (decision.action === "redirect") {
         expect(decision.returnTo).not.toMatch(/login/i);
+        expect(isLoginLoopLocation(`/login/?returnTo=${encodeURIComponent(decision.returnTo ?? "")}`)).toBe(
+          false,
+        );
       }
     }
   });
 
-  it("redirects unauthenticated protected routes to login with safe returnTo", () => {
+  it("redirects unauthenticated protected routes with safe returnTo", () => {
     expect(resolveAuthMiddleware("/", false)).toEqual({
       action: "redirect",
       loginPath: "/login",
@@ -133,7 +151,20 @@ describe("resolveAuthMiddleware (TASK C redirect-loop regression)", () => {
       loginPath: "/login",
       returnTo: "/",
     });
+    expect(resolveAuthMiddleware("/studio/dashboard/", false)).toEqual({
+      action: "redirect",
+      loginPath: "/login",
+      returnTo: "/dashboard",
+    });
     if (previous === undefined) delete process.env.NEXT_PUBLIC_BASE_PATH;
     else process.env.NEXT_PUBLIC_BASE_PATH = previous;
+  });
+});
+
+describe("isLoginLoopLocation", () => {
+  it("detects the production failure signature", () => {
+    expect(isLoginLoopLocation("/studio/login/?returnTo=%2Flogin%2F")).toBe(true);
+    expect(isLoginLoopLocation("/login/?returnTo=/login/")).toBe(true);
+    expect(isLoginLoopLocation("/studio/login/?returnTo=%2F")).toBe(false);
   });
 });

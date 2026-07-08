@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { NextRequest } from "next/server";
 import { AUTH_COOKIE_NAME } from "@/lib/auth/storage";
+import { isLoginLoopLocation } from "@/lib/auth/routes";
 import { config, middleware } from "@/middleware";
 
 function request(path: string, cookie?: string) {
@@ -14,22 +15,28 @@ describe("middleware matcher", () => {
   it("explicitly includes app root so basePath /studio/ is guarded", () => {
     expect(config.matcher).toContain("/");
   });
+
+  it("excludes _next/static from matcher", () => {
+    const patterns = config.matcher.join(" ");
+    expect(patterns).toContain("_next/static");
+  });
 });
 
 describe("middleware auth redirect", () => {
   it("redirects anonymous `/` to login with returnTo=/", () => {
     const res = middleware(request("/"));
     expect(res.status).toBe(307);
-    expect(res.headers.get("location")).toBe(
-      "https://farmacograph.furkanguven.space/login?returnTo=%2F",
-    );
+    const location = res.headers.get("location") ?? "";
+    expect(location).toMatch(/\/login\/?\?returnTo=%2F$/);
+    expect(isLoginLoopLocation(location)).toBe(false);
   });
 
-  it("does not redirect /login or /login/ (Task C loop signature)", () => {
+  it("does not redirect /login or /login/ (loop signature)", () => {
     expect(middleware(request("/login")).status).toBe(200);
     expect(middleware(request("/login/")).headers.get("location")).toBeNull();
     const looped = middleware(request("/login/?returnTo=%2Flogin%2F"));
     expect(looped.headers.get("location")).toBeNull();
+    expect(looped.status).toBe(200);
   });
 
   it("allows authenticated sessions through `/`", () => {
@@ -38,11 +45,19 @@ describe("middleware auth redirect", () => {
     expect(res.headers.get("location")).toBeNull();
   });
 
+  it("redirects /dashboard/ with returnTo=/dashboard", () => {
+    const res = middleware(request("/dashboard/"));
+    expect(res.status).toBe(307);
+    const location = res.headers.get("location") ?? "";
+    expect(location).toMatch(/\/login\/?\?returnTo=%2Fdashboard/);
+    expect(isLoginLoopLocation(location)).toBe(false);
+  });
+
   it("redirects protected pages with returnTo set", () => {
     const res = middleware(request("/settings/"));
     expect(res.status).toBe(307);
     const location = res.headers.get("location") ?? "";
-    // trailingSlash may yield /login/ vs /login — either is fine if returnTo is present
     expect(location).toMatch(/\/login\/?\?returnTo=%2Fsettings/);
+    expect(isLoginLoopLocation(location)).toBe(false);
   });
 });

@@ -81,9 +81,15 @@ STUDIO_BODY="$(cat /tmp/fg-smoke-body.$$ 2>/dev/null || true)"
 
 if echo "${STUDIO_HEADERS}" | grep -qiE '^HTTP/[^ ]+ 3[0-9]{2}'; then
   LOC=$(echo "${STUDIO_HEADERS}" | grep -i '^location:' | head -1 | tr -d '\r')
-  # Single hop to login is OK; loop is not.
-  if echo "${LOC}" | grep -qi '/studio/login'; then
-    pass "/studio/ redirects toward login (${LOC})"
+  # Single hop to login is OK; loop (returnTo=/login) is not.
+  if echo "${LOC}" | grep -qiE 'returnTo=(%2Flogin|\/login)'; then
+    fail "/studio/ redirect loop signature: ${LOC}"
+  elif echo "${LOC}" | grep -qi '/studio/login'; then
+    if echo "${LOC}" | grep -qiE 'returnTo=%2F($|&)'; then
+      pass "/studio/ redirects to login with returnTo=/ (${LOC})"
+    else
+      pass "/studio/ redirects toward login (${LOC})"
+    fi
   else
     warn "/studio/ redirects (${LOC})"
   fi
@@ -110,8 +116,12 @@ LOGIN_NOFOLLOW_CODE=$(echo "${LOGIN_HEADERS}" | awk 'toupper($0) ~ /^HTTP\// {pr
 
 # Redirect loop signature seen in the wild: 307 → /studio/login/?returnTo=%2Flogin%2F forever
 LOGIN_LOOP=0
-if echo "${LOGIN_LOC}" | grep -qi 'returnTo=%2Flogin'; then
+if echo "${LOGIN_LOC}" | grep -qiE 'returnTo=(%2Flogin|\/login)'; then
   fail "/studio/login/ redirect loop signature: ${LOGIN_LOC}"
+  LOGIN_LOOP=1
+fi
+if [[ "${LOGIN_NOFOLLOW_CODE}" =~ ^30[78]$ ]]; then
+  fail "/studio/login/ must be HTTP 200 (public); got ${LOGIN_NOFOLLOW_CODE} ${LOGIN_LOC}"
   LOGIN_LOOP=1
 fi
 

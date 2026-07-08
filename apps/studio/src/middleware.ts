@@ -1,9 +1,21 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { AUTH_COOKIE_NAME } from "@/lib/auth/storage";
-import { resolveAuthMiddleware } from "@/lib/auth/routes";
+import {
+  isLoginLoopLocation,
+  isLoginPath,
+  resolveAuthMiddleware,
+  safeReturnTo,
+} from "@/lib/auth/routes";
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Hard stop: login is always public. Never set returnTo from this path.
+  // (Historical bug: PUBLIC_ROUTES.has("/login/") was false → 307 → returnTo=/login/)
+  if (isLoginPath(pathname)) {
+    return NextResponse.next();
+  }
+
   const authenticated = request.cookies.get(AUTH_COOKIE_NAME)?.value === "1";
   const decision = resolveAuthMiddleware(pathname, authenticated);
 
@@ -13,26 +25,33 @@ export function middleware(request: NextRequest) {
 
   const loginUrl = request.nextUrl.clone();
   loginUrl.pathname = decision.loginPath;
-  if (decision.returnTo) {
-    loginUrl.searchParams.set("returnTo", decision.returnTo);
-  } else {
-    loginUrl.searchParams.delete("returnTo");
+  // Keep query clean — only a sanitized returnTo.
+  loginUrl.search = "";
+  const returnTo = safeReturnTo(decision.returnTo);
+  loginUrl.searchParams.set("returnTo", returnTo);
+
+  const response = NextResponse.redirect(loginUrl);
+  const location = response.headers.get("location");
+  if (isLoginLoopLocation(location)) {
+    // Last-resort guard: never ship the loop Location header.
+    const fallback = request.nextUrl.clone();
+    fallback.pathname = decision.loginPath;
+    fallback.search = "";
+    fallback.searchParams.set("returnTo", "/");
+    return NextResponse.redirect(fallback);
   }
-  return NextResponse.redirect(loginUrl);
+  return response;
 }
 
 export const config = {
   matcher: [
     /*
      * With basePath `/studio`, the common negative-lookahead matcher alone does
-     * NOT run on the app root (`/studio/` → pathname `/`). That skips the auth
-     * redirect and can surface as an empty 200 document at the edge.
-     * Explicit `/` is required — see next.js#62078 / #73786.
-     *
-     * Login stays public via resolveAuthMiddleware / isLoginPath (never
-     * Location: /login/?returnTo=/login/).
+     * NOT run on the app root (`/studio/` → pathname `/`). Explicit `/` required.
+     * Static assets under `/_next/static` stay unmatched (public).
+     * Login stays public via isLoginPath (never Location: /login/?returnTo=/login/).
      */
     "/",
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|manifest\\.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

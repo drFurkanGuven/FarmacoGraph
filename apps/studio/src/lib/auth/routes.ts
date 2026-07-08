@@ -15,6 +15,7 @@ export const PUBLIC_ROUTES = new Set(["/login"]);
  */
 export const ROUTE_GUARDS: Record<string, RouteGuardConfig> = {
   "/": { requireAuth: true, scopes: ["knowledge:read"] },
+  "/dashboard": { requireAuth: true, scopes: ["knowledge:read"] },
   "/settings": { requireAuth: true },
   "/users": { requireAuth: true, roles: ["administrator"] },
   "/knowledge/drugs": { requireAuth: true, scopes: ["curator:write"] },
@@ -29,6 +30,8 @@ export const ROUTE_GUARDS: Record<string, RouteGuardConfig> = {
 };
 
 const DEFAULT_AUTH_GUARD: RouteGuardConfig = { requireAuth: true };
+
+export const LOGIN_PATH = "/login";
 
 /**
  * Production Studio uses Next `trailingSlash: true` with basePath `/studio`.
@@ -46,9 +49,19 @@ export function normalizePathname(pathname: string): string {
   return path.replace(/\/+$/, "") || "/";
 }
 
-export function matchRouteGuard(pathname: string): RouteGuardConfig | null {
-  const path = normalizePathname(pathname);
+/**
+ * True for `/login`, `/login/`, optionally basePath-prefixed (`/studio/login/`).
+ * Does not depend solely on PUBLIC_ROUTES Set membership (which missed `/login/`
+ * before normalize existed → production loop returnTo=%2Flogin%2F).
+ */
+export function isLoginPath(pathname: string): boolean {
+  return normalizePathname(pathname) === LOGIN_PATH;
+}
 
+export function matchRouteGuard(pathname: string): RouteGuardConfig | null {
+  if (isLoginPath(pathname)) return null;
+
+  const path = normalizePathname(pathname);
   if (PUBLIC_ROUTES.has(path)) return null;
   if (ROUTE_GUARDS[path]) return ROUTE_GUARDS[path];
 
@@ -60,20 +73,39 @@ export function matchRouteGuard(pathname: string): RouteGuardConfig | null {
 }
 
 export function isProtectedPath(pathname: string): boolean {
+  if (isLoginPath(pathname)) return false;
   const guard = matchRouteGuard(pathname);
   return Boolean(guard?.requireAuth);
 }
 
-export const LOGIN_PATH = "/login";
-
-export function isLoginPath(pathname: string): boolean {
-  return normalizePathname(pathname) === LOGIN_PATH;
+/** True if returnTo looks like an open redirect target. */
+function isUnsafeReturnTo(raw: string): boolean {
+  const value = raw.trim();
+  if (!value) return true;
+  // Absolute / protocol-relative URLs
+  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/i.test(value)) return true;
+  if (value.startsWith("//")) return true;
+  // Must be an in-app absolute path
+  if (!value.startsWith("/")) return true;
+  if (value.includes("\\") || value.includes("..")) return true;
+  return false;
 }
 
-/** Safe post-login destination — never bounce back onto /login itself. */
+/**
+ * Safe post-login destination — never bounce onto /login, never open-redirect.
+ */
 export function safeReturnTo(returnTo: string | null | undefined): string {
   if (!returnTo) return "/";
-  const cleaned = normalizePathname(returnTo);
+  let raw = returnTo.trim();
+  try {
+    // One decode so %2Flogin%2F is caught as /login/
+    raw = decodeURIComponent(raw);
+  } catch {
+    return "/";
+  }
+  if (isUnsafeReturnTo(raw)) return "/";
+  if (isLoginPath(raw)) return "/";
+  const cleaned = normalizePathname(raw);
   if (isLoginPath(cleaned)) return "/";
   return cleaned || "/";
 }
@@ -96,7 +128,11 @@ export function resolveAuthMiddleware(
   authenticated: boolean,
 ): AuthMiddlewareDecision {
   // Login must NEVER require auth (trailing slash / basePath variants included).
-  if (isLoginPath(pathname) || !isProtectedPath(pathname)) {
+  if (isLoginPath(pathname)) {
+    return { action: "next" };
+  }
+
+  if (!isProtectedPath(pathname)) {
     return { action: "next" };
   }
 
@@ -105,10 +141,15 @@ export function resolveAuthMiddleware(
   }
 
   const returnTo = safeReturnTo(pathname === "/" ? "/" : pathname);
-  // Belt-and-suspenders: if somehow returnTo collapsed to login, omit the param.
-  if (isLoginPath(returnTo) || returnTo === LOGIN_PATH) {
-    return { action: "redirect", loginPath: LOGIN_PATH };
+  if (isLoginPath(returnTo)) {
+    return { action: "redirect", loginPath: LOGIN_PATH, returnTo: "/" };
   }
 
   return { action: "redirect", loginPath: LOGIN_PATH, returnTo };
+}
+
+/** Detect the production login-loop Location signature. */
+export function isLoginLoopLocation(location: string | null | undefined): boolean {
+  if (!location) return false;
+  return /returnTo=(%2Flogin(?:%2F)?|\/login\/?)/i.test(location);
 }

@@ -15,6 +15,7 @@ export {
   matchRouteGuard,
   isProtectedPath,
   isLoginPath,
+  isLoginLoopLocation,
   normalizePathname,
   safeReturnTo,
   resolveAuthMiddleware,
