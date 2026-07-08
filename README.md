@@ -35,6 +35,7 @@ No client — including first-party apps — accesses Neo4j or PostgreSQL direct
 | **API yol haritası** | [docs/api-roadmap.md](docs/api-roadmap.md) |
 | **Discovery** | `GET /api/v1/info` |
 | **Search UI** | https://farmacograph.furkanguven.space/search |
+| **Curation Studio** | https://farmacograph.furkanguven.space/studio/ |
 | **Curation Studio** (local) | `cd apps/studio && npm run dev` → http://localhost:3000 |
 
 Early access: okuma endpoint’leri API key olmadan denenebilir. Key ve kurumsal erişim → getting-started rehberi.

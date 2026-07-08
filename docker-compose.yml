@@ -67,6 +67,25 @@ services:
       - ./ontology:/app/ontology:ro
       - ./staging:/app/staging:ro
 
+  studio:
+    build:
+      context: ./apps/studio
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${FG_STUDIO_API_URL:-https://farmacograph.furkanguven.space/api/v1}
+        NEXT_PUBLIC_BASE_PATH: ${FG_STUDIO_BASE_PATH:-/studio}
+    container_name: farmacograph-studio
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "${FG_HOST_STUDIO_PORT:-3001}:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+
 volumes:
   pgdata:
   neo4jdata:
