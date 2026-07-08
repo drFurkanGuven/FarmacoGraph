@@ -89,7 +89,7 @@ class Container:
             session_factory=self.session_factory,
             snapshot_repo=self.snapshot_repo,
         )
-        self.info_service = InfoService(self.settings, self.snapshot_repo)
+        self.info_service = InfoService(self.settings, self.snapshot_repo, self.graph_repo)
         self.drug_service = DrugService(graph_repo=self.graph_repo, settings=self.settings)
         self.explain_service = ExplainService(graph_repo=self.graph_repo)
         self.compare_service = CompareService(graph_repo=self.graph_repo)
