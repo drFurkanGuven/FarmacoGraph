@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "./context";
-import { matchRouteGuard, LOGIN_PATH, isLoginPath, loginRedirectUrl } from "./routes";
+import { matchRouteGuard, isLoginPath, loginRedirectUrl } from "./routes";
 import type { RouteGuardConfig } from "./routes";
 
 interface ProtectedRouteProps {
