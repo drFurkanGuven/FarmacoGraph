@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { AuthApiError } from "@/lib/auth/api";
 import { useAuth } from "@/lib/auth/context";
+import { safeReturnTo } from "@/lib/auth/routes";
 
 const passwordSchema = z.object({
   email: z.string().email(),
@@ -28,7 +29,8 @@ type ApiKeyForm = z.infer<typeof apiKeySchema>;
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const returnTo = searchParams.get("returnTo") ?? "/";
+  // Never treat /login as a destination — that re-entered the redirect loop.
+  const returnTo = safeReturnTo(searchParams.get("returnTo"));
   const { loginWithPassword, loginWithApiKey, isLoading, isAuthenticated } = useAuth();
   const [mode, setMode] = useState<"password" | "apiKey">("apiKey");
 

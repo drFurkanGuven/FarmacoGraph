@@ -24,9 +24,15 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Protect the entire Studio app except static assets and Next internals.
-     * Login stays public via resolveAuthMiddleware / isLoginPath.
+     * With basePath `/studio`, the common negative-lookahead matcher alone does
+     * NOT run on the app root (`/studio/` → pathname `/`). That skips the auth
+     * redirect and can surface as an empty 200 document at the edge.
+     * Explicit `/` is required — see next.js#62078 / #73786.
+     *
+     * Login stays public via resolveAuthMiddleware / isLoginPath (never
+     * Location: /login/?returnTo=/login/).
      */
+    "/",
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };
