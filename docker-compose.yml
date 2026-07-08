@@ -67,6 +67,15 @@ services:
       - ./ontology:/app/ontology:ro
       - ./staging:/app/staging:ro
 
+  # Studio: NEXT_PUBLIC_* are baked at *build* time into JS chunks.
+  # Changing FG_STUDIO_API_URL / FG_STUDIO_BASE_PATH requires rebuilding the image
+  # (prefer: docker compose build --no-cache studio). Runtime env alone is not enough
+  # for the client bundle; runtime NEXT_PUBLIC_BASE_PATH is still required because
+  # `next start` re-reads next.config.ts for serving path.
+  # Defaults are the public production origin — never localhost / 127.0.0.1.
+  # `docker compose up -d --build api studio` rebuilds when Dockerfile/context
+  # changes, but Compose may reuse a layer cache that still embeds a stale URL;
+  # after env URL changes use --no-cache studio (deploy-production.sh does this).
   studio:
     build:
       context: ./apps/studio
@@ -85,7 +94,7 @@ services:
       NODE_ENV: production
       PORT: 3000
       HOSTNAME: 0.0.0.0
-      # next start loads next.config.ts; these must match the build-time basePath
+      # Must match build-time args (especially basePath for asset/routes serving)
       NEXT_PUBLIC_API_URL: ${FG_STUDIO_API_URL:-https://farmacograph.furkanguven.space/api/v1}
       NEXT_PUBLIC_BASE_PATH: ${FG_STUDIO_BASE_PATH:-/studio}
 

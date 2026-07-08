@@ -101,6 +101,8 @@ Then sign in at https://farmacograph.furkanguven.space/studio/login/
 
 **Important:** Production does **not** seed curator users. A working Studio UI with failed login usually means `create-curator.sh` was not run — not that Studio is broken. Unauthenticated `/api/v1/dashboard` → **401** is expected.
 
+After deploy, HTTP smoke: `./scripts/smoke-studio.sh` (see [Deploy (Studio)](docs/deploy-studio.md)).
+
 Full guide: [Deploy (Studio)](docs/deploy-studio.md)
 
 Full setup: [Development Guide](docs/development.md)

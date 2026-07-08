@@ -1,7 +1,12 @@
 node_modules
 .next
 out
+# Never bake host Next env files into the image (localhost NEXT_PUBLIC_* → white screen / broken API)
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
 npm-debug.log*
+README.md
+e2e
+coverage
+*.md

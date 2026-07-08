@@ -120,8 +120,28 @@ require_docker() {
   fi
 }
 
+is_loopback_studio_api_url() {
+  local url="$1"
+  local lower host
+  lower="$(printf '%s' "$url" | tr '[:upper:]' '[:lower:]')"
+  case "$lower" in
+    *://127.0.0.1*|*://localhost*|*://0.0.0.0*|*://\[::1\]*|*://host.docker.internal*)
+      return 0
+      ;;
+  esac
+  # Strip scheme for host checks when URL is incomplete
+  host="${lower#*://}"
+  host="${host%%/*}"
+  host="${host%%:*}"
+  case "$host" in
+    127.0.0.1|localhost|0.0.0.0|\[::1\]|host.docker.internal) return 0 ;;
+  esac
+  return 1
+}
+
 validate_production_env() {
   local env_name jwt db neo4j_enabled neo4j_uri neo4j_user neo4j_password
+  local studio_api studio_base
   env_name="$(get_env_var FG_ENVIRONMENT)"
   # Accept FG_ENV as an alias some operators set; prefer FG_ENVIRONMENT
   if [[ -z "$env_name" ]]; then
@@ -133,12 +153,15 @@ validate_production_env() {
   neo4j_uri="$(get_env_var FG_NEO4J_URI)"
   neo4j_user="$(get_env_var FG_NEO4J_USER)"
   neo4j_password="$(get_env_var FG_NEO4J_PASSWORD)"
+  studio_api="$(get_env_var FG_STUDIO_API_URL)"
+  studio_base="$(get_env_var FG_STUDIO_BASE_PATH)"
 
   local failed=0
 
   if [[ "$env_name" != "production" ]]; then
     echo "✗ FG_ENVIRONMENT must be 'production' (got: '${env_name:-empty}')" >&2
     echo "  Tip: deploy-production.sh sets this automatically — check .env was written." >&2
+    echo "  Note: API reads FG_ENVIRONMENT only (FG_ENV is a deploy-script alias)." >&2
     failed=1
   fi
 
@@ -166,6 +189,26 @@ validate_production_env() {
     echo "(!) FG_NEO4J_ENABLED is not true — evidence attach and graph publish will fail" >&2
   fi
 
+  if [[ -z "$studio_api" ]]; then
+    echo "✗ FG_STUDIO_API_URL is missing (baked into Studio client at docker build)" >&2
+    failed=1
+  elif is_loopback_studio_api_url "$studio_api"; then
+    echo "✗ FG_STUDIO_API_URL must not be localhost/127.0.0.1/host.docker.internal (got: ${studio_api})" >&2
+    echo "  Baked loopback URLs cause broken Studio API calls from curator browsers." >&2
+    failed=1
+  elif [[ ! "$studio_api" =~ ^https?:// ]]; then
+    echo "✗ FG_STUDIO_API_URL must be an absolute http(s) URL (got: ${studio_api})" >&2
+    failed=1
+  fi
+
+  if [[ -z "$studio_base" ]]; then
+    echo "✗ FG_STUDIO_BASE_PATH is missing (expected /studio for nginx)" >&2
+    failed=1
+  elif [[ "$studio_base" != "/studio" && "$studio_base" != /* ]]; then
+    echo "✗ FG_STUDIO_BASE_PATH should be an absolute path like /studio (got: ${studio_base})" >&2
+    failed=1
+  fi
+
   if [[ "$failed" -ne 0 ]]; then
     echo "" >&2
     echo "Refusing to deploy with unsafe/incomplete production configuration." >&2
@@ -177,6 +220,8 @@ validate_production_env() {
   echo "  FG_JWT_SECRET_KEY=(set, ${#jwt} chars)"
   echo "  FG_DATABASE_URL=(set)"
   echo "  FG_NEO4J_ENABLED=${neo4j_enabled}"
+  echo "  FG_STUDIO_API_URL=${studio_api}"
+  echo "  FG_STUDIO_BASE_PATH=${studio_base}"
 }
 
 echo "=== FarmacoGraph production setup ==="
@@ -246,7 +291,9 @@ if [[ "$NO_PULL" != true ]]; then
 fi
 
 if [[ "$FAST" != true ]]; then
-  echo "→ docker compose build --no-cache studio (bakes NEXT_PUBLIC_BASE_PATH into the image)"
+  echo "→ docker compose build --no-cache studio (bakes NEXT_PUBLIC_API_URL + NEXT_PUBLIC_BASE_PATH)"
+  echo "  Note: plain 'docker compose up -d --build api studio' is NOT enough after URL/basePath"
+  echo "  changes — Compose may reuse cached layers that still embed the old public env."
   docker compose build --no-cache studio
 fi
 

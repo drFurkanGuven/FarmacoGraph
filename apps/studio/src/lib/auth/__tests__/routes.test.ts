@@ -5,6 +5,8 @@ import {
   loginRedirectUrl,
   matchRouteGuard,
   normalizePathname,
+  resolveAuthMiddleware,
+  safeReturnTo,
 } from "../routes";
 
 describe("normalizePathname", () => {
@@ -12,6 +14,15 @@ describe("normalizePathname", () => {
     expect(normalizePathname("/login/")).toBe("/login");
     expect(normalizePathname("/settings/")).toBe("/settings");
     expect(normalizePathname("/")).toBe("/");
+  });
+
+  it("strips configured basePath when present", () => {
+    const previous = process.env.NEXT_PUBLIC_BASE_PATH;
+    process.env.NEXT_PUBLIC_BASE_PATH = "/studio";
+    expect(normalizePathname("/studio/login/")).toBe("/login");
+    expect(normalizePathname("/studio/")).toBe("/");
+    if (previous === undefined) delete process.env.NEXT_PUBLIC_BASE_PATH;
+    else process.env.NEXT_PUBLIC_BASE_PATH = previous;
   });
 });
 
@@ -58,9 +69,29 @@ describe("isProtectedPath", () => {
   });
 });
 
-describe("loginRedirectUrl", () => {
+describe("loginRedirectUrl / safeReturnTo", () => {
   it("does not set returnTo to login itself", () => {
     expect(loginRedirectUrl("/login/")).toBe("/login?returnTo=%2F");
     expect(isLoginPath("/login/")).toBe(true);
+    expect(safeReturnTo("/login/")).toBe("/");
+  });
+});
+
+describe("resolveAuthMiddleware", () => {
+  it("never redirects login onto itself (production loop regression)", () => {
+    expect(resolveAuthMiddleware("/login", false)).toEqual({ action: "next" });
+    expect(resolveAuthMiddleware("/login/", false)).toEqual({ action: "next" });
+  });
+
+  it("redirects anonymous dashboard to login with safe returnTo", () => {
+    expect(resolveAuthMiddleware("/", false)).toEqual({
+      action: "redirect",
+      loginPath: "/login",
+      returnTo: "/",
+    });
+  });
+
+  it("allows authenticated protected routes", () => {
+    expect(resolveAuthMiddleware("/", true)).toEqual({ action: "next" });
   });
 });

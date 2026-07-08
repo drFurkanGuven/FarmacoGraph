@@ -16,10 +16,12 @@ export {
   isProtectedPath,
   isLoginPath,
   normalizePathname,
+  safeReturnTo,
+  resolveAuthMiddleware,
   ROUTE_GUARDS,
   LOGIN_PATH,
   loginRedirectUrl,
 } from "./routes";
-export type { RouteGuardConfig } from "./routes";
+export type { RouteGuardConfig, AuthMiddlewareDecision } from "./routes";
 export { decodeJwtPayload, jwtScopes, isTokenExpired } from "./tokens";
 export { GUEST_SESSION, isSessionAuthenticated } from "./storage";

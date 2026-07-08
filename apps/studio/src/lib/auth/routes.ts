@@ -32,12 +32,18 @@ const DEFAULT_AUTH_GUARD: RouteGuardConfig = { requireAuth: true };
 
 /**
  * Production Studio uses Next `trailingSlash: true` with basePath `/studio`.
- * Middleware therefore sees `/login/` and `/settings/` — normalize before matching.
+ * Middleware normally sees paths without the basePath (`/login/`), but normalize
+ * defensively strips a configured basePath and trailing slashes before matching.
  */
 export function normalizePathname(pathname: string): string {
-  if (!pathname) return "/";
-  if (pathname === "/") return pathname;
-  return pathname.replace(/\/+$/, "") || "/";
+  // Pathname should never include query/hash; strip defensively if callers pass a URL.
+  let path = (pathname || "/").split(/[?#]/, 1)[0] || "/";
+  const base = (process.env.NEXT_PUBLIC_BASE_PATH ?? "").replace(/\/+$/, "");
+  if (base && (path === base || path.startsWith(`${base}/`))) {
+    path = path.slice(base.length) || "/";
+  }
+  if (path === "/") return path;
+  return path.replace(/\/+$/, "") || "/";
 }
 
 export function matchRouteGuard(pathname: string): RouteGuardConfig | null {
@@ -64,9 +70,45 @@ export function isLoginPath(pathname: string): boolean {
   return normalizePathname(pathname) === LOGIN_PATH;
 }
 
-export function loginRedirectUrl(returnTo: string): string {
+/** Safe post-login destination — never bounce back onto /login itself. */
+export function safeReturnTo(returnTo: string | null | undefined): string {
+  if (!returnTo) return "/";
   const cleaned = normalizePathname(returnTo);
-  const safeReturnTo = cleaned === LOGIN_PATH ? "/" : cleaned;
-  const params = new URLSearchParams({ returnTo: safeReturnTo });
+  if (isLoginPath(cleaned)) return "/";
+  return cleaned || "/";
+}
+
+export function loginRedirectUrl(returnTo: string): string {
+  const params = new URLSearchParams({ returnTo: safeReturnTo(returnTo) });
   return `${LOGIN_PATH}?${params.toString()}`;
+}
+
+export type AuthMiddlewareDecision =
+  | { action: "next" }
+  | { action: "redirect"; loginPath: string; returnTo?: string };
+
+/**
+ * Pure middleware decision — keeps `/login` / `/login/` public forever and never
+ * emits the production loop `Location: /login/?returnTo=/login/`.
+ */
+export function resolveAuthMiddleware(
+  pathname: string,
+  authenticated: boolean,
+): AuthMiddlewareDecision {
+  // Login must NEVER require auth (trailing slash / basePath variants included).
+  if (isLoginPath(pathname) || !isProtectedPath(pathname)) {
+    return { action: "next" };
+  }
+
+  if (authenticated) {
+    return { action: "next" };
+  }
+
+  const returnTo = safeReturnTo(pathname === "/" ? "/" : pathname);
+  // Belt-and-suspenders: if somehow returnTo collapsed to login, omit the param.
+  if (isLoginPath(returnTo) || returnTo === LOGIN_PATH) {
+    return { action: "redirect", loginPath: LOGIN_PATH };
+  }
+
+  return { action: "redirect", loginPath: LOGIN_PATH, returnTo };
 }

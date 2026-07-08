@@ -86,12 +86,35 @@ sudo nginx -t && sudo systemctl reload nginx
 
 Studio is served at `/studio/` (trailing slash). API is same-origin at `/api/v1`. The browser must **not** call `127.0.0.1` / `localhost` / `host.docker.internal`.
 
+## Automated smoke (HTTP)
+
+From any machine that can reach the public URL (no SSH required):
+
+```bash
+chmod +x scripts/smoke-studio.sh
+./scripts/smoke-studio.sh
+# or:
+./scripts/smoke-studio.sh https://farmacograph.furkanguven.space
+```
+
+Checks:
+
+| Check | Expect |
+|-------|--------|
+| `GET /api/v1/health` | **200**, JSON `status=ok` |
+| `GET /studio/` | **200** with real HTML (not empty body), or a single redirect toward login — **not** a redirect loop |
+| `GET /studio/login/` | **200** HTML; flag `returnTo=%2Flogin` self-redirect loops |
+| `/studio/_next/static/...` | Referenced chunk returns **200** when HTML includes asset URLs |
+| HTML | No baked `localhost` / `127.0.0.1` / `host.docker.internal` API URLs |
+
+Exit code **0** = pass, **1** = fail. This is an HTTP gate only — it does not replace the browser checklist below (login, editor, publish).
+
 ## Browser smoke test
 
-1. Open `/studio/` — anonymous users must be redirected to login (no dashboard panel).
-2. Open `/studio/login/`.
+1. Open `/studio/` — anonymous users must be redirected to login (no dashboard panel). **Empty 200 HTML = white screen** (fix with `smoke-studio.sh`).
+2. Open `/studio/login/`. Confirm it settles (no endless redirects).
 3. Log in with the curator created above.
-4. Open dashboard — loads without 500.
+4. Open dashboard — loads without 500. If the UI shows the Studio error fallback, open **API health** from that screen and check browser console (`[FarmacoGraph Studio] Uncaught render error`).
 5. Open Drug Browser.
 6. Open **ramipril** (or another curriculum slug).
 7. Confirm autosave / validate UI loads.

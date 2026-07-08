@@ -91,8 +91,11 @@ export function ProtectedRoute({ config, children }: ProtectedRouteProps) {
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const guard = matchRouteGuard(pathname);
 
+  // Login is never gated — even if ROUTE_GUARDS is misconfigured.
+  if (isLoginPath(pathname)) return <>{children}</>;
+
+  const guard = matchRouteGuard(pathname);
   if (!guard) return <>{children}</>;
 
   return <ProtectedRoute config={guard}>{children}</ProtectedRoute>;

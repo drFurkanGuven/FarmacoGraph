@@ -10,12 +10,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider>
       <QueryProvider>
-        <AuthProvider>
-          <ErrorBoundary>
+        <ErrorBoundary>
+          <AuthProvider>
             {children}
             <NotificationProvider />
-          </ErrorBoundary>
-        </AuthProvider>
+          </AuthProvider>
+        </ErrorBoundary>
       </QueryProvider>
     </ThemeProvider>
   );
