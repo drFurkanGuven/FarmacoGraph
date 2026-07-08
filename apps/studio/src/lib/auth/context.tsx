@@ -247,8 +247,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     ],
   );
 
-  if (!hydrated) return null;
-
+  // Never return null — an empty document/tree looks like a white screen before
+  // localStorage hydration. Guest session is safe until loadSession runs.
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

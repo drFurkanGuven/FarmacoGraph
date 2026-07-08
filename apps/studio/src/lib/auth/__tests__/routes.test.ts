@@ -21,8 +21,13 @@ describe("normalizePathname", () => {
     process.env.NEXT_PUBLIC_BASE_PATH = "/studio";
     expect(normalizePathname("/studio/login/")).toBe("/login");
     expect(normalizePathname("/studio/")).toBe("/");
+    expect(normalizePathname("/studio/settings/")).toBe("/settings");
     if (previous === undefined) delete process.env.NEXT_PUBLIC_BASE_PATH;
     else process.env.NEXT_PUBLIC_BASE_PATH = previous;
+  });
+
+  it("strips accidental query/hash from pathname-like input", () => {
+    expect(normalizePathname("/login/?returnTo=%2F")).toBe("/login");
   });
 });
 
@@ -74,24 +79,61 @@ describe("loginRedirectUrl / safeReturnTo", () => {
     expect(loginRedirectUrl("/login/")).toBe("/login?returnTo=%2F");
     expect(isLoginPath("/login/")).toBe(true);
     expect(safeReturnTo("/login/")).toBe("/");
+    expect(safeReturnTo("/login")).toBe("/");
+    expect(safeReturnTo(null)).toBe("/");
   });
 });
 
-describe("resolveAuthMiddleware", () => {
-  it("never redirects login onto itself (production loop regression)", () => {
-    expect(resolveAuthMiddleware("/login", false)).toEqual({ action: "next" });
+describe("resolveAuthMiddleware (TASK C redirect-loop regression)", () => {
+  it("never redirects /login or /login/ (production loop signature)", () => {
+    // Classic failure: middleware treated /login/ as protected →
+    // Location: /login/?returnTo=/login/ forever (curl: 307 × ∞).
     expect(resolveAuthMiddleware("/login/", false)).toEqual({ action: "next" });
+    expect(resolveAuthMiddleware("/login", false)).toEqual({ action: "next" });
   });
 
-  it("redirects anonymous dashboard to login with safe returnTo", () => {
+  it("never emits returnTo=/login for any pathname", () => {
+    for (const path of ["/", "/dashboard/", "/settings/", "/knowledge/drugs/", "/login/"]) {
+      const decision = resolveAuthMiddleware(path, false);
+      if (decision.action === "redirect") {
+        expect(decision.returnTo).not.toMatch(/login/i);
+      }
+    }
+  });
+
+  it("redirects unauthenticated protected routes to login with safe returnTo", () => {
     expect(resolveAuthMiddleware("/", false)).toEqual({
       action: "redirect",
       loginPath: "/login",
       returnTo: "/",
     });
+    expect(resolveAuthMiddleware("/settings/", false)).toEqual({
+      action: "redirect",
+      loginPath: "/login",
+      returnTo: "/settings",
+    });
+    expect(resolveAuthMiddleware("/dashboard/", false)).toEqual({
+      action: "redirect",
+      loginPath: "/login",
+      returnTo: "/dashboard",
+    });
   });
 
-  it("allows authenticated protected routes", () => {
+  it("allows authenticated traffic through protected routes", () => {
     expect(resolveAuthMiddleware("/", true)).toEqual({ action: "next" });
+    expect(resolveAuthMiddleware("/settings/", true)).toEqual({ action: "next" });
+  });
+
+  it("treats basePath-prefixed login as public when NEXT_PUBLIC_BASE_PATH is set", () => {
+    const previous = process.env.NEXT_PUBLIC_BASE_PATH;
+    process.env.NEXT_PUBLIC_BASE_PATH = "/studio";
+    expect(resolveAuthMiddleware("/studio/login/", false)).toEqual({ action: "next" });
+    expect(resolveAuthMiddleware("/studio/", false)).toEqual({
+      action: "redirect",
+      loginPath: "/login",
+      returnTo: "/",
+    });
+    if (previous === undefined) delete process.env.NEXT_PUBLIC_BASE_PATH;
+    else process.env.NEXT_PUBLIC_BASE_PATH = previous;
   });
 });

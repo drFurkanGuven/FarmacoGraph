@@ -6,13 +6,15 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { TopNav } from "@/components/layout/top-nav";
 import { CommandPalette } from "@/components/layout/command-palette";
 import { AuthGate } from "@/lib/auth/guards";
+import { isLoginPath } from "@/lib/auth/routes";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
 
-  if (pathname === "/login") {
+  // Use isLoginPath so trailingSlash `/login/` still skips the chrome shell.
+  if (isLoginPath(pathname ?? "")) {
     return <>{children}</>;
   }
 
