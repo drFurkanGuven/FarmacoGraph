@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { resolveStudioApiUrl } from "@/lib/api/base-url";
 import { useAuth } from "@/lib/auth/context";
 
 const authSchema = z.object({
@@ -113,7 +114,7 @@ export default function SettingsPage() {
           <CardTitle className="text-base">API connection</CardTitle>
         </CardHeader>
         <CardContent className="font-mono text-xs text-muted-foreground">
-          {process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8001/api/v1"}
+          {resolveStudioApiUrl()}
         </CardContent>
       </Card>
     </div>

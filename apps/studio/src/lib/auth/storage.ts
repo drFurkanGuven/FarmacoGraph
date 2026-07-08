@@ -9,9 +9,9 @@ export const GUEST_SESSION: AuthSession = {
   accessToken: null,
   refreshToken: null,
   apiKey: null,
-  roles: ["viewer"],
-  scopes: ["knowledge:read", "knowledge:search", "education:read"],
-  displayName: "Guest Curator",
+  roles: [],
+  scopes: [],
+  displayName: "Signed out",
   email: null,
   expiresAt: null,
 };

@@ -1,6 +1,5 @@
 import type { AuthScope } from "@/lib/api/types";
-
-const DEFAULT_API_URL = "http://127.0.0.1:8001/api/v1";
+import { resolveStudioApiUrl } from "@/lib/api/base-url";
 
 export interface TokenResponse {
   access_token: string;
@@ -47,7 +46,7 @@ export class AuthApiError extends Error {
 }
 
 function getBaseUrl(): string {
-  return process.env.NEXT_PUBLIC_API_URL ?? DEFAULT_API_URL;
+  return resolveStudioApiUrl();
 }
 
 function normalizeDetail(body: AuthApiErrorBody | null, status: number): string {

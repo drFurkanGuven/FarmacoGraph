@@ -6,14 +6,16 @@ export interface RouteGuardConfig {
   scopes?: AuthScope[];
 }
 
-/** Public routes — no guard applied. */
-export const PUBLIC_ROUTES = new Set(["/login", "/settings"]);
+/** Public routes — no guard applied. Everything else requires an authenticated session. */
+export const PUBLIC_ROUTES = new Set(["/login"]);
 
 /**
- * Route guards for Studio pages.
- * Dashboard, search, and graph remain readable without auth (matches API early-access policy).
+ * Explicit route guards for elevated Studio pages.
+ * Unlisted non-public routes still require auth via the default guard.
  */
 export const ROUTE_GUARDS: Record<string, RouteGuardConfig> = {
+  "/": { requireAuth: true, scopes: ["knowledge:read"] },
+  "/settings": { requireAuth: true },
   "/users": { requireAuth: true, roles: ["administrator"] },
   "/knowledge/drugs": { requireAuth: true, scopes: ["curator:write"] },
   "/knowledge/diseases": { requireAuth: true, scopes: ["curator:write"] },
@@ -22,17 +24,21 @@ export const ROUTE_GUARDS: Record<string, RouteGuardConfig> = {
   "/knowledge/education": { requireAuth: true, scopes: ["curator:write"] },
   "/validation": { requireAuth: true, scopes: ["curator:write"] },
   "/snapshots": { requireAuth: true, scopes: ["curator:publish"] },
+  "/graph": { requireAuth: true, scopes: ["knowledge:read"] },
+  "/search": { requireAuth: true, scopes: ["knowledge:search"] },
 };
+
+const DEFAULT_AUTH_GUARD: RouteGuardConfig = { requireAuth: true };
 
 export function matchRouteGuard(pathname: string): RouteGuardConfig | null {
   if (PUBLIC_ROUTES.has(pathname)) return null;
   if (ROUTE_GUARDS[pathname]) return ROUTE_GUARDS[pathname];
 
   for (const [route, guard] of Object.entries(ROUTE_GUARDS)) {
-    if (pathname.startsWith(`${route}/`)) return guard;
+    if (route !== "/" && pathname.startsWith(`${route}/`)) return guard;
   }
 
-  return null;
+  return DEFAULT_AUTH_GUARD;
 }
 
 export function isProtectedPath(pathname: string): boolean {

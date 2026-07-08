@@ -6,6 +6,7 @@
 #   ./scripts/deploy-production.sh --env-only   # only create/update .env
 #   ./scripts/deploy-production.sh --no-pull    # skip git pull
 #   ./scripts/deploy-production.sh --public-url https://example.com
+#   ./scripts/deploy-production.sh --fast          # skip studio --no-cache rebuild
 #
 # Requires: docker, docker compose, git (for pull), openssl or python3
 set -euo pipefail
@@ -13,6 +14,7 @@ cd "$(dirname "$0")/.."
 
 ENV_ONLY=false
 NO_PULL=false
+FAST=false
 PUBLIC_URL="${FG_PUBLIC_URL:-https://farmacograph.furkanguven.space}"
 SERVICES="postgres neo4j api studio"
 
@@ -20,6 +22,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --env-only) ENV_ONLY=true ;;
     --no-pull) NO_PULL=true ;;
+    --fast) FAST=true ;;
     --public-url=*) PUBLIC_URL="${1#*=}" ;;
     --public-url)
       shift
@@ -142,6 +145,11 @@ if [[ "$NO_PULL" != true ]]; then
   fi
 fi
 
+if [[ "$FAST" != true ]]; then
+  echo "→ docker compose build --no-cache studio (bakes NEXT_PUBLIC_BASE_PATH into the image)"
+  docker compose build --no-cache studio
+fi
+
 echo "→ docker compose up -d --build ${SERVICES}"
 docker compose up -d --build ${SERVICES}
 
@@ -167,10 +175,50 @@ else
   exit 1
 fi
 
-if curl -sfI "http://127.0.0.1:${STUDIO_PORT}/studio/" >/dev/null 2>&1; then
-  echo "✓ Studio responding on :${STUDIO_PORT}/studio/"
+if [[ -x scripts/migrate-schema.sh ]]; then
+  echo "→ Applying schema patches"
+  ./scripts/migrate-schema.sh || {
+    echo "(!) Schema migrate failed — dashboard/curator may 500 until fixed" >&2
+  }
+fi
+
+STUDIO_BASE="$(get_env_var FG_STUDIO_BASE_PATH)"
+STUDIO_BASE=${STUDIO_BASE:-/studio}
+STUDIO_HEALTH_URL="http://127.0.0.1:${STUDIO_PORT}${STUDIO_BASE}/"
+
+echo "→ Waiting for Studio on ${STUDIO_HEALTH_URL}..."
+STUDIO_OK=false
+for _ in $(seq 1 30); do
+  if curl -sfI "${STUDIO_HEALTH_URL}" >/dev/null 2>&1; then
+    STUDIO_OK=true
+    break
+  fi
+  sleep 2
+done
+
+if [[ "$STUDIO_OK" == true ]]; then
+  echo "✓ Studio responding on ${STUDIO_HEALTH_URL}"
+  if docker compose exec -T studio node -e " \
+    const m = require('./.next/routes-manifest.json'); \
+    const expected = '${STUDIO_BASE}'; \
+    if ((m.basePath || '') !== expected) { \
+      console.error('container basePath mismatch:', m.basePath, 'expected', expected); \
+      process.exit(1); \
+    } \
+    console.log('container basePath:', m.basePath); \
+  " 2>/dev/null; then
+    echo "✓ Studio image has correct basePath (${STUDIO_BASE})"
+  else
+    echo "✗ Studio container basePath check failed — rebuild with: docker compose build --no-cache studio" >&2
+    exit 1
+  fi
 else
-  echo "(!) Studio not ready yet — check: docker compose logs studio --tail 30"
+  echo "✗ Studio did not respond on ${STUDIO_HEALTH_URL}" >&2
+  echo "  Check: docker compose logs studio --tail 50" >&2
+  docker compose exec -T studio node -e " \
+    try { const m=require('./.next/routes-manifest.json'); console.log('routes-manifest basePath:', m.basePath); } catch (e) { console.error(e.message); } \
+  " 2>/dev/null || true
+  exit 1
 fi
 
 echo ""

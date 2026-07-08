@@ -22,9 +22,10 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/users/:path*",
-    "/knowledge/:path*",
-    "/validation/:path*",
-    "/snapshots/:path*",
+    /*
+     * Protect the entire Studio app except static assets and Next internals.
+     * Login stays public via isProtectedPath/PUBLIC_ROUTES.
+     */
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

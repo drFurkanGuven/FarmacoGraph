@@ -41,6 +41,23 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
+## First curator (required in production)
+
+Production does **not** seed users. Create one on the server before logging in from your PC:
+
+```bash
+cd /opt/FarmacoGraph
+chmod +x scripts/create-curator.sh scripts/migrate-schema.sh
+./scripts/migrate-schema.sh
+./scripts/create-curator.sh --email you@example.com --password 'YourStrongPassword'
+```
+
+Then open **https://farmacograph.furkanguven.space/studio/login/** in your browser.
+
+Studio requires login for the whole app (dashboard included). Unauthenticated visitors are redirected to `/login`.
+
+A browser console **401 on `/dashboard`** without a session is normal. A **500 on `/dashboard`** usually means Postgres is missing `curator_workflows.draft_package_json` — run `./scripts/migrate-schema.sh` (or redeploy; API startup now patches this column).
+
 ## Verify
 
 ### Studio curation path (live)
@@ -90,6 +107,38 @@ FG_ENVIRONMENT=production
 - PostgreSQL for auth, workflow state, and draft packages
 
 ## Troubleshooting
+
+### 404 / ChunkLoadError on `/studio/_next/static/...`
+
+`next start` re-loads `next.config.ts` at runtime. If `NEXT_PUBLIC_BASE_PATH` is missing in the **runner** container, Next serves at `/` even when `routes-manifest.json` still says `/studio`. Symptom:
+
+```text
+curl -sSI http://127.0.0.1:3001/studio/   → 404
+curl -sSI http://127.0.0.1:3001/          → 200
+docker compose exec studio node -e "console.log(require('./.next/routes-manifest.json').basePath)"
+# → /studio   (build OK, runtime config wrong)
+```
+
+**Fix on the server:**
+
+```bash
+cd /opt/FarmacoGraph
+git pull
+./scripts/deploy-production.sh
+```
+
+The deploy script rebuilds Studio with `--no-cache` and verifies `routes-manifest.json` has `"basePath": "/studio"`.
+
+Manual check:
+
+```bash
+curl -sSI http://127.0.0.1:3001/studio/ | head -3          # expect HTTP/1.1 200
+curl -sSI http://127.0.0.1:3001/ | head -3                 # expect HTTP/1.1 404
+docker compose exec studio node -e "console.log(require('./.next/routes-manifest.json').basePath)"
+# → /studio
+```
+
+After redeploy, hard-refresh the browser (cached HTML may reference old chunk hashes).
 
 ```bash
 docker compose logs studio --tail 50

@@ -64,4 +64,16 @@ Anonymous requests to curator mutation endpoints receive **401**.
 
 Set `FG_JWT_SECRET_KEY` to a long random value. Production startup **fails** if the secret is missing or uses the development default.
 
-See also: [getting-started.md](getting-started.md), [api.md](api.md#auth-current), [development.md](development.md).
+Dev auto-seed (`curator@farmacograph.local` / `curator-dev-password`) runs only when `FG_ENVIRONMENT` is `development` or `test`. **Production databases start with zero users** — create a curator on the server:
+
+```bash
+cd /opt/FarmacoGraph
+chmod +x scripts/create-curator.sh
+./scripts/create-curator.sh --email you@example.com --password 'YourStrongPassword'
+```
+
+Then open https://farmacograph.furkanguven.space/studio/login/ from your browser (not only from the server). Dashboard `GET /api/v1/dashboard` returns **401** until you sign in — that is expected.
+
+If login succeeds but API calls still 401, the browser may hold a JWT signed with an old `FG_JWT_SECRET_KEY`. Clear site data for the origin or use a private window.
+
+See also: [getting-started.md](getting-started.md), [api.md](api.md#auth-current), [development.md](development.md), [deploy-studio.md](deploy-studio.md).
