@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,6 +13,15 @@ import type { RouteGuardConfig } from "./routes";
 interface ProtectedRouteProps {
   config: RouteGuardConfig;
   children: React.ReactNode;
+}
+
+function ProtectedRouteSkeleton() {
+  return (
+    <div className="space-y-4 p-6">
+      <Skeleton className="h-8 w-48" />
+      <Skeleton className="h-32 w-full" />
+    </div>
+  );
 }
 
 function UnauthorizedCard({
@@ -44,7 +53,7 @@ function UnauthorizedCard({
   );
 }
 
-export function ProtectedRoute({ config, children }: ProtectedRouteProps) {
+function ProtectedRouteContent({ config, children }: ProtectedRouteProps) {
   const { isAuthenticated, hasRole, hasPermission } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
@@ -58,12 +67,7 @@ export function ProtectedRoute({ config, children }: ProtectedRouteProps) {
   }, [config.requireAuth, isAuthenticated, pathname, router]);
 
   if (config.requireAuth && !isAuthenticated) {
-    return (
-      <div className="space-y-4 p-6">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-32 w-full" />
-      </div>
-    );
+    return <ProtectedRouteSkeleton />;
   }
 
   if (config.roles?.length && !hasRole(config.roles)) {
@@ -87,6 +91,14 @@ export function ProtectedRoute({ config, children }: ProtectedRouteProps) {
   }
 
   return <>{children}</>;
+}
+
+export function ProtectedRoute({ config, children }: ProtectedRouteProps) {
+  return (
+    <Suspense fallback={<ProtectedRouteSkeleton />}>
+      <ProtectedRouteContent config={config}>{children}</ProtectedRouteContent>
+    </Suspense>
+  );
 }
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
