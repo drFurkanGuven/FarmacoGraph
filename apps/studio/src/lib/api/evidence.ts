@@ -80,6 +80,51 @@ export function getEvidence(client: FarmacoGraphClient, evidenceId: string) {
   return client.request<EvidenceRecord>(`/evidence/${normalizedId}`);
 }
 
+export interface CreateEvidenceBody {
+  title: string;
+  evidence_type: string;
+  quality_score?: number;
+  year?: number | null;
+  authors?: string[];
+  journal?: string | null;
+  extract?: string | null;
+  supports_claim?: string | null;
+  slug?: string | null;
+  dataset_version?: string | null;
+}
+
+export interface UpdateEvidenceBody {
+  title?: string;
+  evidence_type?: string;
+  quality_score?: number;
+  year?: number | null;
+  authors?: string[];
+  journal?: string | null;
+  extract?: string | null;
+  supports_claim?: string | null;
+  slug?: string | null;
+  dataset_version?: string | null;
+}
+
+export function createEvidence(client: FarmacoGraphClient, body: CreateEvidenceBody) {
+  return client.request<EvidenceRecord>("/evidence", {
+    method: "POST",
+    body,
+  });
+}
+
+export function updateEvidence(
+  client: FarmacoGraphClient,
+  evidenceId: string,
+  body: UpdateEvidenceBody,
+) {
+  const normalizedId = evidenceId.includes(":") ? evidenceId.split(":").pop()! : evidenceId;
+  return client.request<EvidenceRecord>(`/evidence/${normalizedId}`, {
+    method: "PATCH",
+    body,
+  });
+}
+
 export function isEvidenceIdQuery(query: string): boolean {
   const trimmed = query.trim();
   if (!trimmed) return false;
