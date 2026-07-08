@@ -9,19 +9,18 @@ import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 
+from farmacograph.core.container import reset_container
 from farmacograph.curator.drug_package import (
     CV_CURRICULUM_PATH,
     CV_TEMPLATE_PATH,
     curriculum_stats,
-    init_drug_entry,
     list_pending_drugs,
     load_curriculum,
-    mark_curriculum_published,
     validate_package_file,
 )
 from farmacograph.curator.publish_validator import validate_publish_package
 from farmacograph.curator.structural_stub import build_cardiovascular_publish_package
-from farmacograph.core.container import reset_container
+from tests.auth.helpers import bearer_headers, curator_token, seed_curator_user
 
 os.environ.setdefault("FG_ENVIRONMENT", "test")
 os.environ.setdefault("FG_DATABASE_URL", "sqlite+aiosqlite:///:memory:")
@@ -97,13 +96,17 @@ def _reset():
 @pytest_asyncio.fixture
 async def client():
     from farmacograph.api.main import create_app
+    from farmacograph.core.config import get_settings
     from farmacograph.core.container import get_container
 
     app = create_app()
     container = get_container()
     await container.startup()
+    user, _ = await seed_curator_user(container.session_factory)
+    settings = get_settings()
+    auth = bearer_headers(curator_token(settings, user.id))
     transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+    async with AsyncClient(transport=transport, base_url="http://test", headers=auth) as ac:
         yield ac
     await container.shutdown()
 

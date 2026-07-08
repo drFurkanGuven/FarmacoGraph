@@ -7,7 +7,6 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 
 from farmacograph.api.deps import get_health_service, get_info_service
-from farmacograph.api.schemas.responses import APIResponse
 from farmacograph.services.health import HealthService
 from farmacograph.services.info import InfoService
 

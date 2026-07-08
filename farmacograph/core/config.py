@@ -6,7 +6,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field, PostgresDsn
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -43,10 +43,18 @@ class Settings(BaseSettings):
     neo4j_enabled: bool = False
 
     # Auth
-    jwt_secret_key: str = "change-me-in-production"
+    jwt_secret_key: str = Field(
+        default="dev-only-jwt-secret-change-in-production",
+        description="Set FG_JWT_SECRET_KEY in production. Must not use the default.",
+    )
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60
+    jwt_refresh_expire_days: int = 7
     api_key_prefix: str = "fg"
+    allow_anonymous_read: bool = True
+    seed_dev_users: bool = True
+    seed_curator_email: str = "curator@farmacograph.local"
+    seed_curator_password: str = "curator-dev-password"
 
     # Dataset
     current_dataset_version: str | None = None
@@ -68,6 +76,18 @@ class Settings(BaseSettings):
     @property
     def is_sqlite(self) -> bool:
         return self.database_url.startswith("sqlite")
+
+    @model_validator(mode="after")
+    def _validate_production_secrets(self) -> Settings:
+        insecure_defaults = {
+            "change-me-in-production",
+            "dev-only-jwt-secret-change-in-production",
+        }
+        if self.environment == "production" and self.jwt_secret_key in insecure_defaults:
+            raise ValueError("FG_JWT_SECRET_KEY must be set to a secure value in production")
+        if self.environment == "production":
+            object.__setattr__(self, "allow_anonymous_read", False)
+        return self
 
 
 @lru_cache

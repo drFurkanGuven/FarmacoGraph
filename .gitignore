@@ -20,9 +20,13 @@ env/
 # Testing & coverage
 .pytest_cache/
 .coverage
+coverage.xml
 htmlcov/
 .mypy_cache/
 .ruff_cache/
+apps/studio/coverage/
+apps/studio/playwright-report/
+apps/studio/test-results/
 
 # Local databases
 *.db

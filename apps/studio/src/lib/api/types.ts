@@ -1,4 +1,4 @@
-/** FarmacoGraph API response envelopes */
+/** FarmacoGraph API response envelopes and domain types. */
 
 export interface ResponseMeta {
   api_version?: string;
@@ -7,6 +7,12 @@ export interface ResponseMeta {
   query_time_ms?: number | null;
   content_layers?: string[];
   language?: string;
+  count?: number;
+  total?: number;
+  limit?: number;
+  offset?: number;
+  module?: string;
+  error_count?: number;
 }
 
 export interface ApiEnvelope<T> {
@@ -14,28 +20,21 @@ export interface ApiEnvelope<T> {
   meta: ResponseMeta;
 }
 
-export interface ApiErrorBody {
-  detail?: string | { msg: string }[];
-  message?: string;
+export interface PaginatedMeta extends ResponseMeta {
+  count?: number;
+  total?: number;
+  limit?: number;
+  offset?: number;
 }
 
-export class ApiError extends Error {
-  readonly status: number;
-  readonly body: ApiErrorBody | null;
-  readonly traceId: string | null;
+export interface PaginatedEnvelope<T> {
+  data: T[];
+  meta: PaginatedMeta;
+}
 
-  constructor(
-    message: string,
-    status: number,
-    body: ApiErrorBody | null = null,
-    traceId: string | null = null,
-  ) {
-    super(message);
-    this.name = "ApiError";
-    this.status = status;
-    this.body = body;
-    this.traceId = traceId;
-  }
+export interface PaginationParams {
+  limit?: number;
+  offset?: number;
 }
 
 export interface HealthData {
@@ -102,12 +101,55 @@ export interface CurriculumData {
   completion_pct?: number;
 }
 
+export interface DrugBrowseItem {
+  slug: string;
+  label: string;
+  entity_id: string;
+  module: string;
+  category_slug: string | null;
+  category_name: string | null;
+  curriculum_status: string;
+  publication_status: string;
+  workflow_id: string | null;
+  workflow_state: string | null;
+  validation_valid: boolean;
+  validation_errors: number;
+  confidence_score: number | null;
+}
+
+export interface DrugPackage {
+  entity_payload: Record<string, unknown>;
+  related_entities?: Record<string, unknown>[];
+  relationships?: Record<string, unknown>[];
+  dataset_version?: string;
+  module?: string | null;
+  create_snapshot?: boolean;
+}
+
+export interface PackageValidation {
+  valid: boolean;
+  error_count: number;
+  warning_count: number;
+  issues: Record<string, unknown>[];
+  publish_ready?: boolean;
+}
+
+export interface OpenDrugWorkflowData {
+  workflow: WorkflowItem & { draft_package_json?: DrugPackage | null };
+  package: DrugPackage;
+  validation: PackageValidation;
+}
+
 export interface WorkflowItem {
   id: string;
   entity_id: string;
   entity_type: string;
   state: string;
   notes: string | null;
+  entity_label?: string | null;
+  entity_slug?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
 }
 
 export interface DrugSummary {
@@ -118,15 +160,124 @@ export interface DrugSummary {
   module?: string;
 }
 
+export interface CreateWorkflowInput {
+  entity_id: string;
+  entity_type: string;
+  notes?: string | null;
+}
+
+export interface PublishPackageInput {
+  entity_payload: Record<string, unknown>;
+  related_entities?: Record<string, unknown>[];
+  relationships?: Record<string, unknown>[];
+  dataset_version?: string;
+  module?: string | null;
+  create_snapshot?: boolean;
+}
+
+export interface ValidationResult {
+  valid: boolean;
+  issues: Record<string, unknown>[];
+}
+
+export interface CompareInput {
+  drug_ids: string[];
+  dimensions?: string[];
+  include_education?: boolean;
+  response_mode?: "minimal" | "summary" | "full" | "graph";
+}
+
+export interface AuditLogItem {
+  id: string;
+  timestamp: string | null;
+  action: string;
+  resource_type: string;
+  resource_id: string | null;
+  actor_id: string | null;
+  diff: Record<string, unknown> | null;
+}
+
+export interface JobItem {
+  id: string;
+  job_type: string;
+  status: string;
+  created_at: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  error_message: string | null;
+  payload: Record<string, unknown> | null;
+}
+
+export interface DashboardSnapshot {
+  version_tag: string | null;
+  status: string | null;
+  released_at: string | null;
+  entity_count: number;
+}
+
+export interface DashboardValidationFailure {
+  source: string;
+  job_id?: string;
+  job_type?: string;
+  entity_id?: string | null;
+  message?: string | null;
+  at?: string | null;
+}
+
+export interface DashboardData {
+  published_drugs?: number;
+  health: HealthData;
+  statistics: StatisticsData;
+  snapshot: DashboardSnapshot;
+  curator: {
+    queue_counts: Record<string, number>;
+    pending_review: WorkflowItem[];
+    drafts: WorkflowItem[];
+    recently_published: WorkflowItem[];
+  };
+  activity: AuditLogItem[];
+  jobs: {
+    counts: Record<string, number>;
+    recent: JobItem[];
+  };
+  validation: {
+    failed_count: number;
+    pending_count?: number;
+    recent_failures: DashboardValidationFailure[];
+  };
+  module: string;
+  curriculum: {
+    stats: CurriculumData["stats"];
+    published_in_graph: number;
+    completion_pct: number;
+  } | null;
+  ontology_version?: string | null;
+}
+
 export type UserRole = "curator" | "reviewer" | "administrator" | "developer" | "viewer";
+
+/** Permission scopes aligned with backend `farmacograph.auth.models.SCOPES`. */
+export type AuthScope =
+  | "knowledge:read"
+  | "knowledge:search"
+  | "knowledge:explain"
+  | "education:read"
+  | "graph:query"
+  | "curator:write"
+  | "curator:publish"
+  | "admin:org"
+  | "admin:api_keys";
 
 export interface AuthSession {
   accessToken: string | null;
   refreshToken: string | null;
   apiKey: string | null;
   roles: UserRole[];
+  scopes: AuthScope[];
   displayName: string;
   email: string | null;
+  /** Unix ms — derived from JWT `exp` when available. */
+  expiresAt: number | null;
 }
 
 export interface Workspace {
@@ -134,3 +285,5 @@ export interface Workspace {
   name: string;
   slug: string;
 }
+
+export type { ApiError, ApiErrorBody } from "./errors";

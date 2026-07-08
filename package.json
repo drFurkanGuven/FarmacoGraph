@@ -1,0 +1,46 @@
+{
+  "name": "farmacograph",
+  "version": "0.1.0",
+  "private": true,
+  "description": "FarmacoGraph monorepo developer tooling",
+  "scripts": {
+    "prepare": "husky",
+    "lint": "npm run lint:python && npm run lint:studio",
+    "lint:python": "python3 -m ruff check farmacograph tests && python3 -m ruff format --check farmacograph tests",
+    "lint:studio": "npm run lint --prefix apps/studio",
+    "format": "npm run format:python && npm run format:studio",
+    "format:python": "python3 -m ruff format farmacograph tests",
+    "format:studio": "npm run format --prefix apps/studio",
+    "typecheck": "npm run typecheck:python && npm run typecheck:studio",
+    "typecheck:python": "python3 -m mypy farmacograph",
+    "typecheck:studio": "npm run typecheck --prefix apps/studio",
+    "test": "npm run test:python && npm run test:studio",
+    "test:python": "FG_ENVIRONMENT=test FG_DATABASE_URL=sqlite+aiosqlite:///:memory: FG_NEO4J_ENABLED=false FG_LOG_JSON=false python3 -m pytest -m \"not integration\"",
+    "test:python:all": "FG_ENVIRONMENT=test FG_DATABASE_URL=sqlite+aiosqlite:///:memory: FG_NEO4J_ENABLED=false FG_LOG_JSON=false python3 -m pytest",
+    "test:python:integration": "FG_ENVIRONMENT=test FG_DATABASE_URL=sqlite+aiosqlite:///:memory: FG_NEO4J_ENABLED=false FG_LOG_JSON=false python3 -m pytest -m integration",
+    "test:python:contract": "FG_ENVIRONMENT=test FG_DATABASE_URL=sqlite+aiosqlite:///:memory: FG_NEO4J_ENABLED=false FG_LOG_JSON=false python3 -m pytest -m contract",
+    "test:studio": "npm run test --prefix apps/studio",
+    "test:e2e": "npm run test:e2e --prefix apps/studio",
+    "coverage": "npm run coverage:python && npm run coverage:studio",
+    "coverage:python": "FG_ENVIRONMENT=test FG_DATABASE_URL=sqlite+aiosqlite:///:memory: FG_NEO4J_ENABLED=false FG_LOG_JSON=false python3 -m pytest -m \"not integration\" --cov=farmacograph --cov-report=term-missing --cov-report=xml",
+    "coverage:studio": "npm run test:coverage --prefix apps/studio",
+    "validate": "npm run lint && npm run typecheck && npm run test"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^15.4.3"
+  },
+  "lint-staged": {
+    "farmacograph/**/*.py": [
+      "python3 -m ruff check --fix",
+      "python3 -m ruff format"
+    ],
+    "tests/**/*.py": [
+      "python3 -m ruff check --fix",
+      "python3 -m ruff format"
+    ],
+    "apps/studio/**/*.{ts,tsx}": [
+      "bash -c 'cd apps/studio && npx eslint --fix'"
+    ]
+  }
+}

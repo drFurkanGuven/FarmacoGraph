@@ -1,64 +1,98 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { AuthSession, UserRole, Workspace } from "@/lib/api/types";
-
-const STORAGE_KEY = "farmacograph.studio.session";
-const WORKSPACE_KEY = "farmacograph.studio.workspace";
-
-const DEFAULT_WORKSPACES: Workspace[] = [
-  { id: "ws-cv", name: "Cardiovascular", slug: "cardiovascular" },
-  { id: "ws-default", name: "Default Workspace", slug: "default" },
-];
-
-const GUEST_SESSION: AuthSession = {
-  accessToken: null,
-  refreshToken: null,
-  apiKey: null,
-  roles: ["viewer"],
-  displayName: "Guest Curator",
-  email: null,
-};
+import { authApi, AuthApiError, isAuthEndpointUnavailable } from "./api";
+import { hasPermission, hasRole, resolveSessionScopes, rolesFromScopes } from "./roles";
+import { normalizeScopes } from "./scopes";
+import {
+  clearSession,
+  DEFAULT_WORKSPACES,
+  GUEST_SESSION,
+  isSessionAuthenticated,
+  loadSession,
+  loadWorkspace,
+  saveSession,
+  saveWorkspace,
+} from "./storage";
+import { isTokenExpired, sessionFromAccessToken } from "./tokens";
 
 interface AuthContextValue {
   session: AuthSession;
   isAuthenticated: boolean;
+  isLoading: boolean;
   workspaces: Workspace[];
   activeWorkspace: Workspace;
   setActiveWorkspace: (workspace: Workspace) => void;
   signIn: (patch: Partial<AuthSession>) => void;
   signOut: () => void;
+  loginWithPassword: (email: string, password: string) => Promise<void>;
+  loginWithApiKey: (apiKey: string) => Promise<void>;
+  loginWithTokens: (accessToken: string, refreshToken?: string | null) => void;
+  refreshSession: () => Promise<boolean>;
   hasRole: (role: UserRole | UserRole[]) => boolean;
+  hasScope: (scope: Parameters<typeof hasPermission>[1]) => boolean;
+  hasPermission: (permission: Parameters<typeof hasPermission>[1]) => boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function loadSession(): AuthSession {
-  if (typeof window === "undefined") return GUEST_SESSION;
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return GUEST_SESSION;
-    return { ...GUEST_SESSION, ...JSON.parse(raw) };
-  } catch {
-    return GUEST_SESSION;
+function buildSession(patch: Partial<AuthSession>, previous: AuthSession = GUEST_SESSION): AuthSession {
+  const next: AuthSession = {
+    ...previous,
+    ...patch,
+    roles: patch.roles ?? previous.roles,
+    scopes: patch.scopes ?? previous.scopes,
+  };
+
+  if (patch.accessToken) {
+    const fromJwt = sessionFromAccessToken(patch.accessToken, patch.refreshToken ?? next.refreshToken);
+    next.accessToken = fromJwt.accessToken;
+    next.refreshToken = fromJwt.refreshToken;
+    next.scopes = fromJwt.scopes;
+    next.expiresAt = fromJwt.expiresAt;
+    next.email = patch.email ?? fromJwt.email ?? next.email;
+    next.displayName = patch.displayName ?? fromJwt.displayName;
+    next.roles = rolesFromScopes(next.scopes);
+    next.apiKey = null;
+  } else if (patch.apiKey) {
+    next.apiKey = patch.apiKey;
+    next.accessToken = null;
+    next.refreshToken = null;
+    next.expiresAt = null;
+    if (!patch.roles?.length) next.roles = ["curator", "reviewer"];
+    if (!patch.scopes?.length) next.scopes = resolveSessionScopes(undefined, next.roles);
   }
+
+  next.scopes = resolveSessionScopes(next.scopes, next.roles);
+  next.roles = patch.roles?.length ? patch.roles : rolesFromScopes(next.scopes);
+
+  return next;
 }
 
-function loadWorkspace(): Workspace {
-  if (typeof window === "undefined") return DEFAULT_WORKSPACES[0];
-  try {
-    const raw = localStorage.getItem(WORKSPACE_KEY);
-    if (!raw) return DEFAULT_WORKSPACES[0];
-    return JSON.parse(raw) as Workspace;
-  } catch {
-    return DEFAULT_WORKSPACES[0];
-  }
+function applyTokenResponse(
+  response: Awaited<ReturnType<typeof authApi.loginWithPassword>>,
+  fallback: Partial<AuthSession> = {},
+): AuthSession {
+  const scopes = normalizeScopes(response.scopes);
+  const session = buildSession({
+    accessToken: response.access_token,
+    refreshToken: response.refresh_token ?? null,
+    apiKey: null,
+    scopes,
+    roles: rolesFromScopes(scopes),
+    email: response.email ?? fallback.email ?? null,
+    displayName: response.name ?? fallback.displayName ?? "Authenticated user",
+  });
+  return session;
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<AuthSession>(GUEST_SESSION);
   const [activeWorkspace, setActiveWorkspaceState] = useState<Workspace>(DEFAULT_WORKSPACES[0]);
   const [hydrated, setHydrated] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const refreshInFlight = useRef<Promise<boolean> | null>(null);
 
   useEffect(() => {
     setSession(loadSession());
@@ -68,53 +102,149 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const persistSession = useCallback((next: AuthSession) => {
     setSession(next);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    saveSession(next);
   }, []);
 
-  const signIn = useCallback(
-    (patch: Partial<AuthSession>) => {
-      const next = { ...session, ...patch };
-      if (patch.apiKey && !patch.roles) {
-        next.roles = ["curator", "reviewer"];
-      }
-      if (patch.accessToken && !patch.roles) {
-        next.roles = ["curator"];
-      }
-      persistSession(next);
-    },
-    [persistSession, session],
-  );
+  const signIn = useCallback((patch: Partial<AuthSession>) => {
+    setSession((current) => {
+      const next = buildSession(patch, current);
+      saveSession(next);
+      return next;
+    });
+  }, []);
 
   const signOut = useCallback(() => {
-    localStorage.removeItem(STORAGE_KEY);
+    clearSession();
     setSession(GUEST_SESSION);
   }, []);
 
+  const loginWithTokens = useCallback(
+    (accessToken: string, refreshToken?: string | null) => {
+      persistSession(buildSession({ accessToken, refreshToken: refreshToken ?? null }));
+    },
+    [persistSession],
+  );
+
+  const loginWithPassword = useCallback(
+    async (email: string, password: string) => {
+      setIsLoading(true);
+      try {
+        const response = await authApi.loginWithPassword({ email, password });
+        persistSession(applyTokenResponse(response, { email, displayName: email }));
+      } catch (error) {
+        if (isAuthEndpointUnavailable(error)) {
+          throw new AuthApiError(
+            "Password login is not available yet. Use API key or paste a JWT in Settings.",
+            501,
+          );
+        }
+        throw error;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [persistSession],
+  );
+
+  const loginWithApiKey = useCallback(
+    async (apiKey: string) => {
+      setIsLoading(true);
+      try {
+        const response = await authApi.loginWithApiKey({ apiKey });
+        persistSession(applyTokenResponse(response));
+      } catch (error) {
+        if (isAuthEndpointUnavailable(error)) {
+          persistSession(
+            buildSession({
+              apiKey,
+              roles: ["curator", "reviewer"],
+              displayName: "API key user",
+            }),
+          );
+          return;
+        }
+        throw error;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [persistSession],
+  );
+
+  const refreshSession = useCallback(async (): Promise<boolean> => {
+    if (refreshInFlight.current) return refreshInFlight.current;
+
+    const run = async (): Promise<boolean> => {
+      if (!session.refreshToken) return false;
+      try {
+        const response = await authApi.refreshToken({ refreshToken: session.refreshToken });
+        persistSession(applyTokenResponse(response, session));
+        return true;
+      } catch (error) {
+        if (!isAuthEndpointUnavailable(error)) signOut();
+        return false;
+      }
+    };
+
+    refreshInFlight.current = run().finally(() => {
+      refreshInFlight.current = null;
+    });
+    return refreshInFlight.current;
+  }, [persistSession, session, signOut]);
+
+  useEffect(() => {
+    if (!hydrated || !session.refreshToken || !session.expiresAt) return;
+    if (!isTokenExpired(session.expiresAt)) return;
+    void refreshSession();
+  }, [hydrated, refreshSession, session.expiresAt, session.refreshToken]);
+
   const setActiveWorkspace = useCallback((workspace: Workspace) => {
     setActiveWorkspaceState(workspace);
-    localStorage.setItem(WORKSPACE_KEY, JSON.stringify(workspace));
+    saveWorkspace(workspace);
   }, []);
 
-  const hasRole = useCallback(
-    (role: UserRole | UserRole[]) => {
-      const roles = Array.isArray(role) ? role : [role];
-      return roles.some((r) => session.roles.includes(r));
-    },
+  const checkRole = useCallback(
+    (role: UserRole | UserRole[]) => hasRole(session.roles, role),
     [session.roles],
+  );
+
+  const checkScope = useCallback(
+    (scope: Parameters<typeof hasPermission>[1]) => hasPermission(session.scopes, scope),
+    [session.scopes],
   );
 
   const value = useMemo<AuthContextValue>(
     () => ({
       session,
-      isAuthenticated: Boolean(session.accessToken || session.apiKey),
+      isAuthenticated: isSessionAuthenticated(session),
+      isLoading,
       workspaces: DEFAULT_WORKSPACES,
       activeWorkspace,
       setActiveWorkspace,
       signIn,
       signOut,
-      hasRole,
+      loginWithPassword,
+      loginWithApiKey,
+      loginWithTokens,
+      refreshSession,
+      hasRole: checkRole,
+      hasScope: checkScope,
+      hasPermission: checkScope,
     }),
-    [session, activeWorkspace, setActiveWorkspace, signIn, signOut, hasRole],
+    [
+      session,
+      isLoading,
+      activeWorkspace,
+      setActiveWorkspace,
+      signIn,
+      signOut,
+      loginWithPassword,
+      loginWithApiKey,
+      loginWithTokens,
+      refreshSession,
+      checkRole,
+      checkScope,
+    ],
   );
 
   if (!hydrated) return null;

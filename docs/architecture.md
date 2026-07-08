@@ -57,6 +57,8 @@ Platform specification files:
 | `architecture/plugin-interfaces.json` | Plugin type registry |
 | `architecture/snapshots.schema.json` | Immutable release manifest |
 
+**Runtime diagrams** (deployment, publish pipeline, Studio data flow): [architecture-diagrams.md](architecture-diagrams.md)
+
 ---
 
 ## 2. System Context
@@ -176,17 +178,17 @@ flowchart TB
 
 ```mermaid
 flowchart TB
-    subgraph presentation [Presentation — Future]
-        WEB[Web App]
-        VIZ[Graph Visualizers]
-        ANKI[Anki Export]
+    subgraph presentation [Presentation]
+        STUDIO[Curation Studio]
+        SEARCH[Search Page]
+        VIZ[Graph Visualizers — planned]
     end
 
     subgraph api [API Layer]
         REST[REST API]
         EXPLAIN[Explain Service]
         COMPARE[Compare Service]
-        GRAPH[Graph Query Service]
+        CURATOR[Curator Service]
     end
 
     subgraph ai [AI Layer — Future]
@@ -238,7 +240,60 @@ flowchart TB
 | **Storage** | Neo4j knowledge + PostgreSQL operations |
 | **API** | Stable query contracts, explainability responses |
 | **AI** | RAG over validated graph only — never writes facts |
-| **Presentation** | Visualization, flashcards, simulations (future) |
+| **Presentation** | Curation Studio (dashboard, search, auth — live); drug browser, editors, validation center (planned) |
+
+### 4.1 Curation Studio (implementation status)
+
+The primary curator interface is `apps/studio` — a Next.js App Router client that talks only to the REST API.
+
+| Module | Route | Status |
+|--------|-------|--------|
+| Dashboard | `/` | Live — ops metrics, curator queue, validation summary |
+| Authentication | `/login`, `/settings` | Live — `POST /auth/token`, JWT refresh |
+| Global search | `/search` | Live — `GET /search` |
+| Drug browser | `/knowledge/drugs` | Placeholder — Studio 4.2.2 |
+| Entity editors | `/knowledge/*` | Placeholder — Studio 4.2 |
+| Validation Center | `/validation` | Placeholder — Studio 4.3 |
+| Graph Explorer | `/graph` | Placeholder — Studio 4.3 |
+| Publish / snapshots | `/snapshots` | Placeholder — Studio 4.4 |
+
+See [curation-studio.md](curation-studio.md) and [studio-roadmap.md](studio-roadmap.md).
+
+### 4.2 Authentication model
+
+```mermaid
+flowchart TD
+    subgraph issuance [Token issuance]
+        Login[POST /auth/token]
+        Refresh[POST /auth/refresh]
+    end
+
+    subgraph validation [Per-request validation]
+        MW[AuthContextMiddleware]
+        Bearer{Bearer token?}
+        JWT[JWT decode]
+        APIKey[API key lookup in PostgreSQL]
+        Scopes[require_scope check]
+    end
+
+    Login --> JWT
+    Refresh --> JWT
+    MW --> Bearer
+    Bearer -->|JWT| JWT
+    Bearer -->|fg_ prefix| APIKey
+    JWT --> Scopes
+    APIKey --> Scopes
+```
+
+| Concern | Implementation |
+|---------|----------------|
+| Users & passwords | PostgreSQL `users` table; bcrypt via `passlib` |
+| API keys | PostgreSQL `api_keys` — prefix + SHA-256 hash |
+| Scopes | JWT payload + `UserRole.scopes`; `admin:org` is super-scope |
+| Anonymous read | Allowed when `FG_ALLOW_ANONYMOUS_READ=true` (development default; disabled in production) |
+| Curator protection | `curator:write` / `curator:publish` require authentication |
+
+Implementation: `farmacograph/auth/`, `farmacograph/api/routers/auth.py`, `farmacograph/api/deps.py`
 
 ---
 

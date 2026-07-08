@@ -8,6 +8,7 @@ from farmacograph.api.schemas.responses import ResponseMeta
 from farmacograph.models.enums import ContentLayer
 from farmacograph.repositories.graph import GraphRepository
 from farmacograph.repositories.snapshots import SnapshotRepository
+from farmacograph.services.modules import MODULE_REGISTRY
 
 
 class StatisticsService:
@@ -19,13 +20,24 @@ class StatisticsService:
         snapshot = await self._snapshots.get_latest_published()
         counts = await self._graph.count_entities()
 
+        module_stats: dict[str, Any] = {}
+        for entry in MODULE_REGISTRY:
+            drug_count = await self._graph.count_drugs(module=entry["slug"])
+            status = entry["status"]
+            if entry["slug"] == "cardiovascular" and drug_count > 0:
+                status = "in_progress"
+            module_stats[entry["slug"]] = {
+                "slug": entry["slug"],
+                "name": entry["name"],
+                "status": status,
+                "drug_count": drug_count,
+            }
+
         data: dict[str, Any] = {
             "entity_count": counts.get("entities", 0),
             "relationship_count": counts.get("relationships", 0),
             "evidence_count": snapshot.evidence_count if snapshot else 0,
-            "module_stats": {m["slug"]: m for m in [
-                {"slug": "cardiovascular", "status": "planned", "drug_count": 0}
-            ]},
+            "module_stats": module_stats,
             "latest_snapshot": snapshot.version_tag if snapshot else None,
         }
         meta = ResponseMeta(

@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Frontend + staged Python formatting via lint-staged
+if command -v npx >/dev/null 2>&1; then
+  npx lint-staged
+fi
+
+# Fast Python lint on staged files (full suite runs in CI)
+if command -v python3 >/dev/null 2>&1; then
+  python3 -m ruff check farmacograph tests
+fi

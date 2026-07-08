@@ -19,7 +19,13 @@ from farmacograph.models.confidence import (
     ExplainabilityMetadata,
     RelationshipMetadata,
 )
-from farmacograph.models.graph import GraphEdge, GraphNode, GraphSubgraph, LearningGraph, MechanismDAG
+from farmacograph.models.graph import (
+    GraphEdge,
+    GraphNode,
+    GraphSubgraph,
+    LearningGraph,
+    MechanismDAG,
+)
 from farmacograph.models.molecular import (
     CellType,
     Enzyme,
@@ -32,6 +38,7 @@ from farmacograph.models.molecular import (
     Transporter,
 )
 from farmacograph.models.pharmacologic import (
+    FAQ,
     BoardExamPearl,
     ClinicalCase,
     CommonMistake,
@@ -40,7 +47,6 @@ from farmacograph.models.pharmacologic import (
     Dose,
     Drug,
     DrugClass,
-    FAQ,
     FiveMinuteExplanation,
     FiveSecondSummary,
     Flashcard,
@@ -57,11 +63,16 @@ from farmacograph.models.pharmacologic import (
     TradeName,
     VisualExplanation,
 )
-from farmacograph.models.provenance import ExternalIdentifiers, ProvenanceMetadata, VersioningMetadata
+from farmacograph.models.provenance import (
+    ExternalIdentifiers,
+    ProvenanceMetadata,
+    VersioningMetadata,
+)
 
 __all__ = [
     "BiomedicalEntity",
     "BoardExamPearl",
+    "CellType",
     "ClinicalCase",
     "ClinicalOutcome",
     "ClinicalScenario",

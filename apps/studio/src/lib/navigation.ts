@@ -11,7 +11,6 @@ import {
   Search,
   Settings,
   ShieldCheck,
-  Stethoscope,
   Users,
   Camera,
 } from "lucide-react";

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Optional
 
 from sqlalchemy import (
     Boolean,
@@ -87,8 +86,8 @@ class User(Base, TimestampMixin):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
     email: Mapped[str] = mapped_column(String(320), unique=True, nullable=False)
-    hashed_password: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    full_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    hashed_password: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    full_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_superuser: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
@@ -103,10 +102,10 @@ class UserRole(Base, TimestampMixin):
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
     )
-    organization_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    organization_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=True
     )
-    workspace_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    workspace_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("workspaces.id"), nullable=True
     )
     role: Mapped[str] = mapped_column(String(50), nullable=False)
@@ -119,13 +118,13 @@ class ApiKey(Base, TimestampMixin):
     __tablename__ = "api_keys"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
-    user_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id"), nullable=True
     )
-    organization_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    organization_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=True
     )
-    workspace_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    workspace_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("workspaces.id"), nullable=True
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -133,10 +132,10 @@ class ApiKey(Base, TimestampMixin):
     key_hash: Mapped[str] = mapped_column(String(128), nullable=False)
     scopes: Mapped[list] = mapped_column(JsonType, default=list, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-    last_used_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    user: Mapped[Optional[User]] = relationship(back_populates="api_keys")
+    user: Mapped[User | None] = relationship(back_populates="api_keys")
 
 
 class AuditLog(Base):
@@ -146,15 +145,15 @@ class AuditLog(Base):
     timestamp: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
-    actor_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
-    organization_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
-    workspace_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    actor_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    organization_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    workspace_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     action: Mapped[str] = mapped_column(String(100), nullable=False)
     resource_type: Mapped[str] = mapped_column(String(100), nullable=False)
-    resource_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    diff_json: Mapped[Optional[dict]] = mapped_column(JsonType, nullable=True)
-    ip_address: Mapped[Optional[str]] = mapped_column(String(45), nullable=True)
-    correlation_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True, index=True)
+    resource_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    diff_json: Mapped[dict | None] = mapped_column(JsonType, nullable=True)
+    ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)
+    correlation_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
 
     __table_args__ = (Index("ix_audit_logs_timestamp", "timestamp"),)
 
@@ -167,15 +166,15 @@ class Job(Base, TimestampMixin):
     status: Mapped[str] = mapped_column(String(20), default="pending", nullable=False, index=True)
     priority: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     payload_json: Mapped[dict] = mapped_column(JsonType, default=dict, nullable=False)
-    result_json: Mapped[Optional[dict]] = mapped_column(JsonType, nullable=True)
-    started_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    result_json: Mapped[dict | None] = mapped_column(JsonType, nullable=True)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     max_attempts: Mapped[int] = mapped_column(Integer, default=3, nullable=False)
-    error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    correlation_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
-    workspace_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
-    created_by: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    correlation_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    workspace_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    created_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
 
 
 class OutboxEvent(Base):
@@ -193,11 +192,11 @@ class OutboxEvent(Base):
     occurred_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
-    published_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-    correlation_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
-    tenant_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
-    workspace_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
-    actor_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    correlation_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    tenant_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    workspace_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    actor_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
 
@@ -206,7 +205,7 @@ class KnowledgeSnapshot(Base, TimestampMixin):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
     version_tag: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
-    module: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    module: Mapped[str | None] = mapped_column(String(100), nullable=True)
     ontology_version: Mapped[str] = mapped_column(String(20), nullable=False)
     api_version: Mapped[str] = mapped_column(String(10), nullable=False)
     status: Mapped[str] = mapped_column(String(20), default="staged", nullable=False)
@@ -215,9 +214,9 @@ class KnowledgeSnapshot(Base, TimestampMixin):
     relationship_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     evidence_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     manifest_json: Mapped[dict] = mapped_column(JsonType, default=dict, nullable=False)
-    validation_report_hash: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
-    released_by: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
-    released_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    validation_report_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    released_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    released_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class CuratorWorkflow(Base, TimestampMixin):
@@ -226,20 +225,21 @@ class CuratorWorkflow(Base, TimestampMixin):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
     entity_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
     entity_type: Mapped[str] = mapped_column(String(100), nullable=False)
-    workspace_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
-    assigned_to: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    workspace_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    assigned_to: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     state: Mapped[str] = mapped_column(String(20), default="draft", nullable=False, index=True)
-    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    draft_package_json: Mapped[dict | None] = mapped_column(JsonType, nullable=True)
 
 
 class FeatureFlag(Base, TimestampMixin):
     __tablename__ = "feature_flags"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
-    organization_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    organization_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=True
     )
-    workspace_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    workspace_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("workspaces.id"), nullable=True
     )
     flag_key: Mapped[str] = mapped_column(String(100), nullable=False)
@@ -252,11 +252,9 @@ class ApiUsage(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
     date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    api_key_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
-    organization_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    api_key_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    organization_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     endpoint: Mapped[str] = mapped_column(String(255), nullable=False)
     request_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
-    __table_args__ = (
-        Index("ix_api_usage_date_endpoint", "date", "endpoint"),
-    )
+    __table_args__ = (Index("ix_api_usage_date_endpoint", "date", "endpoint"),)

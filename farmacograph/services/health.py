@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import time
 from typing import Any
 
 from sqlalchemy import text
@@ -43,7 +42,9 @@ class HealthService:
                 "neo4j": neo4j_status,
                 "latest_snapshot": snapshot.version_tag if snapshot else None,
             },
-            "dataset_version": snapshot.version_tag if snapshot else self._settings.current_dataset_version,
+            "dataset_version": snapshot.version_tag
+            if snapshot
+            else self._settings.current_dataset_version,
         }
 
     async def _check_postgres(self) -> str:

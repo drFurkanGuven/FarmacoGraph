@@ -1,0 +1,14 @@
+node_modules/
+apps/studio/.next/
+apps/studio/out/
+apps/studio/coverage/
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+coverage.xml
+playwright-report/
+test-results/

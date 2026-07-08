@@ -8,13 +8,17 @@ FarmacoGraph is not a pharmacology database. It is a **long-term biomedical know
 
 | Phase | Status |
 |-------|--------|
-| Phase 0 — Core Ontology | **Complete** |
+| Phase 0 — Core Ontology & architecture specs | **Complete** |
 | Phase 2 — Foundation (schemas, validators, API contract) | **Complete** |
 | Platform Architecture Review | **Complete** |
 | **Phase 3 — Infrastructure** | **Complete** |
 | **Phase 4 Backend Foundation** (curator API, validation, graph writer) | **Complete** |
 | **Phase 4 Studio 4.1** (Curation Studio shell + dashboard) | **Complete** |
-| Phase 4 Studio 4.2+ (editors, publish wizard) | Planned |
+| Phase API 5.1 (discovery, Neo4j search, search page) | **Complete** |
+| **Phase API 5.2** (JWT issuance, API key validation) | **Complete** |
+| Phase 4 Studio 4.2 (drug list, editors) | **In progress** — 4.2.1 dashboard done; 4.2.2 drug list next |
+| Phase 4 Studio 4.3–4.4 (validation center, publish wizard) | Planned |
+| Cardiovascular module curation | In progress |
 
 > **Primary product:** [Curation Studio](docs/curation-studio.md) (`apps/studio`) — the official knowledge authoring interface.  
 > JSON/bootstrap scripts in `scripts/dev-only/` are **deprecated** for curators.
@@ -25,82 +29,118 @@ FarmacoGraph is not a pharmacology database. It is a **long-term biomedical know
 
 No client — including first-party apps — accesses Neo4j or PostgreSQL directly.
 
-## API (canlı)
+## API (live)
 
 | | |
 |---|---|
 | **Docs (Swagger)** | https://farmacograph.furkanguven.space/docs |
 | **Health** | https://farmacograph.furkanguven.space/api/v1/health |
-| **Erişim rehberi** | [docs/getting-started.md](docs/getting-started.md) |
-| **API yol haritası** | [docs/api-roadmap.md](docs/api-roadmap.md) |
 | **Discovery** | `GET /api/v1/info` |
+| **Auth** | `POST /api/v1/auth/token`, `POST /api/v1/auth/refresh` |
+| **Getting started** | [docs/getting-started.md](docs/getting-started.md) |
+| **API reference** | [docs/api.md](docs/api.md) |
+| **API roadmap** | [docs/api-roadmap.md](docs/api-roadmap.md) |
 | **Search UI** | https://farmacograph.furkanguven.space/search |
 | **Curation Studio** | https://farmacograph.furkanguven.space/studio/ |
 | **Curation Studio** (local) | `cd apps/studio && npm run dev` → http://localhost:3000 |
 
-Early access: okuma endpoint’leri API key olmadan denenebilir. Key ve kurumsal erişim → getting-started rehberi.
+Early access: read endpoints can be tried without an API key. Keys and institutional access → [getting-started guide](docs/getting-started.md).
 
 ## Quick Start
 
-macOS'ta `pip` ve `uvicorn` PATH'te olmayabilir. `python3 -m` kullanın:
+On macOS, `pip` and `uvicorn` may not be on PATH — use `python3 -m` or `./scripts/dev.sh`:
 
 ```bash
 cp .env.example .env
 chmod +x scripts/dev.sh
 
-# Bağımlılıkları kur
+# Install dependencies
 ./scripts/dev.sh install
 
-# API sunucusunu başlat
+# Start API server
 ./scripts/dev.sh api
 ```
 
-Başka terminalde:
+In another terminal:
 
 ```bash
 ./scripts/dev.sh health
-# veya: curl http://127.0.0.1:8000/api/v1/health
+# or: curl http://127.0.0.1:8000/api/v1/health
 ```
 
-### Docker ile Postgres + Neo4j
+### Docker (Postgres + Neo4j + API + Studio)
 
 ```bash
-docker compose up -d postgres neo4j
-# .env dosyasında FG_NEO4J_ENABLED=true yapın
-./scripts/dev.sh api
+docker compose up -d
+# API:    http://localhost:8001/docs
+# Studio: http://localhost:3001
+# Neo4j:  http://localhost:7474 (neo4j / farmacograph)
 ```
 
-- API docs: http://127.0.0.1:8000/docs
-- Neo4j browser: http://localhost:7474 (neo4j / farmacograph)
+Enable Neo4j in `.env`: `FG_NEO4J_ENABLED=true`
 
 ```bash
 ./scripts/dev.sh test
 ```
+
+Full setup: [Development Guide](docs/development.md)
 
 ## Architecture
 
 | Layer | Technology | Public? |
 |-------|------------|---------|
 | API Platform | REST (OpenAPI), GraphQL/MCP/SPARQL future | **Yes** |
+| Curation Studio | Next.js 15 (`apps/studio`) | **Yes** |
 | Knowledge Graph | Neo4j | No |
 | Operations | PostgreSQL (tenants, jobs, audit, snapshots) | No |
-| Search | Plugin-based index (Meilisearch/FTS) | Via API only |
+| Search | Plugin-based index (Neo4j provider live; FTS planned) | Via API only |
+
+Runtime diagrams: [docs/architecture-diagrams.md](docs/architecture-diagrams.md)
 
 ## Documentation
 
+### Getting started
+
 | Document | Description |
 |----------|-------------|
-| **[Platform Architecture](docs/platform-architecture.md)** | **API-first, events, jobs, search, plugins, SaaS** |
+| [Development Guide](docs/development.md) | Local setup, testing, environment |
+| [Getting Started (API)](docs/getting-started.md) | Public API access and authentication |
+| [Contributing](CONTRIBUTING.md) | How to contribute code and docs |
+| [Repository Structure](docs/repository-structure.md) | Monorepo directory map |
+
+### Architecture & design
+
+| Document | Description |
+|----------|-------------|
+| [Platform Architecture](docs/platform-architecture.md) | API-first, events, jobs, search, plugins |
 | [Architecture](docs/architecture.md) | Biomedical knowledge design |
+| [Architecture Diagrams](docs/architecture-diagrams.md) | Runtime deployment and request flows |
 | [API-First](docs/api-first.md) | API hard requirements |
+| [ADR Index](docs/adr/README.md) | Architecture decision records |
 | [Ontology](docs/ontology.md) | Entity types and relationships |
 | [Validation Matrix](docs/validation-matrix.md) | FG-C001–C030 |
 | [Graph Specification](docs/graph-specification.md) | Neo4j model |
 | [OpenAPI Contract](openapi/openapi.yaml) | REST API specification |
-| [Phase 3 Infrastructure](docs/phase3-infrastructure.md) | Platform implementation guide |
-| **[Curation Studio](docs/curation-studio.md)** | **Primary product — knowledge authoring UI** |
-| [Phase 4 Backend](docs/phase4-curator.md) | Curator workflow API (foundation for Studio) |
+
+### Product & roadmap
+
+| Document | Description |
+|----------|-------------|
+| [Implementation Roadmap](docs/roadmap.md) | Phase status and module rollout |
 | [Product Roadmap](docs/product/roadmap.md) | Long-term product milestones |
+| [API Roadmap](docs/api-roadmap.md) | API phase plan |
+| [Curation Studio](docs/curation-studio.md) | Primary product — knowledge authoring UI |
+| [Studio Roadmap](docs/studio-roadmap.md) | Studio implementation milestones |
+
+### Implementation guides
+
+| Document | Description |
+|----------|-------------|
+| [Phase 3 Infrastructure](docs/phase3-infrastructure.md) | Platform implementation status |
+| [Phase 4 Backend](docs/phase4-curator.md) | Curator workflow API |
+| [API Reference](docs/api.md) | Endpoint specification + implementation status |
+| [Deploy (Nginx)](docs/deploy-nginx.md) | Production reverse proxy |
+| [Deploy (Studio)](docs/deploy-studio.md) | Studio production build |
 
 ## Platform Specifications
 

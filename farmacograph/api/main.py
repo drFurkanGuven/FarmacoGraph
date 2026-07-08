@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-from contextlib import asynccontextmanager
 from collections.abc import AsyncGenerator
-
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Request
@@ -12,7 +11,17 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Resp
 from prometheus_client import make_asgi_app
 
 from farmacograph.api.middleware import CorrelationMiddleware
-from farmacograph.api.routers import curator, drugs, explain, health, learning, platform
+from farmacograph.api.routers import (
+    auth,
+    curator,
+    dashboard,
+    drugs,
+    explain,
+    health,
+    learning,
+    platform,
+)
+from farmacograph.auth.middleware import AuthContextMiddleware
 from farmacograph.core.config import get_settings
 from farmacograph.core.container import get_container
 from farmacograph.core.exceptions import FarmacoGraphError
@@ -62,6 +71,7 @@ def create_app() -> FastAPI:
     )
 
     app.add_middleware(CorrelationMiddleware)
+    app.add_middleware(AuthContextMiddleware)
 
     @app.get("/", include_in_schema=False)
     async def root() -> RedirectResponse:
@@ -91,6 +101,8 @@ def create_app() -> FastAPI:
 
     api_v1 = FastAPI(title="FarmacoGraph API v1")
     api_v1.include_router(health.router)
+    api_v1.include_router(auth.router)
+    api_v1.include_router(dashboard.router)
     api_v1.include_router(curator.router)
     api_v1.include_router(drugs.router)
     api_v1.include_router(explain.explain_router)

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from typing import Any
 
 # Fixed UUIDs for reproducible structural stubs (not real drug IDs)
@@ -11,7 +11,7 @@ CV_STUB_CLASS_ID = "00000000-0000-4000-8000-000000000002"
 CV_STUB_DISEASE_ID = "00000000-0000-4000-8000-000000000003"
 CV_STUB_MECHANISM_ID = "00000000-0000-4000-8000-000000000004"
 
-_NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
+_NOW = datetime(2026, 1, 1, tzinfo=UTC)
 _TODAY = date(2026, 1, 1)
 
 

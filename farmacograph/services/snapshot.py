@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from farmacograph.db.postgres.models import KnowledgeSnapshot
@@ -56,6 +56,6 @@ class SnapshotService:
             evidence_count=0,
             manifest_json=manifest,
             released_by=actor_id,
-            released_at=datetime.now(timezone.utc),
+            released_at=datetime.now(UTC),
         )
         return await self._snapshots.create(snapshot)

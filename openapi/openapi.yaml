@@ -42,8 +42,65 @@ tags:
   - name: Search
   - name: Modules
   - name: Future
+  - name: Auth
 
 paths:
+  /auth/token:
+    post:
+      tags: [Auth]
+      summary: Issue access and refresh tokens
+      operationId: issueToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TokenRequest"
+      responses:
+        "200":
+          description: Token pair issued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh access token
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshRequest"
+      responses:
+        "200":
+          description: New token pair issued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+        "401":
+          description: Invalid or expired refresh token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /health:
     get:
       tags: [Health]
@@ -563,7 +620,54 @@ components:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
 
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
   schemas:
+    TokenRequest:
+      type: object
+      required: [grant_type]
+      properties:
+        grant_type:
+          type: string
+          enum: [password, api_key]
+        username:
+          type: string
+          description: Email address for password grant
+        password:
+          type: string
+          format: password
+        api_key:
+          type: string
+
+    RefreshRequest:
+      type: object
+      required: [refresh_token]
+      properties:
+        refresh_token:
+          type: string
+
+    TokenResponse:
+      type: object
+      required: [access_token, refresh_token, token_type, expires_in]
+      properties:
+        access_token: { type: string }
+        refresh_token: { type: string }
+        token_type: { type: string, example: bearer }
+        expires_in: { type: integer, description: Access token lifetime in seconds }
+        scopes:
+          type: array
+          items: { type: string }
+        email: { type: string, nullable: true }
+        name: { type: string, nullable: true }
+
     ResponseMeta:
       type: object
       required: [dataset_version, api_version]

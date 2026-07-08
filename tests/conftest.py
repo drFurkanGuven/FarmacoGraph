@@ -1,16 +1,18 @@
 """Test fixtures and configuration."""
 
+from datetime import UTC
+
 import pytest
 
-from farmacograph.models.enums import ContentLayer, EntityStatus, EvidenceLevel, ValidationState
+from farmacograph.models.enums import ContentLayer, EntityStatus, ValidationState
 from farmacograph.models.provenance import ProvenanceMetadata, VersioningMetadata
 
 
 @pytest.fixture
 def sample_provenance() -> ProvenanceMetadata:
-    from datetime import datetime, timezone
+    from datetime import datetime
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     return ProvenanceMetadata(
         created_at=now,
         updated_at=now,

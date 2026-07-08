@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from farmacograph.curator.workflow import validate_transition
@@ -64,6 +64,32 @@ class CuratorRepository:
                 .limit(limit)
             )
             return list(result.scalars().all())
+
+    async def count_by_state(self) -> dict[str, int]:
+        async with self._session_factory() as session:
+            result = await session.execute(
+                select(CuratorWorkflow.state, func.count()).group_by(CuratorWorkflow.state)
+            )
+            return {row[0]: row[1] for row in result.all()}
+
+    async def list_all_workflows(self, limit: int = 500) -> list[CuratorWorkflow]:
+        async with self._session_factory() as session:
+            result = await session.execute(
+                select(CuratorWorkflow).order_by(CuratorWorkflow.updated_at.desc()).limit(limit)
+            )
+            return list(result.scalars().all())
+
+    async def save_draft_package(self, workflow_id: uuid.UUID, package: dict) -> CuratorWorkflow:
+        async with self._session_factory() as session:
+            await session.execute(
+                update(CuratorWorkflow)
+                .where(CuratorWorkflow.id == workflow_id)
+                .values(draft_package_json=package)
+            )
+            await session.commit()
+        updated = await self.get(workflow_id)
+        assert updated is not None
+        return updated
 
     async def transition(
         self,

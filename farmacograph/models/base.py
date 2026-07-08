@@ -9,7 +9,11 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field
 
 from farmacograph.models.enums import ContentLayer, EntityType
-from farmacograph.models.provenance import ExternalIdentifiers, ProvenanceMetadata, VersioningMetadata
+from farmacograph.models.provenance import (
+    ExternalIdentifiers,
+    ProvenanceMetadata,
+    VersioningMetadata,
+)
 
 
 class BiomedicalEntity(BaseModel):

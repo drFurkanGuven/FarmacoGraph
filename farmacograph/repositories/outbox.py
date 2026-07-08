@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -56,6 +56,6 @@ class OutboxRepository:
             await session.execute(
                 update(OutboxEvent)
                 .where(OutboxEvent.id == event_id)
-                .values(status="published", published_at=datetime.now(timezone.utc))
+                .values(status="published", published_at=datetime.now(UTC))
             )
             await session.commit()

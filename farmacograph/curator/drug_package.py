@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import uuid
+from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -22,7 +23,12 @@ DRUG_ENTITY_NAMESPACE = uuid.UUID("a1000001-0000-4000-8000-000000000000")
 
 # Shared nodes to wire when initializing a drug entry per curriculum category.
 CATEGORY_SHARED_NODE_SLUGS: dict[str, list[str]] = {
-    "beta-blockers": ["beta-blockers", "hypertension", "angina-pectoris", "beta-adrenergic-blockade"],
+    "beta-blockers": [
+        "beta-blockers",
+        "hypertension",
+        "angina-pectoris",
+        "beta-adrenergic-blockade",
+    ],
     "ace-inhibitors": ["ace-inhibitors", "hypertension", "ace-inhibition"],
     "arbs": ["arbs", "hypertension"],
     "calcium-channel-blockers": ["calcium-channel-blockers", "hypertension", "angina-pectoris"],
@@ -164,22 +170,22 @@ def mark_curriculum_published(
     if drug.get("status") == "published":
         return False
     drug["status"] = "published"
-    path.write_text(yaml.safe_dump(curriculum, sort_keys=False, allow_unicode=True), encoding="utf-8")
+    path.write_text(
+        yaml.safe_dump(curriculum, sort_keys=False, allow_unicode=True), encoding="utf-8"
+    )
     return True
 
 
-def init_drug_entry(slug: str, *, overwrite: bool = False) -> Path:
-    """Create drugs/{slug}.json skeleton from curriculum + shared nodes index."""
-    located = find_drug_in_curriculum(slug)
+def build_drug_entry_package(
+    slug: str, *, curriculum: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    """Build in-memory publish package skeleton for a curriculum slug."""
+    located = find_drug_in_curriculum(slug, curriculum)
     if located is None:
         raise ValueError(f"Slug not in curriculum: {slug}")
 
     _, category = located
     category_slug = category.get("slug", "")
-    out_path = CV_DRUGS_DIR / f"{slug}.json"
-    if out_path.exists() and not overwrite:
-        raise FileExistsError(f"Already exists: {out_path}")
-
     index = _nodes_by_slug(load_nodes_index())
     shared_slugs = CATEGORY_SHARED_NODE_SLUGS.get(category_slug, [])
     related_entities: list[dict[str, Any]] = []
@@ -201,18 +207,18 @@ def init_drug_entry(slug: str, *, overwrite: bool = False) -> Path:
             "entity_type": node["entity_type"],
             "slug": node["slug"],
             "label": node["label"],
-            "description": node.get("description", "FILL_BY_CURATOR"),
+            "description": node.get("description", ""),
             "status": "published",
             "dataset_version": "2026.1.0",
             "provenance": {
-                "created_at": "FILL_BY_CURATOR",
-                "updated_at": "FILL_BY_CURATOR",
-                "created_by": "FILL_CURATOR_USER_ID",
-                "source": "ai_assisted_draft",
+                "created_at": datetime.now(UTC).isoformat(),
+                "updated_at": datetime.now(UTC).isoformat(),
+                "created_by": "curator-system",
+                "source": "manual",
             },
             "versioning": {
                 "dataset_version": "2026.1.0",
-                "valid_from": "2026-07-07",
+                "valid_from": date.today().isoformat(),
                 "status": "published",
             },
         }
@@ -252,7 +258,7 @@ def init_drug_entry(slug: str, *, overwrite: bool = False) -> Path:
             )
         related_entities.append(entity)
 
-    package = {
+    return {
         "module": "cardiovascular",
         "dataset_version": "2026.1.0",
         "create_snapshot": False,
@@ -263,30 +269,30 @@ def init_drug_entry(slug: str, *, overwrite: bool = False) -> Path:
             "label": label,
             "generic_name": label,
             "module": "cardiovascular",
-            "routes": ["FILL_BY_CURATOR"],
-            "half_life": "FILL_BY_CURATOR",
-            "protein_binding": "FILL_BY_CURATOR",
-            "bioavailability": "FILL_BY_CURATOR",
-            "onset": "FILL_BY_CURATOR",
-            "duration": "FILL_BY_CURATOR",
+            "routes": [],
+            "half_life": None,
+            "protein_binding": None,
+            "bioavailability": None,
+            "onset": None,
+            "duration": None,
             "has_black_box_warning": False,
             "is_high_alert": False,
-            "status": "published",
+            "status": "draft",
             "dataset_version": "2026.1.0",
-            "external_ids": {"rxnorm": "FILL_BY_CURATOR", "atc": ["FILL_BY_CURATOR"]},
+            "external_ids": {},
             "provenance": {
-                "created_at": "FILL_BY_CURATOR",
-                "updated_at": "FILL_BY_CURATOR",
-                "created_by": "FILL_CURATOR_USER_ID",
-                "source": "ai_assisted_draft",
-                "imported_from": "FILL_BY_CURATOR",
+                "created_at": datetime.now(UTC).isoformat(),
+                "updated_at": datetime.now(UTC).isoformat(),
+                "created_by": "curator-system",
+                "source": "manual",
                 "curator_attestation": False,
             },
             "versioning": {
                 "dataset_version": "2026.1.0",
                 "ontology_version": "1.0.0",
-                "valid_from": "2026-07-07",
-                "status": "published",
+                "valid_from": date.today().isoformat(),
+                "status": "draft",
+                "validation_state": "pending",
             },
             "relationships": rel_map,
         },
@@ -294,6 +300,18 @@ def init_drug_entry(slug: str, *, overwrite: bool = False) -> Path:
         "relationships": relationships,
     }
 
+
+def init_drug_entry(slug: str, *, overwrite: bool = False) -> Path:
+    """Create drugs/{slug}.json skeleton from curriculum + shared nodes index."""
+    located = find_drug_in_curriculum(slug)
+    if located is None:
+        raise ValueError(f"Slug not in curriculum: {slug}")
+
+    out_path = CV_DRUGS_DIR / f"{slug}.json"
+    if out_path.exists() and not overwrite:
+        raise FileExistsError(f"Already exists: {out_path}")
+
+    package = build_drug_entry_package(slug)
     CV_DRUGS_DIR.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(package, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     return out_path

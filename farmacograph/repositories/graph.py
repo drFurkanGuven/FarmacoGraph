@@ -40,10 +40,17 @@ class GraphRepository:
         """
         return await self._driver.run_query(
             query,
-            {"module": module, "limit": limit, "offset": offset, "dataset_version": dataset_version},
+            {
+                "module": module,
+                "limit": limit,
+                "offset": offset,
+                "dataset_version": dataset_version,
+            },
         )
 
-    async def get_drug_by_id(self, drug_id: UUID, dataset_version: str | None = None) -> dict[str, Any] | None:
+    async def get_drug_by_id(
+        self, drug_id: UUID, dataset_version: str | None = None
+    ) -> dict[str, Any] | None:
         if not self.is_available:
             return None
         results = await self._driver.run_query(
@@ -52,12 +59,27 @@ class GraphRepository:
         )
         return results[0] if results else None
 
-    async def get_drug_by_slug(self, slug: str, dataset_version: str | None = None) -> dict[str, Any] | None:
+    async def get_drug_by_slug(
+        self, slug: str, dataset_version: str | None = None
+    ) -> dict[str, Any] | None:
         if not self.is_available:
             return None
         results = await self._driver.run_query(
             "MATCH (d:Drug {slug: $slug}) WHERE ($dv IS NULL OR d.dataset_version = $dv) RETURN d",
             {"slug": slug, "dv": dataset_version},
+        )
+        return results[0] if results else None
+
+    async def get_drug_summary_by_id(self, entity_id: str) -> dict[str, Any] | None:
+        if not self.is_available:
+            return None
+        results = await self._driver.run_query(
+            """
+            MATCH (d:Drug {id: $id})
+            RETURN d.id AS id, d.slug AS slug,
+                   coalesce(d.generic_name, d.label) AS label, d.module AS module
+            """,
+            {"id": entity_id},
         )
         return results[0] if results else None
 
@@ -90,9 +112,7 @@ class GraphRepository:
         entity_result = await self._driver.run_query(
             "MATCH (n:BiomedicalEntity) RETURN count(n) AS count"
         )
-        rel_result = await self._driver.run_query(
-            "MATCH ()-[r]->() RETURN count(r) AS count"
-        )
+        rel_result = await self._driver.run_query("MATCH ()-[r]->() RETURN count(r) AS count")
         return {
             "entities": entity_result[0]["count"] if entity_result else 0,
             "relationships": rel_result[0]["count"] if rel_result else 0,

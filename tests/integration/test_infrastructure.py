@@ -2,56 +2,20 @@
 
 from __future__ import annotations
 
-import os
 import uuid
 
 import pytest
-import pytest_asyncio
-from httpx import ASGITransport, AsyncClient
+from httpx import AsyncClient
 
-# Force test environment before imports
-os.environ["FG_ENVIRONMENT"] = "test"
-os.environ["FG_DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
-os.environ["FG_NEO4J_ENABLED"] = "false"
-os.environ["FG_LOG_JSON"] = "false"
-
-from farmacograph.core.container import Container, reset_container
-from farmacograph.repositories.jobs import JobRepository
+from farmacograph.core.container import Container
 from farmacograph.events.bus import EventBus
 
-
-@pytest.fixture(autouse=True)
-def _reset_container():
-    reset_container()
-    yield
-    reset_container()
-
-
-@pytest_asyncio.fixture
-async def container():
-    c = Container()
-    await c.startup()
-    yield c
-    await c.shutdown()
-
-
-@pytest_asyncio.fixture
-async def client():
-    from farmacograph.api.main import create_app
-    from farmacograph.core.container import get_container
-
-    app = create_app()
-    container = get_container()
-    await container.startup()
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as ac:
-        yield ac
-    await container.shutdown()
+pytestmark = pytest.mark.integration
 
 
 @pytest.mark.asyncio
-async def test_health_endpoint(client: AsyncClient):
-    response = await client.get("/api/v1/health")
+async def test_health_endpoint(api_client: AsyncClient):
+    response = await api_client.get("/api/v1/health")
     assert response.status_code == 200
     body = response.json()
     assert body["data"]["status"] in ("ok", "degraded")
@@ -59,29 +23,29 @@ async def test_health_endpoint(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_list_drugs_empty(client: AsyncClient):
-    response = await client.get("/api/v1/drugs")
+async def test_list_drugs_empty(api_client: AsyncClient):
+    response = await api_client.get("/api/v1/drugs")
     assert response.status_code == 200
     assert response.json()["data"] == []
 
 
 @pytest.mark.asyncio
-async def test_modules_endpoint(client: AsyncClient):
-    response = await client.get("/api/v1/modules")
+async def test_modules_endpoint(api_client: AsyncClient):
+    response = await api_client.get("/api/v1/modules")
     assert response.status_code == 200
     assert len(response.json()["data"]) >= 1
 
 
 @pytest.mark.asyncio
-async def test_statistics_endpoint(client: AsyncClient):
-    response = await client.get("/api/v1/statistics")
+async def test_statistics_endpoint(api_client: AsyncClient):
+    response = await api_client.get("/api/v1/statistics")
     assert response.status_code == 200
     assert "entity_count" in response.json()["data"]
 
 
 @pytest.mark.asyncio
-async def test_search_empty(client: AsyncClient):
-    response = await client.get("/api/v1/search", params={"q": "test"})
+async def test_search_empty(api_client: AsyncClient):
+    response = await api_client.get("/api/v1/search", params={"q": "test"})
     assert response.status_code == 200
     assert response.json()["data"] == []
 

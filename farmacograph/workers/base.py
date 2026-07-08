@@ -24,7 +24,6 @@ class BaseWorker(ABC):
         """Execute job. Return result dict or None."""
 
     async def process_job(self, job_id: Any) -> None:
-        from uuid import UUID
 
         jobs = await self._job_repo.fetch_pending(limit=1)
         job = next((j for j in jobs if j.id == job_id), None)

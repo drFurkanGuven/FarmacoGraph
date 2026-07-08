@@ -21,6 +21,8 @@ from farmacograph.repositories.snapshots import SnapshotRepository
 from farmacograph.search.graph_provider import GraphSearchProvider
 from farmacograph.services.compare import CompareService
 from farmacograph.services.curator import CuratorService
+from farmacograph.services.curriculum import CurriculumService
+from farmacograph.services.dashboard import DashboardService
 from farmacograph.services.drugs import DrugService
 from farmacograph.services.explain import ExplainService
 from farmacograph.services.health import HealthService
@@ -29,7 +31,6 @@ from farmacograph.services.learning import LearningService
 from farmacograph.services.modules import ModuleService
 from farmacograph.services.reasoning import ReasoningService
 from farmacograph.services.search import NullSearchProvider, SearchService
-from farmacograph.services.curriculum import CurriculumService
 from farmacograph.services.snapshot import SnapshotService
 from farmacograph.services.statistics import StatisticsService
 from farmacograph.workers.graph_validation import GraphValidationWorker
@@ -66,6 +67,7 @@ class Container:
     module_service: ModuleService = field(init=False)
     curriculum_service: CurriculumService = field(init=False)
     statistics_service: StatisticsService = field(init=False)
+    dashboard_service: DashboardService = field(init=False)
     curator_service: CuratorService = field(init=False)
     snapshot_service: SnapshotService = field(init=False)
     graph_validation_worker: GraphValidationWorker = field(init=False)
@@ -117,6 +119,15 @@ class Container:
             snapshot_repo=self.snapshot_repo,
             graph_repo=self.graph_repo,
         )
+        self.dashboard_service = DashboardService(
+            health_service=self.health_service,
+            statistics_service=self.statistics_service,
+            audit_repo=self.audit_repo,
+            job_repo=self.job_repo,
+            curator_repo=self.curator_repo,
+            graph_repo=self.graph_repo,
+            snapshot_repo=self.snapshot_repo,
+        )
         self.snapshot_service = SnapshotService(
             snapshot_repo=self.snapshot_repo,
             graph_repo=self.graph_repo,
@@ -127,6 +138,7 @@ class Container:
         )
         self.curator_service = CuratorService(
             curator_repo=self.curator_repo,
+            graph_repo=self.graph_repo,
             graph_writer=self.graph_writer,
             outbox_repo=self.outbox_repo,
             job_repo=self.job_repo,
@@ -137,9 +149,11 @@ class Container:
         )
 
     async def startup(self) -> None:
+        from farmacograph.db.postgres.seed import seed_dev_users
         from farmacograph.db.postgres.session import init_db
 
         await init_db(self._engine)
+        await seed_dev_users(self.session_factory, self.settings)
         if self.settings.neo4j_enabled:
             await self.neo4j.connect()
             await self.neo4j.init_schema()

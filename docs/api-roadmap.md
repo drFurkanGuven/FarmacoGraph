@@ -7,42 +7,44 @@
 
 ---
 
-## Tamamlanan (Phase 3–4)
+## Tamamlanan (Phase 3–4 + API 5.1)
 
 | Bileşen | Durum |
 |---------|--------|
 | Health, drugs, modules, statistics | ✅ |
 | Curator workflow API | ✅ |
+| Dashboard, audit-logs, jobs (Studio ops) | ✅ |
 | Explain / compare / learning (iskelet) | ✅ |
 | Swagger + getting-started | ✅ |
-| Search | Null provider (boş sonuç) |
+| `GET /api/v1/info` | ✅ |
+| Neo4j `GraphSearchProvider` | ✅ (`FG_NEO4J_ENABLED=true`) |
+| `GET /search` — public arama sayfası | ✅ |
+| Curation Studio 4.1 | ✅ |
 
 ---
 
-## Phase API 5.1 — Discovery + temel arama ← **şimdi**
+## Phase API 5.1 — Discovery + temel arama ✅
 
-| # | Deliverable | Yük |
-|---|-------------|-----|
-| 5.1.1 | `GET /api/v1/info` | Düşük |
-| 5.1.2 | Neo4j `GraphSearchProvider` | Düşük |
-| 5.1.3 | **`GET /search` — public arama sayfası** | Düşük |
-| 5.1.4 | `scripts/publish-stub.sh` — ilk test verisi | Düşük |
-
-**Deploy:** `git pull && docker compose up -d --build`
+| # | Deliverable | Durum |
+|---|-------------|--------|
+| 5.1.1 | `GET /api/v1/info` | ✅ |
+| 5.1.2 | Neo4j `GraphSearchProvider` | ✅ |
+| 5.1.3 | **`GET /search` — public arama sayfası** | ✅ |
+| 5.1.4 | İlk test verisi (curator publish) | Kısmi — structural stub |
 
 ---
 
-## Phase API 5.2 — Kimlik doğrulama (sonraki)
+## Phase API 5.2 — Kimlik doğrulama ✅
 
-| # | Deliverable |
-|---|-------------|
-| 5.2.1 | API key doğrulama `deps.py` (PostgreSQL `api_keys`) |
-| 5.2.2 | `POST /auth/token` (dev/admin JWT üretimi) |
-| 5.2.3 | Anonim erişimi `FG_ALLOW_ANONYMOUS_READ=false` ile kapatma (production) |
+| # | Deliverable | Durum |
+|---|-------------|--------|
+| 5.2.1 | API key doğrulama `deps.py` (PostgreSQL `api_keys`) | ✅ |
+| 5.2.2 | `POST /auth/token`, `POST /auth/refresh` | ✅ |
+| 5.2.3 | Anonim erişimi `FG_ALLOW_ANONYMOUS_READ=false` ile kapatma (production) | ✅ (production auto-off) |
 
 ---
 
-## Phase API 5.3 — Koruma ve limitler
+## Phase API 5.3 — Koruma ve limitler ← **şimdi**
 
 | # | Deliverable |
 |---|-------------|

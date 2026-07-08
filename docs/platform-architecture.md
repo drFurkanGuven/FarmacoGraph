@@ -167,7 +167,7 @@ X-FG-Dataset-Version: 2027.1.0
 
 ### Rate limits
 
-Tracked in PostgreSQL `api_usage`:
+Tracked in PostgreSQL `api_usage` (middleware planned — Phase API 5.3):
 
 | Tier | Requests/min | Burst |
 |------|-------------|-------|
@@ -176,7 +176,41 @@ Tracked in PostgreSQL `api_usage`:
 | API key (standard) | 1000 | 2000 |
 | API key (enterprise) | 10000 | 20000 |
 
-### Billing hooks (future)
+### Authentication (implemented — API 5.2)
+
+```mermaid
+sequenceDiagram
+    participant C as Client / Studio
+    participant API as FastAPI
+    participant PG as PostgreSQL
+
+    C->>API: POST /auth/token (password or api_key)
+    API->>PG: Validate user or api_keys row
+    PG-->>API: scopes
+    API-->>C: access_token + refresh_token
+
+    C->>API: GET /curator/queue (Bearer access_token)
+    API->>API: decode JWT or resolve API key
+    API-->>C: 200 or 401/403
+```
+
+| Endpoint | Purpose | Status |
+|----------|---------|--------|
+| `POST /auth/token` | Issue JWT pair (`password` or `api_key` grant) | **Live** |
+| `POST /auth/refresh` | Rotate access token | **Live** |
+| Bearer validation | JWT decode or API key hash lookup | **Live** |
+| `POST /auth/introspect` | API key scope lookup without full login | Planned |
+| Self-service key management | `admin:api_keys` CRUD | Planned |
+
+**Security rules:**
+- Refresh tokens cannot authenticate API requests (access tokens only).
+- Curator scopes reject anonymous callers with `401`.
+- Production requires a non-default `FG_JWT_SECRET_KEY` and disables anonymous read.
+- Dev curator auto-seeded on empty DB when `FG_SEED_DEV_USERS=true` (`farmacograph/db/postgres/seed.py`).
+
+Implementation: `farmacograph/auth/service.py`, `farmacograph/auth/middleware.py`
+
+---
 
 Events consumed by billing adapter:
 
@@ -649,6 +683,8 @@ With platform architecture approved:
 ---
 
 ## Architecture Decision Log
+
+See [adr/README.md](adr/README.md) for the full ADR index.
 
 | ID | Decision | Rationale |
 |----|----------|-----------|

@@ -4,9 +4,12 @@ from __future__ import annotations
 
 import pytest
 
-from farmacograph.curator.publish_validator import require_valid_publish_package, validate_publish_package
-from farmacograph.curator.structural_stub import build_cardiovascular_publish_package
 from farmacograph.core.exceptions import ValidationError
+from farmacograph.curator.publish_validator import (
+    require_valid_publish_package,
+    validate_publish_package,
+)
+from farmacograph.curator.structural_stub import build_cardiovascular_publish_package
 
 
 def test_structural_stub_passes_validation():

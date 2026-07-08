@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -13,6 +14,7 @@ const authSchema = z.object({
   displayName: z.string().min(2),
   email: z.string().email().optional().or(z.literal("")),
   accessToken: z.string().optional(),
+  refreshToken: z.string().optional(),
   apiKey: z.string().optional(),
 });
 
@@ -26,6 +28,7 @@ export default function SettingsPage() {
       displayName: session.displayName,
       email: session.email ?? "",
       accessToken: session.accessToken ?? "",
+      refreshToken: session.refreshToken ?? "",
       apiKey: session.apiKey ?? "",
     },
   });
@@ -35,7 +38,7 @@ export default function SettingsPage() {
       displayName: values.displayName,
       email: values.email || null,
       accessToken: values.accessToken || null,
-      refreshToken: null,
+      refreshToken: values.refreshToken || null,
       apiKey: values.apiKey || null,
     });
     toast.success("Session updated");
@@ -45,13 +48,21 @@ export default function SettingsPage() {
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
         <h2 className="text-2xl font-semibold tracking-tight">Settings</h2>
-        <p className="text-sm text-muted-foreground">Authentication hooks for JWT and API keys (SSO-ready).</p>
+        <p className="text-sm text-muted-foreground">
+          Authentication for JWT, refresh tokens, and API keys. Prefer the{" "}
+          <Link href="/login" className="underline underline-offset-4">
+            sign-in page
+          </Link>{" "}
+          for guided login.
+        </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Profile</CardTitle>
-          <CardDescription>Placeholder profile — full user management ships later.</CardDescription>
+          <CardTitle className="text-base">Profile & credentials</CardTitle>
+          <CardDescription>
+            Scopes: {session.scopes.join(", ")} · Roles: {session.roles.join(", ")}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form className="space-y-4" onSubmit={onSubmit}>
@@ -72,6 +83,12 @@ export default function SettingsPage() {
                 JWT access token
               </label>
               <Input id="accessToken" type="password" autoComplete="off" {...form.register("accessToken")} />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium" htmlFor="refreshToken">
+                Refresh token
+              </label>
+              <Input id="refreshToken" type="password" autoComplete="off" {...form.register("refreshToken")} />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium" htmlFor="apiKey">

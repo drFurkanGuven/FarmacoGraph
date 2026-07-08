@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 from farmacograph.api.schemas.responses import ExplainResponse, ResponseMeta
 from farmacograph.core.exceptions import NoPathError
@@ -36,7 +36,9 @@ class ExplainService:
         if not paths:
             raise NoPathError(f"No validated path for drug={drug} effect={effect}")
 
-        question = f"Why does {drug} cause {effect}?" if effect else f"Explain {drug} {question_type}"
+        question = (
+            f"Why does {drug} cause {effect}?" if effect else f"Explain {drug} {question_type}"
+        )
         response = ExplainResponse(
             question=question,
             answer_summary=None,

@@ -27,15 +27,16 @@ gantt
 
 **Goal:** Production infrastructure + first complete module.
 
-| Deliverable | Dependency |
-|-------------|------------|
-| PostgreSQL ops schema | — |
-| Neo4j init + service layer | PostgreSQL |
-| FastAPI from OpenAPI | Service layer |
-| Auth + API keys | PostgreSQL |
-| Event bus + jobs | PostgreSQL |
-| CI/CD | All above |
-| Cardiovascular module (~70 drugs) | Validators + curator workflow |
+| Deliverable | Status |
+|-------------|--------|
+| PostgreSQL ops schema | ✅ Complete |
+| Neo4j init + service layer | ✅ Complete |
+| FastAPI core endpoints (25 routes) | ✅ Complete |
+| Auth utilities (JWT scopes) | ✅ Partial — API key HTTP validation pending |
+| Event bus + jobs | ✅ Complete |
+| CI/CD + Docker Compose | ✅ Complete |
+| Curation Studio 4.1 | ✅ Complete |
+| Cardiovascular module (~70 drugs) | In progress |
 
 ## Version 2 — Essential Pharmacopedia (2027 H1)
 
@@ -47,7 +48,7 @@ gantt
 | Explain API (full reasoning chains) | Graph traversal service |
 | Comparison API | Graph service |
 | Python + TypeScript SDKs | OpenAPI stable |
-| Search (full-text) | Search indexer worker |
+| Search (full-text) | Meilisearch/FTS plugin (Neo4j provider live) |
 
 ## Version 3 — Adaptive Learning (2027 H2)
 

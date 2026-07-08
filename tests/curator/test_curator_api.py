@@ -14,7 +14,11 @@ os.environ.setdefault("FG_DATABASE_URL", "sqlite+aiosqlite:///:memory:")
 os.environ.setdefault("FG_NEO4J_ENABLED", "false")
 
 from farmacograph.core.container import reset_container
-from farmacograph.curator.structural_stub import CV_STUB_DRUG_ID, build_cardiovascular_publish_package
+from farmacograph.curator.structural_stub import (
+    CV_STUB_DRUG_ID,
+    build_cardiovascular_publish_package,
+)
+from tests.auth.helpers import bearer_headers, curator_token, seed_curator_user
 
 
 @pytest.fixture(autouse=True)
@@ -27,13 +31,17 @@ def _reset():
 @pytest_asyncio.fixture
 async def client():
     from farmacograph.api.main import create_app
+    from farmacograph.core.config import get_settings
     from farmacograph.core.container import get_container
 
     app = create_app()
     container = get_container()
     await container.startup()
+    user, _ = await seed_curator_user(container.session_factory)
+    settings = get_settings()
+    auth = bearer_headers(curator_token(settings, user.id))
     transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+    async with AsyncClient(transport=transport, base_url="http://test", headers=auth) as ac:
         yield ac
     await container.shutdown()
 

@@ -1,105 +1,58 @@
-import {
-  ApiEnvelope,
-  ApiError,
-  ApiErrorBody,
+import { fetchDashboard } from "./dashboard";
+import { buildPaginationParams } from "./pagination";
+import { createTransport, type TransportRequestOptions } from "./transport";
+import type {
+  AuditLogItem,
   AuthSession,
+  CompareInput,
+  CreateWorkflowInput,
   CurriculumData,
+  DrugBrowseItem,
+  DrugPackage,
   DrugSummary,
   HealthData,
   InfoData,
+  JobItem,
   ModuleItem,
+  PackageValidation,
+  PaginationParams,
+  PublishPackageInput,
   StatisticsData,
+  ValidationResult,
   WorkflowItem,
 } from "./types";
 
 export interface ClientConfig {
   baseUrl: string;
   getSession?: () => AuthSession | null;
+  getDatasetVersion?: () => string | null;
   onUnauthorized?: () => void;
+  refreshSession?: () => Promise<boolean>;
+  defaultRetries?: number;
 }
 
-export interface RequestOptions extends Omit<RequestInit, "body"> {
-  body?: unknown;
-  params?: Record<string, string | number | boolean | undefined>;
-  retries?: number;
-}
-
-const DEFAULT_RETRIES = 2;
-
-function buildUrl(base: string, path: string, params?: RequestOptions["params"]): string {
-  const url = new URL(path.replace(/^\//, ""), base.endsWith("/") ? base : `${base}/`);
-  if (params) {
-    for (const [key, value] of Object.entries(params)) {
-      if (value !== undefined) url.searchParams.set(key, String(value));
-    }
-  }
-  return url.toString();
-}
-
-function normalizeErrorMessage(body: ApiErrorBody | null, status: number): string {
-  if (!body) return `Request failed (${status})`;
-  if (typeof body.detail === "string") return body.detail;
-  if (Array.isArray(body.detail)) return body.detail.map((d) => d.msg).join("; ");
-  if (body.message) return body.message;
-  return `Request failed (${status})`;
-}
+export type RequestOptions = TransportRequestOptions;
 
 export class FarmacoGraphClient {
-  private readonly baseUrl: string;
-  private readonly getSession?: () => AuthSession | null;
-  private readonly onUnauthorized?: () => void;
+  private readonly transport;
 
   constructor(config: ClientConfig) {
-    this.baseUrl = config.baseUrl;
-    this.getSession = config.getSession;
-    this.onUnauthorized = config.onUnauthorized;
+    this.transport = createTransport({
+      baseUrl: config.baseUrl,
+      getSession: config.getSession,
+      getDatasetVersion: config.getDatasetVersion,
+      onUnauthorized: config.onUnauthorized,
+      refreshSession: config.refreshSession,
+      defaultRetries: config.defaultRetries,
+    });
   }
 
-  async request<T>(path: string, options: RequestOptions = {}): Promise<ApiEnvelope<T>> {
-    const { body, params, retries = DEFAULT_RETRIES, headers, ...init } = options;
-    const url = buildUrl(this.baseUrl, path, params);
-    const session = this.getSession?.();
+  get interceptors() {
+    return this.transport.interceptorRegistry;
+  }
 
-    const requestHeaders = new Headers(headers);
-    requestHeaders.set("Accept", "application/json");
-    if (body !== undefined) requestHeaders.set("Content-Type", "application/json");
-    if (session?.accessToken) requestHeaders.set("Authorization", `Bearer ${session.accessToken}`);
-    if (session?.apiKey) requestHeaders.set("X-API-Key", session.apiKey);
-    requestHeaders.set("X-FarmacoGraph-Client", "studio");
-    requestHeaders.set("X-Request-Id", crypto.randomUUID());
-
-    let lastError: unknown;
-    for (let attempt = 0; attempt <= retries; attempt++) {
-      try {
-        const response = await fetch(url, {
-          ...init,
-          headers: requestHeaders,
-          body: body !== undefined ? JSON.stringify(body) : undefined,
-        });
-
-        const traceId = response.headers.get("X-Request-Id");
-        const datasetVersion = response.headers.get("X-Dataset-Version");
-        const text = await response.text();
-        const json = text ? (JSON.parse(text) as ApiEnvelope<T> | ApiErrorBody) : null;
-
-        if (!response.ok) {
-          const errBody = json as ApiErrorBody | null;
-          if (response.status === 401) this.onUnauthorized?.();
-          throw new ApiError(normalizeErrorMessage(errBody, response.status), response.status, errBody, traceId);
-        }
-
-        const envelope = json as ApiEnvelope<T>;
-        if (datasetVersion && envelope.meta) {
-          envelope.meta.dataset_version = envelope.meta.dataset_version ?? datasetVersion;
-        }
-        return envelope;
-      } catch (error) {
-        lastError = error;
-        if (error instanceof ApiError || attempt === retries) throw error;
-        await new Promise((r) => setTimeout(r, 300 * (attempt + 1)));
-      }
-    }
-    throw lastError;
+  request<T>(path: string, options: RequestOptions = {}) {
+    return this.transport.request<T>(path, options);
   }
 
   health() {
@@ -122,16 +75,145 @@ export class FarmacoGraphClient {
     return this.request<CurriculumData>(`/modules/${moduleSlug}/curriculum`);
   }
 
-  curatorQueue(state = "review") {
-    return this.request<WorkflowItem[]>("/curator/queue", { params: { state } });
+  search(q: string, options?: PaginationParams & { datasetVersion?: string | null }) {
+    const { datasetVersion, ...pagination } = options ?? {};
+    return this.request<DrugSummary[]>("/search", {
+      params: { q, ...buildPaginationParams(pagination) },
+      datasetVersion,
+    });
   }
 
-  drugs(module?: string) {
-    return this.request<DrugSummary[]>("/drugs", { params: { module } });
+  drugs(
+    moduleOrOptions?: string | (PaginationParams & { module?: string; datasetVersion?: string | null }),
+  ) {
+    const options =
+      typeof moduleOrOptions === "string" ? { module: moduleOrOptions } : (moduleOrOptions ?? {});
+    const { module, datasetVersion, ...pagination } = options;
+    return this.request<DrugSummary[]>("/drugs", {
+      params: { module, ...buildPaginationParams(pagination) },
+      datasetVersion,
+    });
   }
 
-  search(q: string, limit = 10) {
-    return this.request<DrugSummary[]>("/search", { params: { q, limit } });
+  getDrug(drugId: string, datasetVersion?: string | null) {
+    const params: Record<string, string | number | boolean | undefined> = {};
+    if (datasetVersion) params.dataset_version = datasetVersion;
+    return this.request<Record<string, unknown>>(`/drugs/${drugId}`, {
+      params,
+      datasetVersion,
+    });
+  }
+
+  getDrugPrerequisites(drugSlug: string) {
+    return this.request<Record<string, unknown>>(`/drugs/${drugSlug}/prerequisites`);
+  }
+
+  dashboard(module = "cardiovascular") {
+    return fetchDashboard(this, module);
+  }
+
+  auditLogs(options?: PaginationParams & { resourceType?: string }) {
+    const { resourceType, ...pagination } = options ?? {};
+    return this.request<AuditLogItem[]>("/audit-logs", {
+      params: { resource_type: resourceType, ...buildPaginationParams(pagination) },
+    });
+  }
+
+  jobs(options?: PaginationParams & { status?: string; jobType?: string }) {
+    const { status, jobType, ...pagination } = options ?? {};
+    return this.request<JobItem[]>("/jobs", {
+      params: { status, job_type: jobType, ...buildPaginationParams(pagination) },
+    });
+  }
+
+  curatorQueue(state = "review", options?: PaginationParams) {
+    return this.request<WorkflowItem[]>("/curator/queue", {
+      params: { state, ...buildPaginationParams(options) },
+    });
+  }
+
+  getWorkflow(workflowId: string) {
+    return this.request<WorkflowItem>(`/curator/workflows/${workflowId}`);
+  }
+
+  createWorkflow(body: CreateWorkflowInput) {
+    return this.request<WorkflowItem>("/curator/workflows", { method: "POST", body });
+  }
+
+  submitWorkflow(workflowId: string) {
+    return this.request<WorkflowItem>(`/curator/workflows/${workflowId}/submit`, { method: "POST" });
+  }
+
+  approveWorkflow(workflowId: string) {
+    return this.request<WorkflowItem>(`/curator/workflows/${workflowId}/approve`, { method: "POST" });
+  }
+
+  curatorDrugs(options?: {
+    module?: string;
+    search?: string;
+    status?: string;
+    workflowState?: string;
+    sort?: string;
+  } & PaginationParams) {
+    const { module, search, status, workflowState, sort, ...pagination } = options ?? {};
+    return this.request<DrugBrowseItem[]>("/curator/drugs", {
+      params: {
+        module,
+        search,
+        status,
+        workflow_state: workflowState,
+        sort,
+        ...buildPaginationParams(pagination),
+      },
+    });
+  }
+
+  openDrugWorkflow(slug: string) {
+    return this.request<{
+      workflow: WorkflowItem;
+      package: DrugPackage;
+      validation: PackageValidation;
+    }>(`/curator/drugs/${slug}/workflows`, { method: "POST" });
+  }
+
+  getDrugPackage(slug: string) {
+    return this.request<DrugPackage>(`/curator/drugs/${slug}/package`);
+  }
+
+  saveWorkflowPackage(workflowId: string, body: PublishPackageInput) {
+    return this.request<{ workflow: WorkflowItem; validation: PackageValidation }>(
+      `/curator/workflows/${workflowId}/package`,
+      { method: "PUT", body },
+    );
+  }
+
+  publishWorkflow(workflowId: string, body: PublishPackageInput) {
+    return this.request<WorkflowItem>(`/curator/workflows/${workflowId}/publish`, {
+      method: "POST",
+      body,
+    });
+  }
+
+  validatePackage(body: PublishPackageInput) {
+    return this.request<ValidationResult>("/curator/validate", { method: "POST", body });
+  }
+
+  getCardiovascularStub() {
+    return this.request<Record<string, unknown>>("/curator/stubs/cardiovascular");
+  }
+
+  explain(params: { drug: string; effect?: string; questionType?: string }) {
+    return this.request<Record<string, unknown>>("/explain", {
+      params: {
+        drug: params.drug,
+        effect: params.effect,
+        question_type: params.questionType ?? "mechanism",
+      },
+    });
+  }
+
+  compare(body: CompareInput) {
+    return this.request<Record<string, unknown>>("/compare", { method: "POST", body });
   }
 }
 

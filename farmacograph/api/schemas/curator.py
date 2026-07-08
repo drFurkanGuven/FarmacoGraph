@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -30,9 +31,14 @@ class WorkflowResponse(BaseModel):
     notes: str | None = None
     assigned_to: UUID | None = None
     workspace_id: UUID | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+    entity_label: str | None = None
+    entity_slug: str | None = None
+    draft_package_json: dict | None = None
 
     @classmethod
-    def from_model(cls, w) -> WorkflowResponse:
+    def from_model(cls, w, *, entity: dict | None = None) -> WorkflowResponse:
         return cls(
             id=w.id,
             entity_id=w.entity_id,
@@ -41,4 +47,9 @@ class WorkflowResponse(BaseModel):
             notes=w.notes,
             assigned_to=w.assigned_to,
             workspace_id=w.workspace_id,
+            created_at=w.created_at,
+            updated_at=w.updated_at,
+            entity_label=(entity or {}).get("label"),
+            entity_slug=(entity or {}).get("slug"),
+            draft_package_json=getattr(w, "draft_package_json", None),
         )

@@ -1,7 +1,72 @@
 # FarmacoGraph API Specification
 
-> **Version:** 1.0.0-draft  
-> REST API for graph queries, explainability, and visualization
+> **Version:** 1.1.0  
+> REST API for graph queries, explainability, and curation
+
+**Live docs:** https://farmacograph.furkanguven.space/docs  
+**Getting started:** [getting-started.md](getting-started.md)  
+**API roadmap:** [api-roadmap.md](api-roadmap.md)
+
+---
+
+## Implementation status
+
+The OpenAPI file at `openapi/openapi.yaml` describes the **full contract** (implemented + planned). FastAPI serves the live spec at `/openapi.json`.
+
+### Implemented endpoints (27 routes)
+
+| Method | Path | Auth scope | Notes |
+|--------|------|------------|-------|
+| POST | `/api/v1/auth/token` | Public | Issue JWT (`password` or `api_key` grant) |
+| POST | `/api/v1/auth/refresh` | Public | Refresh access token |
+| GET | `/api/v1/info` | Public | API discovery |
+| GET | `/api/v1/health` | Public | Health check |
+| GET | `/api/v1/dashboard` | `knowledge:read` | Studio ops dashboard |
+| GET | `/api/v1/audit-logs` | `knowledge:read` | Recent audit entries |
+| GET | `/api/v1/jobs` | `knowledge:read` | Background job list |
+| GET | `/api/v1/drugs` | `knowledge:read` | List drugs |
+| GET | `/api/v1/drugs/{drug_id}` | `knowledge:read` | Drug detail |
+| GET | `/api/v1/search` | `knowledge:search` | Drug search (Neo4j when enabled) |
+| GET | `/api/v1/modules` | `knowledge:read` | Curriculum modules |
+| GET | `/api/v1/modules/{module_slug}/curriculum` | `knowledge:read` | Module curriculum |
+| GET | `/api/v1/statistics` | `knowledge:read` | Graph statistics |
+| GET | `/api/v1/explain` | `knowledge:explain` | Reasoning chain |
+| POST | `/api/v1/compare` | `knowledge:read` | Drug comparison |
+| GET | `/api/v1/drugs/{drug_slug}/prerequisites` | `knowledge:read` | Learning prerequisites |
+| POST | `/api/v1/curator/validate` | `curator:write` | Dry-run validation |
+| GET | `/api/v1/curator/stubs/cardiovascular` | `curator:write` | Structural stub template |
+| POST | `/api/v1/curator/workflows` | `curator:write` | Create draft |
+| GET | `/api/v1/curator/workflows/{workflow_id}` | `curator:write` | Get workflow |
+| GET | `/api/v1/curator/queue` | `curator:write` | Review queue |
+| GET | `/api/v1/curator/validation-summary` | `curator:write` | Validation stats |
+| POST | `/api/v1/curator/workflows/{id}/submit` | `curator:write` | draft → review |
+| POST | `/api/v1/curator/workflows/{id}/approve` | `curator:publish` | review → approved |
+| POST | `/api/v1/curator/workflows/{id}/publish` | `curator:publish` | approved → published |
+
+### App-level routes (not under `/api/v1`)
+
+| Method | Path | Notes |
+|--------|------|-------|
+| GET | `/` | Redirect to `/docs` |
+| GET | `/search` | Public HTML search page |
+| GET | `/docs` | Swagger UI |
+| GET | `/metrics` | Prometheus (if `FG_METRICS_ENABLED=true`) |
+
+### Planned (in OpenAPI, not yet routed)
+
+Entity endpoints (`/drug-classes`, `/diseases`, `/pathways/{id}`, …), clinical queries (`/interactions`), education (`/flashcards`, `/cases`), graph projection (`/drugs/{id}/graph`, `POST /graph/query`), version management (`/version`), and AI endpoints (`POST /rag`, `POST /tutor`).
+
+### Auth (current)
+
+- `POST /auth/token` — password or API key grant → access + refresh JWT pair
+- `POST /auth/refresh` — rotate access token from refresh token
+- Bearer JWT or raw API key on `Authorization: Bearer …` (API keys validated against PostgreSQL `api_keys`)
+- Optional `X-API-Key` header (same validation as Bearer API key)
+- Scope checks per route via `require_scope` dependency
+- Anonymous read/search/explain allowed when `FG_ALLOW_ANONYMOUS_READ=true` (default in development; forced off in production)
+- Curator endpoints (`curator:write`, `curator:publish`) require authentication — anonymous callers receive `401`
+- `POST /auth/introspect` — planned (Studio client ready; not routed yet)
+- Self-service API key provisioning — planned (manual provisioning today)
 
 ---
 
@@ -18,6 +83,45 @@
 OpenAPI documentation auto-generated via FastAPI at `/docs`.
 
 **New to the API?** Read [Getting Started](getting-started.md) — how to access the service, authentication, scopes, and examples.
+
+### 1.1 Authentication endpoints
+
+#### `POST /auth/token`
+
+Issue an access/refresh token pair.
+
+**Request body:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `grant_type` | string | Yes | `password` or `api_key` |
+| `username` | string | For password | User email |
+| `password` | string | For password | User password |
+| `api_key` | string | For api_key | Full API key (`fg_…`) |
+
+**Response:**
+
+```json
+{
+  "access_token": "eyJ…",
+  "refresh_token": "eyJ…",
+  "token_type": "bearer",
+  "expires_in": 3600,
+  "scopes": ["knowledge:read", "curator:write"],
+  "email": "curator@example.org",
+  "name": "Curator Name"
+}
+```
+
+#### `POST /auth/refresh`
+
+Rotate tokens using a refresh token (refresh tokens cannot be used as Bearer credentials on protected routes).
+
+**Request body:** `{ "refresh_token": "eyJ…" }`
+
+**Response:** Same shape as `/auth/token`.
+
+**Implementation:** `farmacograph/api/routers/auth.py`, `farmacograph/auth/service.py`
 
 ---
 

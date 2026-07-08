@@ -1,11 +1,5 @@
-import { PlaceholderPage } from "@/components/layout/placeholder-page";
+import { DrugBrowser } from "@/components/drugs/drug-browser";
 
 export default function DrugsPage() {
-  return (
-    <PlaceholderPage
-      title="Drugs"
-      phase="Studio 4.2"
-      description="Notion-style drug editor with independent section autosave. Replaces manual JSON packages."
-    />
-  );
+  return <DrugBrowser />;
 }
