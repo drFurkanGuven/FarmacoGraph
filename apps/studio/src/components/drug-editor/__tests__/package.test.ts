@@ -37,6 +37,8 @@ describe("drugRecordToPackage", () => {
     const pkg = createEmptyDrugPackage("new-drug");
     expect(pkg.entity_payload.id).toBe("new-drug");
     expect(pkg.entity_payload.status).toBe("draft");
+    const provenance = pkg.entity_payload.provenance as { curator_attestation?: boolean };
+    expect(provenance.curator_attestation).toBe(false);
   });
 });
 
@@ -67,6 +69,21 @@ describe("applyFieldChange", () => {
 
     expect(values.slug).toBe("ramipril");
     expect(values.id).toBe("drug-1");
+  });
+
+  it("parses curator attestation booleans from provenance text fields", () => {
+    const base = createEmptyDrugPackage("drug-1");
+    const section = DRUG_EDITOR_SECTIONS.find((entry) => entry.id === "provenance")!;
+    const field = section.fields.find((entry) => entry.key === "curator_attestation")!;
+
+    const unattested = applyFieldChange(base, field.path, "false", field.type);
+    const provenance = unattested.entity_payload.provenance as { curator_attestation?: boolean };
+    expect(provenance.curator_attestation).toBe(false);
+
+    const attested = applyFieldChange(unattested, field.path, "true", field.type);
+    const attestedProvenance = attested.entity_payload.provenance as { curator_attestation?: boolean };
+    expect(attestedProvenance.curator_attestation).toBe(true);
+    expect(sectionFieldValues(attested, section).curator_attestation).toBe("true");
   });
 });
 

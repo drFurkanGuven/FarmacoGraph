@@ -15,13 +15,16 @@ FarmacoGraph is not a pharmacology database. It is a **long-term biomedical know
 | **Phase 4 Backend Foundation** (curator API, validation, graph writer) | **Complete** |
 | **Phase 4 Studio 4.1** (Curation Studio shell + dashboard) | **Complete** |
 | Phase API 5.1 (discovery, Neo4j search, search page) | **Complete** |
-| **Phase API 5.2** (JWT issuance, API key validation) | **Complete** |
-| Phase 4 Studio 4.2 (drug list, editors) | **In progress** — 4.2.1 dashboard done; 4.2.2 drug list next |
-| Phase 4 Studio 4.3–4.4 (validation center, publish wizard) | Planned |
+| **Phase API 5.2** (JWT issuance, API key validation, introspect) | **Complete** |
+| **Phase 4 Studio 4.2** (drug browser, drug editor, validation center) | **Complete** — secure curation path live |
+| **Phase 4 Studio 4.4** (publish wizard UI) | **Complete** — submit / approve / publish from Drug Editor |
+| **Phase 4 Studio 5** (Evidence Manager + drug evidence workflow) | **Complete** — `/knowledge/evidence`, Drug Editor Evidence section, publish wizard evidence readiness |
+| Phase 4 Studio 4.3 (mechanism editor, graph explorer) | Planned |
 | Cardiovascular module curation | In progress |
 
 > **Primary product:** [Curation Studio](docs/curation-studio.md) (`apps/studio`) — the official knowledge authoring interface.  
-> JSON/bootstrap scripts in `scripts/dev-only/` are **deprecated** for curators.
+> **Evidence:** Curators manage citations in **Evidence Manager** (`/knowledge/evidence`) and attach them from the Drug Editor **Evidence** section. Validation and the Publish wizard surface evidence blockers (FG-C012).  
+> Manual JSON editing and shell scripts in `scripts/dev-only/` are **dev-only / deprecated** for curators — see [scripts/dev-only/README.md](scripts/dev-only/README.md).
 
 ## Core Principle
 
@@ -36,7 +39,7 @@ No client — including first-party apps — accesses Neo4j or PostgreSQL direct
 | **Docs (Swagger)** | https://farmacograph.furkanguven.space/docs |
 | **Health** | https://farmacograph.furkanguven.space/api/v1/health |
 | **Discovery** | `GET /api/v1/info` |
-| **Auth** | `POST /api/v1/auth/token`, `POST /api/v1/auth/refresh` |
+| **Auth** | `POST /api/v1/auth/token`, `POST /api/v1/auth/refresh`, `POST /api/v1/auth/introspect` |
 | **Getting started** | [docs/getting-started.md](docs/getting-started.md) |
 | **API reference** | [docs/api.md](docs/api.md) |
 | **API roadmap** | [docs/api-roadmap.md](docs/api-roadmap.md) |

@@ -1,6 +1,8 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { ConfidenceBadge } from "@/components/ui/confidence-badge";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -16,6 +18,7 @@ import { ValidationBadge } from "@/components/ui/validation-badge";
 import type { SortDirection, SortField } from "./types";
 import type { DrugBrowserRow } from "./types";
 import { DrugRowActions } from "./drug-row-actions";
+import { drugEditorHref } from "./utils";
 
 interface DrugTableProps {
   rows: DrugBrowserRow[];
@@ -64,6 +67,12 @@ function workflowStatusValue(row: DrugBrowserRow): "draft" | "processing" | "act
 }
 
 export function DrugTable({ rows, sortField, sortDirection, onSort }: DrugTableProps) {
+  const router = useRouter();
+
+  function openDrugEditor(slug: string) {
+    router.push(`/knowledge/drugs/${slug}`);
+  }
+
   return (
     <Table>
       <TableHeader>
@@ -109,15 +118,37 @@ export function DrugTable({ rows, sortField, sortDirection, onSort }: DrugTableP
       </TableHeader>
       <TableBody>
         {rows.map((row) => (
-          <TableRow key={`${row.source}-${row.slug}`}>
+          <TableRow
+            key={`${row.source}-${row.slug}`}
+            className="cursor-pointer hover:bg-muted/50"
+            tabIndex={0}
+            role="link"
+            aria-label={`Open drug editor for ${row.label}`}
+            onClick={() => openDrugEditor(row.slug)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                openDrugEditor(row.slug);
+              }
+            }}
+          >
             <TableCell>
-              <div className="font-medium">{row.label}</div>
+              <Link
+                href={drugEditorHref(row.slug)}
+                className="font-medium hover:text-primary hover:underline"
+              >
+                {row.label}
+              </Link>
               {row.source === "curriculum" && (
                 <p className="text-xs text-muted-foreground">Curriculum queue</p>
               )}
             </TableCell>
             <TableCell>
-              <code className="rounded bg-muted px-1.5 py-0.5 text-xs">{row.slug}</code>
+              <Link href={drugEditorHref(row.slug)} className="hover:text-primary">
+                <code className="rounded bg-muted px-1.5 py-0.5 text-xs hover:bg-muted/80">
+                  {row.slug}
+                </code>
+              </Link>
             </TableCell>
             <TableCell className="text-muted-foreground">{row.module ?? "—"}</TableCell>
             <TableCell>
@@ -147,7 +178,7 @@ export function DrugTable({ rows, sortField, sortDirection, onSort }: DrugTableP
             <TableCell>
               <ValidationBadge status={row.validationStatus} />
             </TableCell>
-            <TableCell className="text-right">
+            <TableCell className="text-right" onClick={(event) => event.stopPropagation()}>
               <DrugRowActions row={row} />
             </TableCell>
           </TableRow>

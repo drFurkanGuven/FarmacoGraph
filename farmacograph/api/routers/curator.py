@@ -2,21 +2,30 @@
 
 from __future__ import annotations
 
+from contextlib import suppress
 from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from farmacograph.api.deps import get_app_container, require_scope
-from farmacograph.api.schemas.curator import CreateWorkflowRequest, PublishRequest, WorkflowResponse
+from farmacograph.api.deps import get_app_container, get_evidence_service, require_scope
+from farmacograph.api.schemas.curator import (
+    CreateWorkflowRequest,
+    DrugWorkflowStateResponse,
+    PublishRequest,
+    WorkflowResponse,
+)
+from farmacograph.api.schemas.evidence import AttachDrugEvidenceRequest
 from farmacograph.auth.models import AuthContext
 from farmacograph.core.container import Container
 from farmacograph.core.exceptions import FarmacoGraphError, NotFoundError, ValidationError
+from farmacograph.curator.drug_package import drug_entity_id
 from farmacograph.curator.publish_validator import validate_publish_package
 from farmacograph.curator.structural_stub import (
     CV_STUB_DRUG_ID,
     build_cardiovascular_publish_package,
 )
+from farmacograph.services.evidence import EvidenceService
 
 router = APIRouter(prefix="/curator", tags=["Curator"])
 
@@ -80,6 +89,19 @@ async def open_drug_workflow(
     }
 
 
+@router.get("/drugs/{slug}/workflow-state")
+async def get_drug_workflow_state(
+    slug: str,
+    service=Depends(get_curator_service),
+    _auth: Annotated[AuthContext, Depends(require_scope("curator:write"))] = None,
+) -> dict:
+    state = await service.get_drug_workflow_state(slug)
+    return {
+        "data": DrugWorkflowStateResponse.model_validate(state).model_dump(),
+        "meta": {"api_version": "v1", "slug": slug},
+    }
+
+
 @router.get("/drugs/{slug}/package")
 async def get_drug_package(
     slug: str,
@@ -98,6 +120,60 @@ async def get_drug_package(
     }
 
 
+@router.get("/drugs/{slug}/evidence")
+async def list_curator_drug_evidence(
+    slug: str,
+    evidence_service: Annotated[EvidenceService, Depends(get_evidence_service)],
+    _auth: Annotated[AuthContext, Depends(require_scope("curator:write"))] = None,
+) -> dict:
+    drug_id = UUID(drug_entity_id(slug))
+    data, meta = await evidence_service.list_drug_evidence(drug_id)
+    meta["slug"] = slug
+    return {"data": data, "meta": meta}
+
+
+@router.post("/drugs/{slug}/evidence", status_code=201)
+async def attach_curator_drug_evidence(
+    slug: str,
+    body: AttachDrugEvidenceRequest,
+    evidence_service: Annotated[EvidenceService, Depends(get_evidence_service)],
+    auth: Annotated[AuthContext, Depends(require_scope("curator:write"))] = None,
+) -> dict:
+    drug_id = UUID(drug_entity_id(slug))
+    try:
+        data = await evidence_service.attach_to_drug(
+            body.evidence_id, drug_id, actor_id=auth.user_id
+        )
+        return {"data": data, "meta": {"api_version": "v1", "slug": slug}}
+    except FarmacoGraphError as exc:
+        raise _curator_evidence_error(exc) from exc
+
+
+@router.delete("/drugs/{slug}/evidence/{evidence_id}")
+async def detach_curator_drug_evidence(
+    slug: str,
+    evidence_id: UUID,
+    evidence_service: Annotated[EvidenceService, Depends(get_evidence_service)],
+    auth: Annotated[AuthContext, Depends(require_scope("curator:write"))] = None,
+) -> dict:
+    drug_id = UUID(drug_entity_id(slug))
+    try:
+        data = await evidence_service.detach_from_drug(evidence_id, drug_id, actor_id=auth.user_id)
+        return {"data": data, "meta": {"api_version": "v1", "slug": slug}}
+    except FarmacoGraphError as exc:
+        raise _curator_evidence_error(exc) from exc
+
+
+def _curator_evidence_error(exc: FarmacoGraphError) -> HTTPException:
+    if exc.code == "ENTITY_NOT_FOUND":
+        status = 404
+    elif exc.code == "SERVICE_UNAVAILABLE":
+        status = 503
+    else:
+        status = 400
+    return HTTPException(status_code=status, detail={"code": exc.code, "message": exc.message})
+
+
 @router.put("/workflows/{workflow_id}/package")
 async def save_workflow_package(
     workflow_id: UUID,
@@ -113,7 +189,10 @@ async def save_workflow_package(
         "module": body.module,
         "create_snapshot": body.create_snapshot,
     }
-    workflow = await service.save_draft_package(workflow_id, package, actor_id=auth.user_id)
+    try:
+        workflow = await service.save_draft_package(workflow_id, package, actor_id=auth.user_id)
+    except (ValidationError, NotFoundError) as exc:
+        raise HTTPException(status_code=400, detail=exc.message) from exc
     validation = service.validate_draft_package(package)
     return {
         "data": {
@@ -127,7 +206,9 @@ async def save_workflow_package(
 @router.post("/validate")
 async def validate_package(
     body: PublishRequest,
-    _auth: Annotated[AuthContext, Depends(require_scope("curator:write"))] = None,
+    service=Depends(get_curator_service),
+    auth: Annotated[AuthContext, Depends(require_scope("curator:write"))] = None,
+    workflow_id: UUID | None = Query(None),
 ) -> dict:
     """Dry-run validation — no Neo4j write."""
     result = validate_publish_package(
@@ -135,6 +216,18 @@ async def validate_package(
         related_entities=body.related_entities,
         relationships=body.relationships,
     )
+    validation = {
+        "valid": result.valid,
+        "error_count": len(result.errors),
+        "warning_count": max(0, len(result.issues) - len(result.errors)),
+    }
+    if workflow_id is not None:
+        with suppress(NotFoundError):
+            await service.log_validation_run(
+                workflow_id,
+                validation,
+                actor_id=auth.user_id,
+            )
     return {
         "data": {
             "valid": result.valid,
@@ -172,6 +265,30 @@ async def create_workflow(
     return {
         "data": WorkflowResponse.from_model(workflow).model_dump(),
         "meta": {"api_version": "v1"},
+    }
+
+
+@router.get("/workflows/{workflow_id}/timeline")
+async def get_workflow_timeline(
+    workflow_id: UUID,
+    service=Depends(get_curator_service),
+    _auth: Annotated[AuthContext, Depends(require_scope("curator:write"))] = None,
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+) -> dict:
+    try:
+        data = await service.get_workflow_timeline(workflow_id, limit=limit, offset=offset)
+    except NotFoundError as exc:
+        raise HTTPException(status_code=404, detail=exc.message) from exc
+    return {
+        "data": data,
+        "meta": {
+            "api_version": "v1",
+            "count": len(data),
+            "workflow_id": str(workflow_id),
+            "limit": limit,
+            "offset": offset,
+        },
     }
 
 
@@ -258,6 +375,14 @@ async def publish_workflow(
     service=Depends(get_curator_service),
     auth: Annotated[AuthContext, Depends(require_scope("curator:publish"))] = None,
 ) -> dict:
+    package = {
+        "entity_payload": body.entity_payload,
+        "related_entities": body.related_entities,
+        "relationships": body.relationships,
+        "dataset_version": body.dataset_version,
+        "module": body.module,
+        "create_snapshot": body.create_snapshot,
+    }
     try:
         workflow = await service.publish(
             workflow_id,
@@ -269,9 +394,14 @@ async def publish_workflow(
             module=body.module,
             create_snapshot=body.create_snapshot,
         )
+        extras = await service.build_publish_result_async(workflow, package)
         return {
-            "data": WorkflowResponse.from_model(workflow).model_dump(),
+            "data": {
+                "workflow": WorkflowResponse.from_model(workflow).model_dump(),
+                **extras,
+            },
             "meta": {"api_version": "v1"},
         }
     except (ValidationError, NotFoundError, FarmacoGraphError) as exc:
+        await service.log_publish_failure(workflow_id, exc.message, actor_id=auth.user_id)
         raise HTTPException(status_code=400, detail=exc.message) from exc

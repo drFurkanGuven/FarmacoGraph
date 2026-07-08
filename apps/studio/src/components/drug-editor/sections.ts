@@ -86,6 +86,13 @@ export const DRUG_EDITOR_SECTIONS: DrugEditorSection[] = [
     ],
   },
   {
+    id: "evidence",
+    title: "Evidence",
+    kind: "evidence",
+    description: "Citations, provenance links, and validation gaps for this drug.",
+    fields: [],
+  },
+  {
     id: "provenance",
     title: "Provenance",
     description: "Attribution and curation metadata required by validators.",

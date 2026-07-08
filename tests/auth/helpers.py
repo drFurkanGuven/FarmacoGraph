@@ -64,3 +64,31 @@ def bearer_headers(token: str) -> dict[str, str]:
 def curator_token(settings: Settings, user_id: uuid.UUID | None = None) -> str:
     subject = str(user_id or uuid.uuid4())
     return create_access_token(subject, settings, scopes=CURATOR_SCOPES)
+
+
+INSECURE_JWT_SECRETS = (
+    "change-me-in-production",
+    "dev-only-jwt-secret-change-in-production",
+    "",
+)
+
+SETTINGS_INSECURE_JWT_SECRETS = (
+    "change-me-in-production",
+    "dev-only-jwt-secret-change-in-production",
+)
+
+SECURITY_WORKFLOW_ID = "00000000-0000-4000-8000-000000000099"
+TEST_DRUG_SLUG = "cv-structural-stub"
+
+
+def curator_create_workflow_payload() -> dict[str, str]:
+    return {
+        "entity_id": "00000000-0000-4000-8000-000000000001",
+        "entity_type": "Drug",
+    }
+
+
+def curator_publish_payload() -> dict:
+    from farmacograph.curator.structural_stub import build_cardiovascular_publish_package
+
+    return build_cardiovascular_publish_package()

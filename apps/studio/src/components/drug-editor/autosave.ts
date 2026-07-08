@@ -1,5 +1,6 @@
-import { ApiError, type FarmacoGraphClient } from "@/lib/api";
-import type { DrugPublishPackage, SaveResult, SaveStrategy } from "./types";
+import { ApiError, type FarmacoGraphClient, type ValidationResult } from "@/lib/api";
+import { isDrugSlug } from "./api";
+import type { DrugPublishPackage, SaveResult } from "./types";
 
 export const AUTOSAVE_DEBOUNCE_MS = 800;
 export const VALIDATION_DEBOUNCE_MS = 600;
@@ -47,48 +48,43 @@ export function createDebouncedFn<T extends unknown[]>(
   return debounced;
 }
 
-export function isUnsupportedSaveError(error: unknown): boolean {
-  if (!(error instanceof ApiError)) return false;
-  return error.status === 404 || error.status === 405 || error.status === 501;
-}
-
+/** Persist draft package via canonical curator workflow API. */
 export async function saveDrugPackage(
   client: FarmacoGraphClient,
-  drugId: string,
   workflowId: string | null,
   pkg: DrugPublishPackage,
 ): Promise<SaveResult> {
-  try {
-    await client.request<Record<string, unknown>>(`/drugs/${drugId}`, {
-      method: "PATCH",
-      body: pkg.entity_payload,
-    });
-    return { strategy: "drug_patch", savedAt: new Date().toISOString() };
-  } catch (error) {
-    if (!isUnsupportedSaveError(error)) throw error;
-  }
-
   if (!workflowId) {
     throw new ApiError("Curator workflow is required before draft autosave.", 400, {
       message: "No workflow available for curator draft save.",
     });
   }
 
-  await client.saveWorkflowPackage(workflowId, pkg);
+  const envelope = await client.saveWorkflowPackage(workflowId, pkg);
 
-  return { strategy: "curator_draft", savedAt: new Date().toISOString() };
+  return {
+    strategy: "curator_package",
+    savedAt: new Date().toISOString(),
+    validation: envelope.data.validation as ValidationResult | undefined,
+  };
 }
 
+/** Open or create a draft workflow for the drug editor. */
 export async function ensureDraftWorkflow(
   client: FarmacoGraphClient,
-  drugId: string,
+  drugIdOrSlug: string,
 ): Promise<string> {
+  if (isDrugSlug(drugIdOrSlug)) {
+    const envelope = await client.openDrugWorkflow(drugIdOrSlug);
+    return envelope.data.workflow.id;
+  }
+
   const queue = await client.curatorQueue("draft", { limit: 100 });
-  const existing = queue.data.find((item) => item.entity_id === drugId);
+  const existing = queue.data.find((item) => item.entity_id === drugIdOrSlug);
   if (existing) return existing.id;
 
   const created = await client.createWorkflow({
-    entity_id: drugId,
+    entity_id: drugIdOrSlug,
     entity_type: "Drug",
     notes: "Opened in Studio drug editor",
   });
@@ -104,6 +100,6 @@ export function clearDirtySection(current: string[], sectionId: string): string[
   return current.filter((entry) => entry !== sectionId);
 }
 
-export function describeSaveStrategy(strategy: SaveStrategy): string {
-  return strategy === "drug_patch" ? "Drug PATCH" : "Curator draft";
+export function describeSaveStrategy(strategy: "curator_package"): string {
+  return "Curator package";
 }

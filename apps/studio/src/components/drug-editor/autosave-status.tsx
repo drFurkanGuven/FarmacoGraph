@@ -58,14 +58,18 @@ export function AutosaveStatus({
         <span className="hidden sm:inline">· {formatSavedAt(lastSavedAt)}</span>
       )}
       {strategy && status === "saved" && (
-        <span className="hidden md:inline">· {describeSaveStrategy(strategy as "drug_patch" | "curator_draft")}</span>
+        <span className="hidden md:inline">· {describeSaveStrategy(strategy as "curator_package")}</span>
       )}
       {status === "error" && onRetry && (
         <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={onRetry}>
           Retry
         </Button>
       )}
-      {status === "error" && error && <span className="sr-only">{error}</span>}
+      {status === "error" && error && (
+        <span className="max-w-[14rem] truncate text-destructive" title={error}>
+          {error}
+        </span>
+      )}
     </div>
   );
 }

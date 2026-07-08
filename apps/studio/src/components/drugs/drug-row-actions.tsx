@@ -23,6 +23,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ApiError } from "@/lib/api";
 import { useDrug } from "@/lib/api/react-query/hooks";
 import type { DrugBrowserRow } from "./types";
+import { drugEditorHref } from "./utils";
 
 interface DrugRowActionsProps {
   row: DrugBrowserRow;
@@ -94,7 +95,7 @@ export function DrugRowActions({ row }: DrugRowActionsProps) {
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link href={`/knowledge/drugs/${row.slug}`}>
+            <Link href={drugEditorHref(row.slug)}>
               <ExternalLink className="h-4 w-4" />
               Open drug editor
             </Link>

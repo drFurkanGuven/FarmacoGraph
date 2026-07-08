@@ -45,6 +45,12 @@ class AuthRepository:
             scopes.update(role.scopes or [])
         return sorted(scopes)
 
+    async def get_user_roles(self, user_id: uuid.UUID) -> list[str]:
+        async with self._session_factory() as session:
+            stmt = select(UserRole.role).where(UserRole.user_id == user_id)
+            result = await session.execute(stmt)
+            return sorted({row[0] for row in result.all() if row[0]})
+
     async def get_api_key_by_prefix(self, prefix: str) -> ApiKey | None:
         async with self._session_factory() as session:
             stmt = (

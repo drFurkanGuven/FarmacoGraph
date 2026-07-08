@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import desc, select
+from sqlalchemy import asc, desc, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from farmacograph.db.postgres.models import AuditLog
@@ -59,5 +59,29 @@ class AuditRepository:
             if action:
                 stmt = stmt.where(AuditLog.action == action)
             stmt = stmt.offset(offset).limit(limit)
+            result = await session.execute(stmt)
+            return list(result.scalars().all())
+
+    async def list_for_resource(
+        self,
+        resource_type: str,
+        resource_id: str,
+        *,
+        limit: int = 50,
+        offset: int = 0,
+        ascending: bool = True,
+    ) -> list[AuditLog]:
+        async with self._session_factory() as session:
+            order = asc(AuditLog.timestamp) if ascending else desc(AuditLog.timestamp)
+            stmt = (
+                select(AuditLog)
+                .where(
+                    AuditLog.resource_type == resource_type,
+                    AuditLog.resource_id == resource_id,
+                )
+                .order_by(order)
+                .offset(offset)
+                .limit(limit)
+            )
             result = await session.execute(stmt)
             return list(result.scalars().all())

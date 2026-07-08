@@ -1,7 +1,7 @@
 # Curation Studio Roadmap
 
 > **Product:** [Curation Studio](curation-studio.md) (`apps/studio`)  
-> **Status:** Phase 4.2.1 complete — dashboard + auth; **4.2.2 Drug List** next  
+> **Status:** Phase 4.2 secure curation path complete — dashboard, auth, drug browser, drug editor, validation center  
 > **Backend dependency:** [Phase 4 curator API](phase4-curator.md), [API auth](api.md#auth-current)
 
 The Curation Studio is the official interface for authoring, reviewing, validating, and publishing biomedical knowledge. All Studio features consume the public FarmacoGraph REST API — never Neo4j or PostgreSQL directly.
@@ -16,9 +16,12 @@ The Curation Studio is the official interface for authoring, reviewing, validati
 | `/login` | **Complete** | API key or password via `POST /api/v1/auth/token`; middleware + `AuthGate` guards |
 | `/search` | **Complete** | Drug search via `GET /search` |
 | `/settings` | **Complete** | Manual JWT/API key, session scopes, API URL config |
-| `/knowledge/drugs` | **Placeholder** | Studio 4.2.2 — Drug List (next sprint task) |
-| `/knowledge/diseases`, `/evidence`, `/education`, `/mechanisms` | **Placeholder** | Studio 4.2 |
-| `/graph`, `/validation` | **Placeholder** | Studio 4.3 — Graph Explorer, Validation Center |
+| `/knowledge/drugs` | **Complete** | Drug Browser — merges `GET /drugs`, `GET /search`, `GET /modules`, `GET /curator/queue`; opens editor at `/knowledge/drugs/{slug\|id}` |
+| `/knowledge/drugs/[id]` | **Complete** | Drug Editor — sectioned fields, debounced autosave (`PUT .../package`), live validation |
+| `/validation` | **Complete** | Validation Center — `GET /curator/validation-summary`, queue dry-runs via `POST /curator/validate` |
+| `/knowledge/diseases`, `/education`, `/mechanisms` | **Placeholder** | Studio 4.2+ |
+| `/knowledge/evidence` | **Complete** | Evidence manager — browse/search/create via `GET/POST /evidence` |
+| `/graph` | **Placeholder** | Studio 4.3 — Graph Explorer |
 | `/snapshots` | **Placeholder** | Studio 4.4 |
 | `/activity`, `/users` | **Placeholder** | Soon |
 
@@ -28,23 +31,36 @@ The Curation Studio is the official interface for authoring, reviewing, validati
 
 ## Sprint focus: secure curation path
 
-The current engineering sprint wires the first end-to-end curator workflow in Studio:
+The secure curation path from login through **publish** is **live** in Studio (Drug Editor publish wizard).
 
 ```mermaid
 flowchart LR
-    Login["/login<br/>POST /auth/token"] --> DrugList["/knowledge/drugs<br/>GET /drugs"]
-    DrugList --> Editor["Drug Editor 4.2.3<br/>workflows + validate"]
-    Editor --> Validation["/validation 4.3<br/>POST /curator/validate"]
-    Validation --> Publish["Publish wizard 4.4<br/>submit → approve → publish"]
+    Login["/login<br/>POST /auth/token"] --> DrugList["/knowledge/drugs<br/>GET /drugs + queue"]
+    DrugList --> Editor["/knowledge/drugs/[id]<br/>PUT .../package"]
+    Editor --> PublishUI["Publish wizard<br/>submit → approve → publish"]
 ```
 
 | Task | Deliverable | API dependencies | Status |
 |------|-------------|------------------|--------|
-| API 5.2 | JWT issuance + API key validation | `POST /auth/token`, `POST /auth/refresh` | **Complete** |
+| API 5.2 | JWT issuance + API key validation | `POST /auth/token`, `POST /auth/refresh`, `POST /auth/introspect` | **Complete** |
 | Studio auth | Login page, session refresh, scope guards | Auth endpoints | **Complete** |
-| Studio 4.2.2 | Drug List — pagination, module filter, status badges | `GET /drugs`, `GET /curator/queue` | **Next** |
-| Studio 4.2.3 | Drug Editor — section autosave, context panel | `POST /curator/workflows`, `GET /curator/workflows/{id}`, `POST /curator/validate` | Planned |
-| Studio 4.3 | Validation Center — grouped issues, fix hints | `POST /curator/validate`, `GET /curator/validation-summary` | Planned |
+| Studio 4.2.2 | Drug Browser — pagination, module filter, status badges | `GET /drugs`, `GET /modules`, `GET /curator/queue` | **Complete** |
+| Studio 4.2.3 | Drug Editor — section autosave, context panel | `POST /curator/drugs/{slug}/workflows`, `PUT /curator/workflows/{id}/package`, `POST /curator/validate` | **Complete** |
+| Studio 4.3 | Validation Center — grouped issues, publish readiness | `POST /curator/validate`, `GET /curator/validation-summary` | **Complete** |
+| Studio 4.4 | Publish wizard — submit, approve, publish from UI | `POST /curator/workflows/{id}/submit`, `/approve`, `/publish` | **Complete** |
+
+### Workflow state machine (backend — live)
+
+Enforced in `farmacograph/curator/workflow.py` (FG-C023):
+
+| From | Allowed transitions |
+|------|---------------------|
+| `draft` | → `review` |
+| `review` | → `draft`, `approved` |
+| `approved` | → `published`, `draft` |
+| `published` | → `deprecated` |
+
+Package edits (`PUT .../package`) are permitted only in `draft` and `review`. Publish requires `approved` state and `curator:publish` scope.
 
 ---
 
@@ -57,8 +73,9 @@ gantt
     section Foundation
     4.1 App shell + dashboard     :done, s41, 2026-07, 1M
     section Editors
-    4.2 Drug + evidence editors   :active, s42, after s41, 2M
-    4.3 Mechanism + graph + validation :s43, after s42, 2M
+    4.2 Drug browser + editor   :done, s42, after s41, 2M
+    4.3 Validation center       :done, s43, after s42, 1M
+    4.3 Mechanism + graph       :s43b, after s43, 1M
     4.4 Publish wizard + snapshots :s44, after s43, 2M
     4.5 Polish + a11y + tests     :s45, after s44, 1M
 ```
@@ -77,14 +94,14 @@ gantt
 | Placeholder pages for future modules | Done |
 | Docker standalone build | Done |
 
-### Studio 4.2 — Knowledge editors (in progress)
+### Studio 4.2 — Knowledge editors (drug path complete)
 
 | Deliverable | API dependency | Status |
 |-------------|----------------|--------|
-| **4.2.2 Drug List** | `GET /drugs`, `GET /modules`, `GET /curator/queue` | Next |
-| **4.2.3 Drug Editor** (Obsidian-style) | `POST /curator/workflows`, `GET /curator/workflows/{id}`, `POST /curator/validate` | Planned |
+| **4.2.2 Drug Browser** | `GET /drugs`, `GET /search`, `GET /modules`, `GET /curator/queue` | **Complete** |
+| **4.2.3 Drug Editor** (Obsidian-style) | `POST /curator/drugs/{slug}/workflows`, `PUT /curator/workflows/{id}/package`, `POST /curator/validate` | **Complete** |
 | Disease / indication authoring | Entity endpoints (planned) | Placeholder page |
-| Evidence Manager | Evidence endpoints (planned) | Placeholder page |
+| Evidence Manager | `/evidence` + drug attach endpoints | **Partial** — global browser + Drug Editor section live; API path gaps remain |
 | Educational layer editor | Education endpoints (planned) | Placeholder page |
 | Relationship Editor | Graph write via curator publish | Planned |
 
@@ -99,32 +116,69 @@ The editor is not a long form page. It is a **knowledge workspace**:
 
 The right panel updates as the curator edits so they always see where the drug sits in the graph — essential for consistency at hundreds of entities.
 
-**Exit criteria:** Create and edit a draft drug package in Studio; submit to review queue without CLI.
+**Exit criteria (met for draft editing):** Create and edit a draft drug package in Studio with autosave and live validation.
 
-**Building blocks already in codebase:** `PropertyEditor`, `ValidationBadge`, `ConfidenceBadge`, React Query hooks (`useDrug`, `usePublishedDrugs`), curator mutation methods on `FarmacoGraphClient`.
+**Evidence workflow (partial):** Curators attach or create evidence in the Drug Editor **Evidence** section, set `curator_attestation` in **Provenance**, dry-run validation in the context panel, and review **Evidence readiness** in the Publish wizard. See [§ Evidence workflow](#evidence-workflow-partial).
+
+**Publish workflow (Studio 4.4):** Submit-to-review, approve, and publish are exposed in the Drug Editor **Publish wizard** with role/scope gating for `curator:publish`.
+
+**Building blocks in codebase:** `PropertyEditor`, `ValidationBadge`, `ConfidenceBadge`, drug editor autosave (`apps/studio/src/components/drug-editor/`), `PublishWizard` + `WorkflowStatePanel`, React Query hooks for draft save and publish transitions.
 
 ### Studio 4.3 — Graph and validation
 
 | Deliverable | Technology | Status |
 |-------------|------------|--------|
+| **Validation Center** | Grouped errors from `/curator/validate`, `/curator/validation-summary` | **Complete** |
 | Mechanism Editor | React Flow DAG | Placeholder page |
 | Graph Explorer | Cytoscape.js | Placeholder page |
-| **Validation Center** | Grouped errors from `/curator/validate`, `/curator/validation-summary` | Placeholder page |
 
-Dashboard already surfaces validation summary (`failed_count`, `recent_failures`) from `GET /dashboard`. The dedicated Validation Center will add grouped issue views, drill-down, and fix suggestions.
+The Validation Center (`/validation`) surfaces summary stats, publish readiness, grouped issue sections (errors, warnings, ontology violations, missing evidence), and client-side dry-runs for up to 15 queue items. Auto-refreshes every 30 seconds.
 
-**Exit criteria:** Visualize mechanism DAG; resolve validation errors before submit.
+**Exit criteria (partial):** Resolve validation errors before submit — met via editor + validation center. Mechanism DAG visualization remains planned.
+
+### Evidence workflow (partial)
+
+Evidence readiness is split across **provenance fields**, **validation grouping**, and the **publish wizard** — not a standalone manager UI.
+
+```mermaid
+flowchart LR
+    Editor["Drug Editor<br/>Evidence + Provenance"] --> Validate["POST /curator/validate"]
+    Validate --> Context["Context panel<br/>Package status"]
+    Validate --> Wizard["Publish wizard<br/>Evidence readiness"]
+    Wizard --> Gate["publish_ready gate<br/>attestation + evidence blockers"]
+```
+
+| Component | Path / API | Status |
+|-----------|------------|--------|
+| Evidence editor panel | Drug Editor → **Evidence** | **Live** — attach/create via `evidence-client.ts` |
+| Provenance editor | Drug Editor → **Provenance** | **Live** |
+| Dry-run validation | `POST /curator/validate` | **Live** |
+| Missing evidence panel | `/validation` | **Live** |
+| Publish wizard evidence readiness | Drug Editor → Publish | **Live** — blockers, missing, low-confidence |
+| Global Evidence Manager | `/knowledge/evidence` | **Live** — `EvidenceBrowser` (search, filters, create) |
+| Evidence list/create API | `GET/POST /api/v1/evidence` | **Live** (Neo4j required for writes) |
+| Drug evidence list (OpenAPI) | `GET /drugs/{id}/evidence` | **Gap** — Studio calls `/curator/drugs/{slug}/evidence` instead |
+| Drug attach (backend) | `POST /evidence/{id}/drugs/{drug_id}` | **Live** — UUID drug id; Studio client uses slug path |
+| Assertion `SUPPORTED_BY` UI | Mechanism / relationship editors | **Planned** (4.3+) |
+
+**Client-side attestation gate:** `computePublishReady` requires `entity_payload.provenance.curator_attestation === true` in addition to `valid: true` from the validator.
+
+**Tests:** Unit — `drug-editor/__tests__/package.test.ts`, `drug-editor/__tests__/evidence-helpers.test.ts`, `publish-wizard/validation/__tests__/evidence-gating.test.ts`. E2E — `apps/studio/e2e/evidence-workflow.spec.ts` (Playwright mocks).
+
+**Gaps (honest):** Studio client drug-evidence paths do not match all routed backend endpoints; assertion-level attach not in UI; Neo4j required for evidence writes in production API; context panel shows summary only (full editor in Evidence section).
 
 ### Studio 4.4 — Publish and release
 
-| Deliverable | API dependency |
-|-------------|----------------|
-| Diff Viewer (draft vs published) | Snapshot comparison (planned) |
-| Snapshot Manager | `KnowledgeSnapshot` HTTP API (planned) |
-| Publish Wizard | `/curator/workflows/{id}/approve`, `/publish` |
-| AI Draft Assistant | External LLM plugin (draft only, never auto-publish) |
+| Deliverable | API dependency | Status |
+|-------------|----------------|--------|
+| Diff Viewer (draft vs published) | Snapshot comparison (planned) | Not started |
+| Snapshot Manager | `KnowledgeSnapshot` HTTP API (planned) | Placeholder `/snapshots` route |
+| **Publish Wizard** | `POST /curator/workflows/{id}/submit`, `/approve`, `/publish` | **Complete** — Drug Editor dialog |
+| AI Draft Assistant | External LLM plugin (draft only, never auto-publish) | Planned |
 
-**Exit criteria:** End-to-end publish from Studio with snapshot preview.
+**Exit criteria (met):** End-to-end publish from Studio via Publish wizard; snapshot result shown after publish.
+
+**Dev-only:** Curator transition endpoints remain available via curl/API for automation; production curators use Studio.
 
 ### Studio 4.5 — Production readiness
 
@@ -133,7 +187,7 @@ Dashboard already surfaces validation summary (`failed_count`, `recent_failures`
 | Role-based UI gating (`hasRole`) | Wired to JWT scopes |
 | Activity timeline | `GET /audit-logs` (partial on dashboard) |
 | Background jobs panel | `GET /jobs` (partial on dashboard) |
-| E2E tests (Playwright) | Scaffold in `apps/studio/e2e/` |
+| E2E tests (Playwright) | `apps/studio/e2e/` — drug navigation, publish wizard, **evidence workflow** smoke |
 | Unit tests (Vitest) | API client, auth, utils |
 | Accessibility audit | WCAG 2.1 AA target |
 | Performance (code splitting, virtualized lists) | Large drug lists |
@@ -173,7 +227,54 @@ sequenceDiagram
 
 **Fallback:** If auth endpoints return 404/501 (older API builds), API key login stores a client-only session with default curator scopes; password login prompts for Settings/manual JWT.
 
+**API keys:** Format `fg_{prefix}_{secret}`. Exchange via `grant_type: api_key` on `/auth/token`, or send directly as `Authorization: Bearer fg_…` or `X-API-Key` header. Keys are stored as prefix + SHA-256 hash in PostgreSQL — no self-service key management UI yet.
+
 Key files: `apps/studio/src/lib/auth/`, `apps/studio/src/middleware.ts`
+
+---
+
+## Canonical autosave workflow
+
+Studio drug editing persists drafts through the **curator workflow API** — not direct entity PATCH. Draft packages live in PostgreSQL (`draft_package_json`) until publish writes to Neo4j.
+
+```mermaid
+sequenceDiagram
+    participant UI as Drug Editor
+    participant API as FastAPI
+
+    UI->>API: POST /curator/drugs/{slug}/workflows (open by slug)
+    Note over UI,API: Or GET /drugs/{id} + find draft in queue (UUID)
+    UI->>UI: Field edit → debounce 800ms
+    UI->>API: PUT /curator/workflows/{id}/package
+    API-->>UI: workflow + validation result
+    UI->>API: POST /curator/validate (debounce 600ms, parallel)
+```
+
+| Step | API | Purpose |
+|------|-----|---------|
+| Open workflow | `POST /curator/drugs/{slug}/workflows` | Load or create draft for slug |
+| Bootstrap draft | `POST /curator/workflows` | Create draft when opening by UUID |
+| **Autosave** | `PUT /curator/workflows/{id}/package` | Persist `entity_payload`, `relationships`, `related_entities` |
+| Live validation | `POST /curator/validate` | Dry-run without state transition |
+| Publish (Studio wizard) | `POST .../submit` → `.../approve` → `.../publish` | State machine to Neo4j |
+
+**Transition scopes:** `submit` requires `curator:write`; `approve` and `publish` require `curator:publish`.
+
+Implementation: `apps/studio/src/components/drug-editor/autosave.ts`, `use-drug-editor.ts`. Backend: `farmacograph/api/routers/curator.py`, `farmacograph/services/curator.py`.
+
+### Dev-only / deprecated: manual JSON and shell publishing
+
+The following are **not** curator workflows — development, CI, and emergency recovery only:
+
+| Path | Purpose |
+|------|---------|
+| `scripts/dev-only/publish-drug.sh` | Publish a local JSON package via API (legacy bootstrap) |
+| `scripts/dev-only/publish-stub.sh` | One-time structural stub via API |
+| `scripts/dev-only/bootstrap-cv.sh` | Stub + curriculum queue summary |
+| `staging/` | Internal JSON fixtures |
+| `python3 -m farmacograph init-drug-entry` | Scaffold new drug JSON entry |
+
+Curators must use Curation Studio or the curator REST API. See [scripts/dev-only/README.md](../scripts/dev-only/README.md).
 
 ---
 
@@ -212,17 +313,23 @@ Implemented in `apps/studio/src/lib/api/client.ts`:
 | `health()` | `GET /health` | Dashboard |
 | `info()` | `GET /info` | Dashboard |
 | `statistics()` | `GET /statistics` | Dashboard |
-| `modules()` | `GET /modules` | Hook only |
-| `curriculum(slug)` | `GET /modules/{slug}/curriculum` | Dashboard |
-| `curatorQueue(state)` | `GET /curator/queue` | Dashboard |
-| `drugs(module?)` | `GET /drugs` | Dashboard fallback |
-| `search(q)` | `GET /search` | Search page |
-| `getDrug(id)` | `GET /drugs/{id}` | Hook only |
-| `createWorkflow(…)` | `POST /curator/workflows` | Hook only |
-| `validatePackage(…)` | `POST /curator/validate` | Hook only |
-| `submitWorkflow` / `approveWorkflow` / `publishWorkflow` | Curator transitions | Hook only |
+| `modules()` | `GET /modules` | Drug Browser |
+| `curriculum(slug)` | `GET /modules/{slug}/curriculum` | Dashboard, Drug Browser |
+| `curatorQueue(state)` | `GET /curator/queue` | Dashboard, Drug Browser, Drug Editor |
+| `drugs(…)` | `GET /drugs` | Drug Browser, Dashboard fallback |
+| `search(q)` | `GET /search` | Search page, Drug Browser |
+| `getDrug(id)` | `GET /drugs/{id}` | Drug Editor (UUID load) |
+| `openDrugWorkflow(slug)` | `POST /curator/drugs/{slug}/workflows` | Drug Editor |
+| `createWorkflow(…)` | `POST /curator/workflows` | Drug Editor |
+| `getWorkflow(id)` | `GET /curator/workflows/{id}` | Drug Editor |
+| `saveWorkflowPackage(…)` | `PUT /curator/workflows/{id}/package` | Drug Editor autosave |
+| `validatePackage(…)` | `POST /curator/validate` | Drug Editor, Validation Center |
+| `validationSummary()` | `GET /curator/validation-summary` | Validation Center |
+| `auditLogs()` | `GET /audit-logs` | Drug Editor context panel |
+| `explain(…)` | `GET /explain` | Drug Editor context panel |
+| `submitWorkflow` / `approveWorkflow` / `publishWorkflow` | Curator transitions | **Wired** — Publish wizard mutations + cache invalidation |
 
-**Not yet wired to feature UI:** drug list, drug editor, validation center, publish wizard, audit logs, jobs (dashboard composes some of these via `/dashboard`).
+**Not yet wired to feature UI:** graph explorer, mechanism editor, dedicated activity/users pages, snapshot manager page. Dashboard composes some ops data via `GET /dashboard`.
 
 ---
 

@@ -140,16 +140,89 @@ export interface OpenDrugWorkflowData {
   validation: PackageValidation;
 }
 
+export type WorkflowState = "draft" | "review" | "approved" | "published" | "deprecated";
+
+export interface WorkflowActorRef {
+  actor_id: string | null;
+  at: string | null;
+}
+
+export interface WorkflowAutosaveInfo {
+  at: string | null;
+  by: string | null;
+}
+
+export interface WorkflowValidationState {
+  at: string | null;
+  valid: boolean;
+  error_count: number;
+  warning_count: number;
+  publish_ready: boolean;
+  issues: Record<string, unknown>[];
+}
+
+export interface WorkflowApprovalState {
+  status: string | null;
+  approved_by: string | null;
+  approved_at: string | null;
+}
+
+export interface WorkflowSnapshotRef {
+  id: string | null;
+  version_tag: string | null;
+  status: string | null;
+  module: string | null;
+  released_at: string | null;
+  entity_count: number | null;
+  relationship_count: number | null;
+}
+
+export interface DrugWorkflowState {
+  slug: string;
+  entity_id: string;
+  workflow_id: string | null;
+  status: WorkflowState | null;
+  curator: WorkflowActorRef | null;
+  reviewer: WorkflowActorRef | null;
+  approval: WorkflowApprovalState | null;
+  last_autosave: WorkflowAutosaveInfo | null;
+  last_validation: WorkflowValidationState;
+  publish_ready: boolean;
+  allowed_transitions: WorkflowState[];
+  snapshot: WorkflowSnapshotRef | null;
+  package: DrugPackage | null;
+}
+
 export interface WorkflowItem {
   id: string;
   entity_id: string;
   entity_type: string;
-  state: string;
+  state: WorkflowState;
   notes: string | null;
   entity_label?: string | null;
   entity_slug?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
+}
+
+export interface GraphWriteResult {
+  available: boolean;
+  status: string;
+}
+
+export interface PublishValidationSummary {
+  valid: boolean;
+  publish_ready: boolean;
+}
+
+export interface PublishWorkflowResult {
+  workflow: WorkflowItem;
+  published_slug: string | null;
+  dataset_version: string | null;
+  published_at: string | null;
+  graph_write: GraphWriteResult;
+  snapshot: WorkflowSnapshotRef | null;
+  validation_summary: PublishValidationSummary;
 }
 
 export interface DrugSummary {
@@ -194,6 +267,27 @@ export interface AuditLogItem {
   resource_type: string;
   resource_id: string | null;
   actor_id: string | null;
+  diff: Record<string, unknown> | null;
+}
+
+export type WorkflowTimelineKind =
+  | "workflow_created"
+  | "autosaved"
+  | "validation_run"
+  | "submitted"
+  | "approved"
+  | "published"
+  | "publish_failed"
+  | "snapshot_created"
+  | "unknown";
+
+export interface WorkflowTimelineEvent {
+  id: string;
+  kind: WorkflowTimelineKind;
+  action: string;
+  timestamp: string | null;
+  actor_id: string | null;
+  detail: string | null;
   diff: Record<string, unknown> | null;
 }
 

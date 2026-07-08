@@ -17,7 +17,7 @@ from farmacograph.curator.publish_validator import (
     require_valid_publish_package,
     validate_publish_package,
 )
-from farmacograph.curator.workflow import InvalidTransitionError
+from farmacograph.curator.workflow import InvalidTransitionError, allowed_transitions
 from farmacograph.db.postgres.models import CuratorWorkflow
 from farmacograph.events.bus import EventBus
 from farmacograph.repositories.audit import AuditRepository
@@ -29,6 +29,19 @@ from farmacograph.repositories.outbox import OutboxRepository
 from farmacograph.services.snapshot import SnapshotService
 from farmacograph.validators.base import ValidationSeverity
 from farmacograph.workers.graph_validation import GraphValidationWorker
+
+WORKFLOW_RESOURCE_TYPE = "CuratorWorkflow"
+
+ACTION_TIMELINE_KIND: dict[str, str] = {
+    "curator.draft_created": "workflow_created",
+    "curator.draft_saved": "autosaved",
+    "curator.validated": "validation_run",
+    "curator.submitted": "submitted",
+    "curator.approved": "approved",
+    "curator.published": "published",
+    "curator.publish_failed": "publish_failed",
+    "curator.snapshot_created": "snapshot_created",
+}
 
 
 class CuratorService:
@@ -68,7 +81,7 @@ class CuratorService:
         )
         await self._audit.log(
             "curator.draft_created",
-            "CuratorWorkflow",
+            WORKFLOW_RESOURCE_TYPE,
             resource_id=str(workflow.id),
             actor_id=actor_id,
             workspace_id=workspace_id,
@@ -157,6 +170,13 @@ class CuratorService:
                 actor_id=actor_id,
                 structural_stub=entity_payload.get("slug", "").endswith("structural-stub"),
             )
+            await self._audit.log(
+                "curator.snapshot_created",
+                WORKFLOW_RESOURCE_TYPE,
+                resource_id=str(workflow_id),
+                actor_id=actor_id,
+                diff={"version_tag": dataset_version, "module": module},
+            )
 
         event = self._bus.build_event(
             "DrugPublished" if label == "Drug" else "KnowledgeValidated",
@@ -166,6 +186,28 @@ class CuratorService:
         )
         await self._bus.publish(event)
         return updated
+
+    async def build_publish_result_async(
+        self,
+        workflow: CuratorWorkflow,
+        package: dict[str, Any],
+    ) -> dict[str, Any]:
+        entity_payload = package.get("entity_payload", package)
+        version_tag = package.get("dataset_version") or entity_payload.get("dataset_version")
+        pkg_for_snapshot = {**package, "dataset_version": version_tag}
+        snapshot_ref = await self._resolve_workflow_snapshot(workflow, pkg_for_snapshot)
+        graph_available = self._writer.is_available
+        return {
+            "published_slug": entity_payload.get("slug"),
+            "dataset_version": version_tag,
+            "published_at": workflow.updated_at,
+            "graph_write": {
+                "available": graph_available,
+                "status": "success" if graph_available else "skipped",
+            },
+            "snapshot": snapshot_ref,
+            "validation_summary": {"valid": True, "publish_ready": True},
+        }
 
     async def get_queue(self, state: str = "review", *, limit: int = 50) -> list[CuratorWorkflow]:
         return await self._curator.list_by_state(state, limit=limit)
@@ -191,12 +233,63 @@ class CuratorService:
             raise ValidationError(str(exc)) from exc
         await self._audit.log(
             action,
-            "CuratorWorkflow",
+            WORKFLOW_RESOURCE_TYPE,
             resource_id=str(workflow_id),
             actor_id=actor_id,
             diff={"to_state": to_state},
         )
         return workflow
+
+    async def log_validation_run(
+        self,
+        workflow_id: uuid.UUID,
+        validation: dict[str, Any],
+        *,
+        actor_id: uuid.UUID | None = None,
+    ) -> None:
+        await self._audit.log(
+            "curator.validated",
+            WORKFLOW_RESOURCE_TYPE,
+            resource_id=str(workflow_id),
+            actor_id=actor_id,
+            diff={
+                "valid": validation.get("valid"),
+                "error_count": validation.get("error_count", 0),
+                "warning_count": validation.get("warning_count", 0),
+            },
+        )
+
+    async def log_publish_failure(
+        self,
+        workflow_id: uuid.UUID,
+        message: str,
+        *,
+        actor_id: uuid.UUID | None = None,
+    ) -> None:
+        await self._audit.log(
+            "curator.publish_failed",
+            WORKFLOW_RESOURCE_TYPE,
+            resource_id=str(workflow_id),
+            actor_id=actor_id,
+            diff={"message": message},
+        )
+
+    async def get_workflow_timeline(
+        self,
+        workflow_id: uuid.UUID,
+        *,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> list[dict[str, Any]]:
+        await self.get_workflow(workflow_id)
+        entries = await self._audit.list_for_resource(
+            WORKFLOW_RESOURCE_TYPE,
+            str(workflow_id),
+            limit=limit,
+            offset=offset,
+            ascending=True,
+        )
+        return [_timeline_entry(entry) for entry in entries]
 
     async def list_drugs_browser(
         self,
@@ -292,6 +385,127 @@ class CuratorService:
         package = await self.resolve_package(slug, workflow)
         return package, workflow
 
+    async def get_drug_workflow_state(self, slug: str) -> dict[str, Any]:
+        """Aggregate workflow, validation, actors, and snapshot for a curriculum drug slug."""
+        entity_id = drug_entity_id(slug)
+        workflow = await self._curator.get_by_entity(entity_id)
+        package = await self.resolve_package(slug, workflow)
+        validation = self._validate_package_dict(package)
+
+        audit_refs: dict[str, Any] = {}
+        if workflow is not None:
+            audit_refs = await self._workflow_audit_refs(workflow.id)
+
+        created = audit_refs.get("created")
+        autosaved = audit_refs.get("autosaved")
+        approved = audit_refs.get("approved")
+
+        curator_actor = None
+        curator_at = None
+        if autosaved is not None:
+            curator_actor = autosaved.actor_id
+            curator_at = autosaved.timestamp
+        elif created is not None:
+            curator_actor = created.actor_id
+            curator_at = created.timestamp
+        elif workflow is not None:
+            curator_actor = workflow.assigned_to
+            curator_at = workflow.created_at
+
+        autosave_at = autosaved.timestamp if autosaved else None
+        if autosave_at is None and workflow is not None and workflow.draft_package_json:
+            autosave_at = workflow.updated_at
+
+        autosave_by = autosaved.actor_id if autosaved else None
+
+        reviewer_actor = approved.actor_id if approved else None
+        reviewer_at = approved.timestamp if approved else None
+
+        approval_status = workflow.state if workflow else None
+        approved_by = approved.actor_id if approved else None
+        approved_at = approved.timestamp if approved else None
+
+        validation_at = autosave_at
+        if validation_at is None and workflow is not None:
+            validation_at = workflow.updated_at
+
+        snapshot_ref = await self._resolve_workflow_snapshot(workflow, package)
+
+        status = workflow.state if workflow else None
+        transitions = allowed_transitions(status) if status else []
+
+        return {
+            "slug": slug,
+            "entity_id": entity_id,
+            "workflow_id": workflow.id if workflow else None,
+            "status": status,
+            "curator": {"actor_id": curator_actor, "at": curator_at},
+            "reviewer": {"actor_id": reviewer_actor, "at": reviewer_at},
+            "approval": {
+                "status": approval_status,
+                "approved_by": approved_by,
+                "approved_at": approved_at,
+            },
+            "last_autosave": {"at": autosave_at, "by": autosave_by},
+            "last_validation": {
+                "at": validation_at,
+                "valid": validation["valid"],
+                "error_count": validation["error_count"],
+                "warning_count": validation["warning_count"],
+                "publish_ready": validation.get("publish_ready", False),
+                "issues": validation.get("issues", []),
+            },
+            "publish_ready": validation.get("publish_ready", False),
+            "allowed_transitions": transitions,
+            "snapshot": snapshot_ref,
+            "package": package,
+        }
+
+    async def _workflow_audit_refs(self, workflow_id: uuid.UUID) -> dict[str, Any]:
+        logs = await self._audit.list_for_resource(
+            WORKFLOW_RESOURCE_TYPE, str(workflow_id), limit=100
+        )
+        by_action: dict[str, list[Any]] = {}
+        for log in logs:
+            by_action.setdefault(log.action, []).append(log)
+
+        def latest(action: str):
+            entries = by_action.get(action, [])
+            return entries[-1] if entries else None
+
+        def first(action: str):
+            entries = by_action.get(action, [])
+            return entries[0] if entries else None
+
+        return {
+            "created": first("curator.draft_created"),
+            "autosaved": latest("curator.draft_saved"),
+            "submitted": latest("curator.submitted"),
+            "approved": latest("curator.approved"),
+            "published": latest("curator.published"),
+        }
+
+    async def _resolve_workflow_snapshot(
+        self, workflow: CuratorWorkflow | None, package: dict[str, Any]
+    ) -> dict[str, Any] | None:
+        if workflow is None or workflow.state not in ("published", "deprecated"):
+            return None
+        version_tag = package.get("dataset_version")
+        if not version_tag:
+            return None
+        snapshot = await self._snapshots.get_by_version(version_tag)
+        if snapshot is None:
+            return None
+        return {
+            "id": snapshot.id,
+            "version_tag": snapshot.version_tag,
+            "status": snapshot.status,
+            "module": snapshot.module,
+            "released_at": snapshot.released_at,
+            "entity_count": snapshot.entity_count,
+            "relationship_count": snapshot.relationship_count,
+        }
+
     async def resolve_package(
         self, slug: str, workflow: CuratorWorkflow | None = None
     ) -> dict[str, Any]:
@@ -317,10 +531,22 @@ class CuratorService:
         updated = await self._curator.save_draft_package(workflow_id, package)
         await self._audit.log(
             "curator.draft_saved",
-            "CuratorWorkflow",
+            WORKFLOW_RESOURCE_TYPE,
             resource_id=str(workflow_id),
             actor_id=actor_id,
             diff={"slug": package.get("entity_payload", {}).get("slug")},
+        )
+        validation = self._validate_package_dict(package)
+        await self._audit.log(
+            "curator.validated",
+            WORKFLOW_RESOURCE_TYPE,
+            resource_id=str(workflow_id),
+            actor_id=actor_id,
+            diff={
+                "valid": validation["valid"],
+                "error_count": validation["error_count"],
+                "warning_count": validation["warning_count"],
+            },
         )
         return updated
 
@@ -347,3 +573,46 @@ class CuratorService:
             "publish_ready": result.valid
             and entity.get("provenance", {}).get("curator_attestation") is True,
         }
+
+
+def _timeline_entry(entry) -> dict[str, Any]:
+    action = entry.action
+    diff = entry.diff_json or {}
+    return {
+        "id": str(entry.id),
+        "kind": ACTION_TIMELINE_KIND.get(action, "unknown"),
+        "action": action,
+        "timestamp": entry.timestamp.isoformat() if entry.timestamp else None,
+        "actor_id": str(entry.actor_id) if entry.actor_id else None,
+        "detail": _timeline_detail(action, diff),
+        "diff": diff,
+    }
+
+
+def _timeline_detail(action: str, diff: dict[str, Any]) -> str | None:
+    if action == "curator.draft_saved":
+        slug = diff.get("slug")
+        return f"Draft saved for {slug}" if slug else "Draft autosaved"
+    if action == "curator.validated":
+        if diff.get("valid"):
+            warnings = diff.get("warning_count", 0)
+            return f"Validation passed ({warnings} warnings)" if warnings else "Validation passed"
+        errors = diff.get("error_count", 0)
+        return f"Validation failed ({errors} errors)"
+    if action == "curator.submitted":
+        return "Submitted for review"
+    if action == "curator.approved":
+        return "Approved for publish"
+    if action == "curator.published":
+        return "Published to knowledge graph"
+    if action == "curator.publish_failed":
+        return str(diff.get("message") or "Publish failed")
+    if action == "curator.snapshot_created":
+        version = diff.get("version_tag")
+        module = diff.get("module")
+        if version and module:
+            return f"Snapshot {version} for {module}"
+        return "Knowledge snapshot created"
+    if action == "curator.draft_created":
+        return "Workflow created"
+    return None

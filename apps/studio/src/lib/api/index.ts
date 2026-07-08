@@ -67,4 +67,5 @@ export type {
 } from "./interceptors";
 
 export * from "./types";
+export * from "./evidence";
 export * from "./react-query";

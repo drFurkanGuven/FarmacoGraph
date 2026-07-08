@@ -7,6 +7,7 @@ import uuid
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from farmacograph.core.exceptions import NotFoundError
 from farmacograph.curator.workflow import validate_transition
 from farmacograph.db.postgres.models import CuratorWorkflow
 
@@ -100,7 +101,7 @@ class CuratorRepository:
     ) -> CuratorWorkflow:
         workflow = await self.get(workflow_id)
         if workflow is None:
-            raise ValueError(f"Workflow not found: {workflow_id}")
+            raise NotFoundError(f"Workflow not found: {workflow_id}")
         validate_transition(workflow.state, to_state)
         async with self._session_factory() as session:
             values: dict = {"state": to_state}

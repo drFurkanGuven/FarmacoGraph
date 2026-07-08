@@ -51,10 +51,10 @@ Full context: [platform-architecture.md](../platform-architecture.md#architectur
 
 | ID | Decision | Rationale | Implemented |
 |----|----------|-----------|-------------|
-| ADR-020 | Studio is the only curator UI | JSON/scripts are bootstrap only | Phase 4.1 shell complete |
+| ADR-020 | Studio is the only curator UI | JSON/scripts are bootstrap only | Yes — drug browser, editor, validation center live |
 | ADR-021 | Studio never touches databases | API-first consistency | Yes — `FarmacoGraphClient` only |
-| ADR-022 | AI drafts, humans publish | Clinical accountability | Planned — Studio 4.4 |
-| ADR-023 | Separate education editor | Layer separation in UI | Planned — Studio 4.2 |
+| ADR-022 | AI drafts, humans publish | Clinical accountability | Partial — draft editing live; publish wizard (4.4) planned |
+| ADR-023 | Separate education editor | Layer separation in UI | Planned — education editor not built |
 | ADR-024 | Next.js App Router + React Query | Typed client, server-state caching | Yes — `apps/studio` |
 
 Full context: [studio-roadmap.md](../studio-roadmap.md#architecture-decisions).
@@ -65,7 +65,7 @@ Full context: [studio-roadmap.md](../studio-roadmap.md#architecture-decisions).
 
 | ID | Decision | Rationale | Implemented |
 |----|----------|-----------|-------------|
-| ADR-025 | Dual auth: JWT sessions + API keys | Studio login for humans; API keys for integrations | Yes — `POST /auth/token`, Bearer validation |
+| ADR-025 | Dual auth: JWT sessions + API keys | Studio login for humans; API keys for integrations | Yes — `POST /auth/token`, `/auth/refresh`, `/auth/introspect` |
 
 | Sub-decision | Choice |
 |--------------|--------|

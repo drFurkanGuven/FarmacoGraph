@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, PanelRight } from "lucide-react";
+import { ArrowLeft, PanelRight, Rocket } from "lucide-react";
+import type { WorkflowItem } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -19,6 +20,7 @@ import { DrugContextPanel } from "./drug-context-panel";
 import { DrugSectionEditor } from "./drug-section-editor";
 import { DrugSectionNav } from "./drug-section-nav";
 import { useDrugEditor } from "./use-drug-editor";
+import { PublishWizard } from "@/components/publish-wizard";
 
 export interface DrugEditorWorkspaceProps {
   drugId: string;
@@ -39,8 +41,16 @@ function EditorSkeleton() {
 
 export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
   const [contextOpen, setContextOpen] = useState(false);
-  const { loading, loadError, snapshot, activeSection, setActiveSection, updateField, retrySave } =
+  const [publishOpen, setPublishOpen] = useState(false);
+  const [workflowOverride, setWorkflowOverride] = useState<WorkflowItem | null>(null);
+  const { loading, loadError, snapshot, activeSection, setActiveSection, updateField, retrySave, retryLoad } =
     useDrugEditor({ drugId });
+
+  const workflow = workflowOverride ?? snapshot.workflow;
+
+  const handleWorkflowUpdated = useCallback((nextWorkflow: WorkflowItem) => {
+    setWorkflowOverride(nextWorkflow);
+  }, []);
 
   if (loading) {
     return <EditorSkeleton />;
@@ -48,8 +58,19 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
 
   if (loadError) {
     return (
-      <div className="p-4">
-        <ErrorState title="Unable to open drug editor" message={loadError} />
+      <div className="space-y-4 p-4">
+        <Button variant="ghost" size="sm" asChild>
+          <Link href="/knowledge/drugs">
+            <ArrowLeft className="h-4 w-4" />
+            Back to drug browser
+          </Link>
+        </Button>
+        <ErrorState
+          title="Unable to open drug editor"
+          message={loadError}
+          onRetry={retryLoad}
+          retryLabel="Try again"
+        />
       </div>
     );
   }
@@ -79,6 +100,10 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
         </div>
 
         <div className="flex items-center gap-2">
+          <Button variant="default" size="sm" onClick={() => setPublishOpen(true)}>
+            <Rocket className="h-4 w-4" />
+            Publish
+          </Button>
           <AutosaveStatus
             status={snapshot.saveStatus}
             error={snapshot.saveError}
@@ -120,13 +145,19 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
           <DrugSectionEditor
             section={activeSection}
             pkg={snapshot.package}
+            drugId={drugId}
+            validation={snapshot.validation}
             disabled={snapshot.saveStatus === "saving"}
             onFieldChange={(fieldKey, value) => updateField(snapshot.activeSectionId, fieldKey, value)}
           />
         </main>
 
         <div className="hidden border-l lg:block">
-          <DrugContextPanel snapshot={snapshot} className="h-full" />
+          <DrugContextPanel
+            snapshot={{ ...snapshot, workflow }}
+            onOpenEvidenceSection={() => setActiveSection("evidence")}
+            className="h-full"
+          />
         </div>
       </div>
 
@@ -136,9 +167,30 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
             <DrawerTitle>Live context</DrawerTitle>
             <DrawerDescription>Workflow, validation, and graph context for this drug.</DrawerDescription>
           </DrawerHeader>
-          <DrugContextPanel snapshot={snapshot} className="h-[calc(100vh-8rem)]" />
+          <DrugContextPanel
+            snapshot={{ ...snapshot, workflow }}
+            onOpenEvidenceSection={() => {
+              setActiveSection("evidence");
+              setContextOpen(false);
+            }}
+            className="h-[calc(100vh-8rem)]"
+          />
         </DrawerContent>
       </Drawer>
+
+      <PublishWizard
+        open={publishOpen}
+        onOpenChange={setPublishOpen}
+        drugId={drugId}
+        workflow={workflow}
+        package={snapshot.package}
+        saveStatus={snapshot.saveStatus}
+        dirtySections={snapshot.dirtySections}
+        editorValidation={snapshot.validation}
+        validationPending={snapshot.validationPending}
+        onWorkflowUpdated={handleWorkflowUpdated}
+        onNavigateSection={setActiveSection}
+      />
     </div>
   );
 }

@@ -25,9 +25,34 @@ sudo systemctl reload nginx
 
 ## Verify
 
+### Studio curation path (live)
+
 - Studio: https://farmacograph.furkanguven.space/studio/
 - API health: https://farmacograph.furkanguven.space/api/v1/health
-- Dashboard should load queue/stats from the same-origin API (`/api/v1`)
+- Login → Drug Browser → Drug Editor (`/knowledge/drugs/{slug}`) → autosave → validation
+- Validation Center (`/validation`) — publish readiness panel, queue dry-runs
+- Dashboard loads queue/stats from the same-origin API (`/api/v1`)
+
+### Publish workflow (Studio)
+
+Login → Drug Browser → Drug Editor → autosave → validate → **Publish** button → submit / approve / publish. Requires `curator:publish` for approve and publish steps.
+
+Workflow transitions run in the Drug Editor **Publish wizard**. The right sidebar shows workflow state and an activity timeline (`GET /api/v1/curator/workflows/{id}/timeline`).
+
+```
+draft → review → approved → published
+```
+
+| Step | Endpoint | Scope |
+|------|----------|-------|
+| Autosave draft | `PUT /api/v1/curator/workflows/{id}/package` | `curator:write` |
+| Submit for review | `POST /api/v1/curator/workflows/{id}/submit` | `curator:write` |
+| Approve | `POST /api/v1/curator/workflows/{id}/approve` | `curator:publish` |
+| Publish to graph | `POST /api/v1/curator/workflows/{id}/publish` | `curator:publish` |
+
+Obtain a JWT with `curator:publish` via `POST /api/v1/auth/token` (password or API key grant). Full reference: [api.md §1.3](api.md#13-curator-publish-workflow).
+
+**Do not use in production curation:** `scripts/dev-only/publish-drug.sh`, `publish-stub.sh`, `bootstrap-cv.sh`, or manual `staging/` JSON edits. These are dev-only / deprecated bootstrap tools. See [scripts/dev-only/README.md](../scripts/dev-only/README.md).
 
 ## Environment (optional `.env` on server)
 
@@ -35,7 +60,15 @@ sudo systemctl reload nginx
 FG_HOST_STUDIO_PORT=3001
 FG_STUDIO_API_URL=https://farmacograph.furkanguven.space/api/v1
 FG_STUDIO_BASE_PATH=/studio
+FG_NEO4J_ENABLED=true
+FG_JWT_SECRET_KEY=<non-default-secret>
 ```
+
+**Production requirements:**
+
+- Non-default `FG_JWT_SECRET_KEY` (startup fails if missing or default)
+- `FG_NEO4J_ENABLED=true` for publish to write to the knowledge graph
+- PostgreSQL for auth, workflow state, and draft packages
 
 ## Troubleshooting
 
@@ -46,3 +79,5 @@ curl -s http://127.0.0.1:3001/studio/ | head -20
 ```
 
 If Studio build fails (memory): `docker system prune` and retry with swap enabled.
+
+**Publish failures:** Check API logs for validation errors (`400`), workflow state mismatches (`Cannot publish from state: …`), or Neo4j connectivity (`FG_NEO4J_ENABLED`). Inspect `GET /api/v1/curator/queue?state=review` and `GET /api/v1/curator/validation-summary`.

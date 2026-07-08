@@ -39,3 +39,11 @@ def validate_transition(from_state: str, to_state: str) -> None:
     allowed = VALID_TRANSITIONS.get(from_ws, set())
     if to_ws not in allowed:
         raise InvalidTransitionError(from_state, to_state)
+
+
+def allowed_transitions(from_state: str) -> list[str]:
+    try:
+        from_ws = WorkflowState(from_state)
+    except ValueError:
+        return []
+    return sorted(s.value for s in VALID_TRANSITIONS.get(from_ws, set()))

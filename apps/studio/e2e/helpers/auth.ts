@@ -16,6 +16,18 @@ const E2E_SESSION = {
 
 /** Bypass middleware and client auth guards for protected Studio routes during smoke E2E. */
 export async function authenticateStudio(page: Page): Promise<void> {
+  const port = process.env.PLAYWRIGHT_PORT ?? "3000";
+  const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${port}`;
+
+  await page.context().addCookies([
+    {
+      name: AUTH_COOKIE_NAME,
+      value: "1",
+      url: baseURL,
+      sameSite: "Lax",
+    },
+  ]);
+
   await page.addInitScript(
     ({ cookieName, sessionKey, session }) => {
       localStorage.setItem(sessionKey, JSON.stringify(session));

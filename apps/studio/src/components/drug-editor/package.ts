@@ -44,7 +44,7 @@ export function createEmptyDrugPackage(drugId: string, module = "cardiovascular"
         updated_at: timestamp,
         created_by: "",
         source: "manual",
-        curator_attestation: true,
+        curator_attestation: false,
       },
       versioning: {
         dataset_version: "2026.1.0",

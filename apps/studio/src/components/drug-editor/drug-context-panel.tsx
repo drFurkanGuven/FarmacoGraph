@@ -2,26 +2,25 @@
 
 import { useMemo } from "react";
 import {
-  Activity,
   GitBranch,
   HeartPulse,
   Loader2,
   Network,
   ShieldCheck,
-  Workflow,
 } from "lucide-react";
 import { ValidationBadge } from "@/components/ui";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { EmptyState } from "@/components/ui/empty-state";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { StatusBadge } from "@/components/ui/status-badge";
-import { useAuditLogs, useExplain } from "@/lib/hooks/use-dashboard";
+import { WorkflowStatePanel } from "@/components/publish-wizard/workflow-state-panel";
+import { WorkflowTimeline } from "@/components/workflow-timeline";
+import { DrugEvidencePanel } from "./drug-evidence-panel";
 import { relationshipCounts } from "./package";
 import type { DrugEditorSnapshot } from "./types";
 
 export interface DrugContextPanelProps {
   snapshot: DrugEditorSnapshot;
+  onOpenEvidenceSection?: () => void;
   className?: string;
 }
 
@@ -45,15 +44,14 @@ function ContextMetric({
   );
 }
 
-export function DrugContextPanel({ snapshot, className }: DrugContextPanelProps) {
-  const slug = String(snapshot.package.entity_payload.slug ?? "");
+export function DrugContextPanel({ snapshot, onOpenEvidenceSection, className }: DrugContextPanelProps) {
   const counts = useMemo(() => relationshipCounts(snapshot.package), [snapshot.package]);
-  const auditQuery = useAuditLogs({ resourceType: "Drug", limit: 20 });
-  const explainQuery = useExplain(slug, undefined);
-
-  const recentActivity = useMemo(() => {
-    return (auditQuery.data?.data ?? []).filter((entry) => entry.resource_id === snapshot.drugId).slice(0, 5);
-  }, [auditQuery.data?.data, snapshot.drugId]);
+  const workflowId = snapshot.workflow?.id ?? null;
+  const entityId = String(snapshot.package.entity_payload.id ?? snapshot.drugId);
+  const slug =
+    typeof snapshot.package.entity_payload.slug === "string" && snapshot.package.entity_payload.slug
+      ? snapshot.package.entity_payload.slug
+      : null;
 
   const validationStatus = snapshot.validationPending
     ? "pending"
@@ -74,35 +72,7 @@ export function DrugContextPanel({ snapshot, className }: DrugContextPanelProps)
             </h3>
           </div>
 
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-sm">
-                <Workflow className="h-4 w-4" />
-                Workflow
-              </CardTitle>
-              <CardDescription>Curator draft state for this entity.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              {snapshot.workflow ? (
-                <>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-muted-foreground">State</span>
-                    <StatusBadge status={snapshot.workflow.state === "draft" ? "draft" : "processing"} />
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-muted-foreground">Workflow ID</span>
-                    <span className="truncate font-mono text-xs">{snapshot.workflow.id}</span>
-                  </div>
-                </>
-              ) : (
-                <EmptyState
-                  title="No workflow yet"
-                  description="A curator workflow is created automatically on first autosave."
-                  className="py-6"
-                />
-              )}
-            </CardContent>
-          </Card>
+          <WorkflowStatePanel snapshot={snapshot} />
 
           <Card>
             <CardHeader className="pb-3">
@@ -110,7 +80,7 @@ export function DrugContextPanel({ snapshot, className }: DrugContextPanelProps)
                 <ShieldCheck className="h-4 w-4" />
                 Validation
               </CardTitle>
-              <CardDescription>Debounced dry-run against curator validators.</CardDescription>
+              <CardDescription>Same dry-run state used by the publish wizard.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-center justify-between gap-2">
@@ -136,60 +106,25 @@ export function DrugContextPanel({ snapshot, className }: DrugContextPanelProps)
             </CardContent>
           </Card>
 
+          <DrugEvidencePanel
+            drugId={snapshot.drugId}
+            entityId={entityId}
+            slug={slug}
+            validation={snapshot.validation}
+            onOpenSection={onOpenEvidenceSection}
+          />
+
           <div className="grid gap-2">
             <ContextMetric icon={<GitBranch className="h-4 w-4" />} label="Mechanism roots" value={counts.mechanisms} />
             <ContextMetric icon={<HeartPulse className="h-4 w-4" />} label="Indications" value={counts.indications} />
             <ContextMetric icon={<Network className="h-4 w-4" />} label="Drug classes" value={counts.classes} />
           </div>
 
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-sm">
-                <Activity className="h-4 w-4" />
-                Recent activity
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {auditQuery.isLoading ? (
-                <p className="text-sm text-muted-foreground">Loading audit events…</p>
-              ) : recentActivity.length ? (
-                <ul className="space-y-2 text-xs">
-                  {recentActivity.map((entry) => (
-                    <li key={entry.id} className="rounded-md border px-2 py-1.5">
-                      <p className="font-medium">{entry.action}</p>
-                      <p className="text-muted-foreground">{entry.timestamp ?? "Unknown time"}</p>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-sm text-muted-foreground">No recent audit events for this drug.</p>
-              )}
-            </CardContent>
-          </Card>
-
-          {slug && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm">Explain preview</CardTitle>
-                <CardDescription>Live mechanism query for the current slug.</CardDescription>
-              </CardHeader>
-              <CardContent className="text-xs text-muted-foreground">
-                {explainQuery.isLoading ? (
-                  <p>Loading explain response…</p>
-                ) : explainQuery.isError ? (
-                  <p>Explain API unavailable for this slug.</p>
-                ) : (
-                  <pre className="max-h-40 overflow-auto whitespace-pre-wrap rounded-md border bg-muted/20 p-2 font-mono text-[11px]">
-                    {JSON.stringify(explainQuery.data?.data ?? {}, null, 2)}
-                  </pre>
-                )}
-              </CardContent>
-            </Card>
-          )}
+          {workflowId && <WorkflowTimeline workflowId={workflowId} limit={8} />}
 
           <Separator />
           <p className="text-[11px] leading-relaxed text-muted-foreground">
-            Context updates as you edit. Graph neighborhood and publish preview endpoints are planned for Studio 4.3.
+            Open the publish wizard from the header to submit, approve, and publish this drug.
           </p>
         </div>
       </ScrollArea>

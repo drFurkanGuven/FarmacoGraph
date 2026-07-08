@@ -32,10 +32,10 @@ async def test_get_drug_not_found_contract(
 
 
 @pytest.mark.skip(
-    reason="Skeleton: /drugs/{id}/graph — add when Task A implements graph projection"
+    reason="Route not implemented: GET /drugs/{drug_id}/graph (future graph projection)"
 )
 @pytest.mark.asyncio
 async def test_drug_graph_contract(contract_client: AsyncClient, openapi_spec: dict) -> None:
     response = await contract_client.get("/api/v1/drugs/00000000-0000-4000-8000-000000000001/graph")
     assert response.status_code == 200
-    validate_openapi_response(openapi_spec, "/drugs/{id}/graph", response.json())
+    validate_openapi_response(openapi_spec, "/drugs/{drug_id}/graph", response.json())

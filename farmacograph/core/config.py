@@ -83,8 +83,10 @@ class Settings(BaseSettings):
             "change-me-in-production",
             "dev-only-jwt-secret-change-in-production",
         }
-        if self.environment == "production" and self.jwt_secret_key in insecure_defaults:
-            raise ValueError("FG_JWT_SECRET_KEY must be set to a secure value in production")
+        if self.environment == "production":
+            secret = (self.jwt_secret_key or "").strip()
+            if not secret or secret in insecure_defaults:
+                raise ValueError("FG_JWT_SECRET_KEY must be set to a secure value in production")
         if self.environment == "production":
             object.__setattr__(self, "allow_anonymous_read", False)
         return self

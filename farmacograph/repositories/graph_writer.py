@@ -32,9 +32,7 @@ class GraphWriter:
         RETURN n {{.*}} AS node
         """
         props = {k: v for k, v in properties.items() if v is not None}
-        results = await self._driver.run_query(
-            query, {"id": str(entity_id), "props": props}
-        )
+        results = await self._driver.run_query(query, {"id": str(entity_id), "props": props})
         return results[0]["node"] if results else {}
 
     async def publish_package(
@@ -96,3 +94,36 @@ class GraphWriter:
             },
         )
         return bool(results[0]["created"]) if results else False
+
+    async def delete_relationship(
+        self,
+        rel_type: str,
+        source_id: str,
+        target_id: str,
+        source_label: str,
+        target_label: str,
+        *,
+        properties: dict[str, Any] | None = None,
+        require_properties: bool = False,
+    ) -> bool:
+        """Delete relationship. When require_properties is True, only edges with all props match."""
+        if not self.is_available:
+            raise RuntimeError("Neo4j not connected")
+        props = properties or {}
+        if require_properties:
+            where_clause = " AND ".join(f"r.{key} = ${key}" for key in props) or "true"
+        else:
+            where_clause = " AND ".join(f"r.{key} IS NULL" for key in props) if props else "true"
+        query = f"""
+        MATCH (a:{source_label} {{id: $source_id}})-[r:{rel_type}]->(b:{target_label} {{id: $target_id}})
+        WHERE {where_clause}
+        DELETE r
+        RETURN count(r) AS deleted
+        """
+        params: dict[str, Any] = {
+            "source_id": source_id,
+            "target_id": target_id,
+            **props,
+        }
+        results = await self._driver.run_query(query, params)
+        return bool(results[0]["deleted"]) if results else False

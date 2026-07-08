@@ -9,6 +9,11 @@ import type {
   SortField,
 } from "./types";
 
+/** Studio drug editor route — always keyed by slug (curriculum + curator workflows). */
+export function drugEditorHref(slug: string): string {
+  return `/knowledge/drugs/${encodeURIComponent(slug)}`;
+}
+
 export function confidenceLevelFromScore(score: number | null | undefined): ConfidenceLevel | null {
   if (score === null || score === undefined) return null;
   if (score >= 0.8) return "high";

@@ -2,12 +2,16 @@
 
 import { cn } from "@/lib/utils";
 import { PropertyEditor, type PropertyEditorField } from "@/components/ui";
+import type { ValidationResult } from "@/lib/api";
+import { DrugEvidenceSection } from "./drug-evidence-section";
 import { sectionFieldValues } from "./package";
 import type { DrugEditorSection, DrugPublishPackage } from "./types";
 
 export interface DrugSectionEditorProps {
   section: DrugEditorSection;
   pkg: DrugPublishPackage;
+  drugId: string;
+  validation: ValidationResult | null;
   disabled?: boolean;
   onFieldChange: (fieldKey: string, value: string) => void;
   className?: string;
@@ -16,10 +20,30 @@ export interface DrugSectionEditorProps {
 export function DrugSectionEditor({
   section,
   pkg,
+  drugId,
+  validation,
   disabled = false,
   onFieldChange,
   className,
 }: DrugSectionEditorProps) {
+  if (section.kind === "evidence" || section.id === "evidence") {
+    const entityId = String(pkg.entity_payload.id ?? drugId);
+    const slug = typeof pkg.entity_payload.slug === "string" && pkg.entity_payload.slug
+      ? pkg.entity_payload.slug
+      : null;
+
+    return (
+      <DrugEvidenceSection
+        drugId={drugId}
+        entityId={entityId}
+        slug={slug}
+        validation={validation}
+        disabled={disabled}
+        className={className}
+      />
+    );
+  }
+
   const values = sectionFieldValues(pkg, section);
   const fields: PropertyEditorField[] = section.fields.map((field) => ({
     key: field.key,

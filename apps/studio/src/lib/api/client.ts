@@ -10,6 +10,7 @@ import type {
   DrugBrowseItem,
   DrugPackage,
   DrugSummary,
+  DrugWorkflowState,
   HealthData,
   InfoData,
   JobItem,
@@ -17,9 +18,11 @@ import type {
   PackageValidation,
   PaginationParams,
   PublishPackageInput,
+  PublishWorkflowResult,
   StatisticsData,
   ValidationResult,
   WorkflowItem,
+  WorkflowTimelineEvent,
 } from "./types";
 
 export interface ClientConfig {
@@ -136,6 +139,12 @@ export class FarmacoGraphClient {
     return this.request<WorkflowItem>(`/curator/workflows/${workflowId}`);
   }
 
+  getWorkflowTimeline(workflowId: string, options?: PaginationParams) {
+    return this.request<WorkflowTimelineEvent[]>(`/curator/workflows/${workflowId}/timeline`, {
+      params: buildPaginationParams(options),
+    });
+  }
+
   createWorkflow(body: CreateWorkflowInput) {
     return this.request<WorkflowItem>("/curator/workflows", { method: "POST", body });
   }
@@ -180,6 +189,10 @@ export class FarmacoGraphClient {
     return this.request<DrugPackage>(`/curator/drugs/${slug}/package`);
   }
 
+  getDrugWorkflowState(slug: string) {
+    return this.request<DrugWorkflowState>(`/curator/drugs/${slug}/workflow-state`);
+  }
+
   saveWorkflowPackage(workflowId: string, body: PublishPackageInput) {
     return this.request<{ workflow: WorkflowItem; validation: PackageValidation }>(
       `/curator/workflows/${workflowId}/package`,
@@ -188,7 +201,7 @@ export class FarmacoGraphClient {
   }
 
   publishWorkflow(workflowId: string, body: PublishPackageInput) {
-    return this.request<WorkflowItem>(`/curator/workflows/${workflowId}/publish`, {
+    return this.request<PublishWorkflowResult>(`/curator/workflows/${workflowId}/publish`, {
       method: "POST",
       body,
     });

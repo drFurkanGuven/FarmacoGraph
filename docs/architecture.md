@@ -240,7 +240,7 @@ flowchart TB
 | **Storage** | Neo4j knowledge + PostgreSQL operations |
 | **API** | Stable query contracts, explainability responses |
 | **AI** | RAG over validated graph only — never writes facts |
-| **Presentation** | Curation Studio (dashboard, search, auth — live); drug browser, editors, validation center (planned) |
+| **Presentation** | Curation Studio — dashboard, search, auth, drug browser, drug editor, validation center (live); graph explorer, publish wizard (planned) |
 
 ### 4.1 Curation Studio (implementation status)
 
@@ -249,11 +249,12 @@ The primary curator interface is `apps/studio` — a Next.js App Router client t
 | Module | Route | Status |
 |--------|-------|--------|
 | Dashboard | `/` | Live — ops metrics, curator queue, validation summary |
-| Authentication | `/login`, `/settings` | Live — `POST /auth/token`, JWT refresh |
+| Authentication | `/login`, `/settings` | Live — `POST /auth/token`, `/auth/refresh`, API keys |
 | Global search | `/search` | Live — `GET /search` |
-| Drug browser | `/knowledge/drugs` | Placeholder — Studio 4.2.2 |
-| Entity editors | `/knowledge/*` | Placeholder — Studio 4.2 |
-| Validation Center | `/validation` | Placeholder — Studio 4.3 |
+| Drug browser | `/knowledge/drugs` | Live — list, filter, sort, workflow status overlay |
+| Drug editor | `/knowledge/drugs/[id]` | Live — sectioned editing, curator draft autosave, live validation |
+| Validation Center | `/validation` | Live — grouped issues, publish readiness, queue dry-runs |
+| Other entity editors | `/knowledge/diseases`, `/evidence`, … | Placeholder — Studio 4.2+ |
 | Graph Explorer | `/graph` | Placeholder — Studio 4.3 |
 | Publish / snapshots | `/snapshots` | Placeholder — Studio 4.4 |
 
@@ -288,12 +289,27 @@ flowchart TD
 | Concern | Implementation |
 |---------|----------------|
 | Users & passwords | PostgreSQL `users` table; bcrypt via `passlib` |
-| API keys | PostgreSQL `api_keys` — prefix + SHA-256 hash |
+| API keys | PostgreSQL `api_keys` — prefix + SHA-256 hash; format `fg_{prefix}_{secret}` |
+| Token grants | `POST /auth/token` — `password` or `api_key` grant types |
+| Token refresh | `POST /auth/refresh` — rotate access/refresh pair |
+| Credential introspection | `POST /auth/introspect` — scopes, roles, identity |
+| Direct API key use | `Authorization: Bearer fg_…` or `X-API-Key` header (no JWT required) |
 | Scopes | JWT payload + `UserRole.scopes`; `admin:org` is super-scope |
 | Anonymous read | Allowed when `FG_ALLOW_ANONYMOUS_READ=true` (development default; disabled in production) |
 | Curator protection | `curator:write` / `curator:publish` require authentication |
 
 Implementation: `farmacograph/auth/`, `farmacograph/api/routers/auth.py`, `farmacograph/api/deps.py`
+
+### 4.3 Curator draft persistence (autosave)
+
+Drug edits in Studio do **not** write directly to Neo4j. The canonical save path is:
+
+1. Open or create a curator workflow (`POST /curator/drugs/{slug}/workflows` or `POST /curator/workflows`).
+2. Autosave the publish package to PostgreSQL via `PUT /curator/workflows/{id}/package`.
+3. Dry-run validation in parallel via `POST /curator/validate`.
+4. Transition through `submit` → `approve` → `publish` to commit knowledge to Neo4j.
+
+`PATCH /drugs/{id}` is not implemented; all draft state lives in `draft_package_json` until publish.
 
 ---
 

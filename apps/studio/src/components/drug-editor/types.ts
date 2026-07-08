@@ -1,6 +1,4 @@
 import type { PublishPackageInput, ValidationResult, WorkflowItem } from "@/lib/api";
-
-/** Curator publish package used by the drug editor. */
 export type DrugPublishPackage = PublishPackageInput;
 
 export type DrugFieldType = "text" | "textarea" | "readonly" | "uuid-list";
@@ -15,20 +13,24 @@ export interface DrugFieldDef {
   placeholder?: string;
 }
 
+export type DrugEditorSectionKind = "fields" | "evidence";
+
 export interface DrugEditorSection {
   id: string;
   title: string;
   description?: string;
+  kind?: DrugEditorSectionKind;
   fields: DrugFieldDef[];
 }
 
 export type SaveStatus = "idle" | "pending" | "saving" | "saved" | "error";
 
-export type SaveStrategy = "drug_patch" | "curator_draft";
+export type SaveStrategy = "curator_package";
 
 export interface SaveResult {
   strategy: SaveStrategy;
   savedAt: string;
+  validation?: ValidationResult;
 }
 
 export interface DrugEditorSnapshot {

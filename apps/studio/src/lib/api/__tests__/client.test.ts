@@ -55,4 +55,35 @@ describe("FarmacoGraphClient", () => {
       datasetVersion: undefined,
     });
   });
+
+  it("opens slug workflow via curator drug endpoint", async () => {
+    const transport = createMockTransport();
+    const client = new FarmacoGraphClient({ baseUrl: "http://api.test/api/v1/" });
+    Object.defineProperty(client, "transport", { value: transport });
+
+    await client.openDrugWorkflow("ramipril");
+
+    expect(transport.request).toHaveBeenCalledWith("/curator/drugs/ramipril/workflows", {
+      method: "POST",
+    });
+  });
+
+  it("saves workflow package via canonical PUT endpoint", async () => {
+    const transport = createMockTransport();
+    const client = new FarmacoGraphClient({ baseUrl: "http://api.test/api/v1/" });
+    Object.defineProperty(client, "transport", { value: transport });
+
+    const body = {
+      entity_payload: { id: "drug-1", slug: "ramipril" },
+      related_entities: [],
+      relationships: [],
+    };
+
+    await client.saveWorkflowPackage("workflow-1", body);
+
+    expect(transport.request).toHaveBeenCalledWith("/curator/workflows/workflow-1/package", {
+      method: "PUT",
+      body,
+    });
+  });
 });

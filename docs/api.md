@@ -13,12 +13,13 @@
 
 The OpenAPI file at `openapi/openapi.yaml` describes the **full contract** (implemented + planned). FastAPI serves the live spec at `/openapi.json`.
 
-### Implemented endpoints (27 routes)
+### Implemented endpoints (30 routes)
 
 | Method | Path | Auth scope | Notes |
 |--------|------|------------|-------|
 | POST | `/api/v1/auth/token` | Public | Issue JWT (`password` or `api_key` grant) |
 | POST | `/api/v1/auth/refresh` | Public | Refresh access token |
+| POST | `/api/v1/auth/introspect` | Public | Introspect JWT or API key (scopes, roles, identity) |
 | GET | `/api/v1/info` | Public | API discovery |
 | GET | `/api/v1/health` | Public | Health check |
 | GET | `/api/v1/dashboard` | `knowledge:read` | Studio ops dashboard |
@@ -33,9 +34,13 @@ The OpenAPI file at `openapi/openapi.yaml` describes the **full contract** (impl
 | GET | `/api/v1/explain` | `knowledge:explain` | Reasoning chain |
 | POST | `/api/v1/compare` | `knowledge:read` | Drug comparison |
 | GET | `/api/v1/drugs/{drug_slug}/prerequisites` | `knowledge:read` | Learning prerequisites |
+| GET | `/api/v1/curator/drugs` | `curator:write` | Curator drug browser |
+| POST | `/api/v1/curator/drugs/{slug}/workflows` | `curator:write` | Open/create workflow for slug |
+| GET | `/api/v1/curator/drugs/{slug}/package` | `curator:write` | Load draft package |
+| PUT | `/api/v1/curator/workflows/{id}/package` | `curator:write` | **Canonical autosave** |
 | POST | `/api/v1/curator/validate` | `curator:write` | Dry-run validation |
 | GET | `/api/v1/curator/stubs/cardiovascular` | `curator:write` | Structural stub template |
-| POST | `/api/v1/curator/workflows` | `curator:write` | Create draft |
+| POST | `/api/v1/curator/workflows` | `curator:write` | Create draft (entity UUID) |
 | GET | `/api/v1/curator/workflows/{workflow_id}` | `curator:write` | Get workflow |
 | GET | `/api/v1/curator/queue` | `curator:write` | Review queue |
 | GET | `/api/v1/curator/validation-summary` | `curator:write` | Validation stats |
@@ -54,19 +59,21 @@ The OpenAPI file at `openapi/openapi.yaml` describes the **full contract** (impl
 
 ### Planned (in OpenAPI, not yet routed)
 
-Entity endpoints (`/drug-classes`, `/diseases`, `/pathways/{id}`, …), clinical queries (`/interactions`), education (`/flashcards`, `/cases`), graph projection (`/drugs/{id}/graph`, `POST /graph/query`), version management (`/version`), and AI endpoints (`POST /rag`, `POST /tutor`).
+Entity endpoints (`/drug-classes`, `/diseases`, `/pathways/{id}`, …), drug-scoped evidence list (`GET /drugs/{drug_id}/evidence` — OpenAPI only), clinical queries (`/interactions`), education (`/flashcards`, `/cases`), graph projection (`/drugs/{id}/graph`, `POST /graph/query`), version management (`/version`), and AI endpoints (`POST /rag`, `POST /tutor`).
+
+> **Note:** Core evidence CRUD and attach routes under `/evidence` are **implemented** — see [§1.4](#14-evidence-workflow-status).
 
 ### Auth (current)
 
 - `POST /auth/token` — password or API key grant → access + refresh JWT pair
 - `POST /auth/refresh` — rotate access token from refresh token
+- `POST /auth/introspect` — introspect JWT or API key (scopes, roles, identity, expiry)
 - Bearer JWT or raw API key on `Authorization: Bearer …` (API keys validated against PostgreSQL `api_keys`)
 - Optional `X-API-Key` header (same validation as Bearer API key)
 - Scope checks per route via `require_scope` dependency
 - Anonymous read/search/explain allowed when `FG_ALLOW_ANONYMOUS_READ=true` (default in development; forced off in production)
 - Curator endpoints (`curator:write`, `curator:publish`) require authentication — anonymous callers receive `401`
-- `POST /auth/introspect` — planned (Studio client ready; not routed yet)
-- Self-service API key provisioning — planned (manual provisioning today)
+- Manual JSON editing and shell publish scripts (`scripts/dev-only/`) are **dev-only / deprecated** for curators — use Curation Studio (`apps/studio`) or the curator API below
 
 ---
 
@@ -121,7 +128,180 @@ Rotate tokens using a refresh token (refresh tokens cannot be used as Bearer cre
 
 **Response:** Same shape as `/auth/token`.
 
+#### `POST /auth/introspect`
+
+Resolve scopes, roles, and identity from a JWT or API key without issuing new tokens.
+
+**Request body (any of):**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `access_token` | string | JWT access token |
+| `api_key` | string | Full API key (`fg_…`) |
+
+Alternatively, send `Authorization: Bearer …` or `X-API-Key` header.
+
+**Response:**
+
+```json
+{
+  "active": true,
+  "scopes": ["knowledge:read", "curator:write"],
+  "roles": ["curator"],
+  "user_id": "uuid",
+  "email": "curator@example.org",
+  "name": "Curator Name",
+  "auth_method": "jwt",
+  "token_type": "access",
+  "expires_at": "2026-07-08T12:00:00Z"
+}
+```
+
 **Implementation:** `farmacograph/api/routers/auth.py`, `farmacograph/auth/service.py`
+
+### 1.2 Curator autosave workflow
+
+Studio and integration clients persist drug drafts through the curator workflow API:
+
+| Step | Endpoint | Scope |
+|------|----------|-------|
+| Open by slug | `POST /curator/drugs/{slug}/workflows` | `curator:write` |
+| Create draft | `POST /curator/workflows` | `curator:write` |
+| **Autosave** | `PUT /curator/workflows/{id}/package` | `curator:write` |
+| Validate | `POST /curator/validate` | `curator:write` |
+| Submit | `POST /curator/workflows/{id}/submit` | `curator:write` |
+| Approve | `POST /curator/workflows/{id}/approve` | `curator:publish` |
+| Publish | `POST /curator/workflows/{id}/publish` | `curator:publish` |
+
+**Package body (`PUT .../package` and `POST .../publish`):**
+
+```json
+{
+  "entity_payload": { "id": "uuid", "slug": "...", "type": "Drug" },
+  "related_entities": [],
+  "relationships": [],
+  "dataset_version": "2026.1.0",
+  "module": "cardiovascular",
+  "create_snapshot": false
+}
+```
+
+**Autosave response:** `{ "data": { "workflow": {...}, "validation": { "valid": true, "issues": [] } } }`
+
+Draft packages are stored in PostgreSQL (`draft_package_json`) until publish writes to Neo4j. Package edits are allowed only in `draft` and `review` states. There is no `PATCH /drugs/{id}` endpoint.
+
+### 1.3 Curator publish workflow
+
+State machine (FG-C023), enforced in `farmacograph/curator/workflow.py`:
+
+```
+draft → review → approved → published → deprecated
+         ↑__________|
+```
+
+| Transition | Endpoint | Scope | Preconditions |
+|------------|----------|-------|---------------|
+| draft → review | `POST /curator/workflows/{id}/submit` | `curator:write` | Valid state transition |
+| review → approved | `POST /curator/workflows/{id}/approve` | `curator:publish` | Workflow in `review` |
+| approved → published | `POST /curator/workflows/{id}/publish` | `curator:publish` | Workflow in `approved`; package passes `require_valid_publish_package` |
+
+**Publish request body:** Same shape as autosave (`entity_payload`, `related_entities`, `relationships`, `dataset_version`, optional `module`, `create_snapshot`).
+
+**Publish side effects** (when `FG_NEO4J_ENABLED=true`):
+
+1. Neo4j MERGE via `GraphWriter.publish_package`
+2. Workflow state → `published`
+3. Outbox event (`DrugPublished` or `KnowledgeValidated`)
+4. Background job `graph_validation`
+5. Audit log (`curator.published`)
+6. Optional module snapshot when `create_snapshot=true`
+
+**Studio status:** Transition endpoints are live and wired to the **Publish wizard** in the Drug Editor. See [curation-studio.md](curation-studio.md).
+
+**Queue inspection:** `GET /curator/queue?state=review|draft|approved|published` — used by dashboard and drug browser.
+
+**Workflow timeline:** `GET /curator/workflows/{id}/timeline?limit=50&offset=0` — audit-backed activity feed (autosave, validation, submit, approve, publish, snapshot). Used by Drug Editor sidebar and Publish wizard.
+
+**Publish response:** `POST .../publish` returns `data.workflow` plus `published_slug`, `dataset_version`, `published_at`, `graph_write`, `snapshot`, and `validation_summary`.
+
+### Dev-only / deprecated publishing paths
+
+| Path | Status |
+|------|--------|
+| `scripts/dev-only/publish-drug.sh` | Dev-only — publishes local JSON via API |
+| `scripts/dev-only/publish-stub.sh` | Dev-only — structural stub bootstrap |
+| `scripts/dev-only/bootstrap-cv.sh` | Dev-only — stub + curriculum summary |
+| `staging/*.json` | Dev-only fixtures |
+| `python3 -m farmacograph init-drug-entry` | Dev-only scaffold |
+
+These remain for pipeline testing, CI, and emergency recovery — **not** production curator workflows. See [scripts/dev-only/README.md](../scripts/dev-only/README.md).
+
+### 1.4 Evidence workflow status
+
+Evidence spans **ontology nodes** (`Evidence`, `SUPPORTED_BY` edges — see [ontology.md](ontology.md)), **REST CRUD/attach endpoints**, **FG-C012 validation**, and **curation gates** in Studio.
+
+| Capability | API / Studio | Status |
+|------------|--------------|--------|
+| List / create evidence | `GET/POST /evidence` | **Implemented** |
+| Evidence detail / update | `GET/PATCH /evidence/{id}` | **Implemented** |
+| List drug evidence | `GET /drugs/{drug_id}/evidence`, `GET /curator/drugs/{slug}/evidence` | **Implemented** |
+| Attach / detach drug evidence | `POST/DELETE /drugs/{id}/evidence`, `/curator/drugs/{slug}/evidence` | **Implemented** — Neo4j required |
+| Attach to assertion | `POST/DELETE /evidence/{id}/assertions` | **Implemented** |
+| Evidence publish validation | FG-C012 / FG-C019 / FG-C020 in `EvidenceValidator` | **Implemented** |
+| Drug Editor Evidence section | Drug Editor | **Implemented** |
+| Global Evidence Manager | `/knowledge/evidence` | **Implemented** |
+| Publish wizard evidence readiness | Publish wizard | **Implemented** |
+
+**Implemented evidence routes (FastAPI):**
+
+| Method | Path | Scope |
+|--------|------|-------|
+| GET | `/evidence` | `knowledge:read` |
+| POST | `/evidence` | `curator:write` |
+| GET | `/evidence/{evidence_id}` | `knowledge:read` |
+| PATCH | `/evidence/{evidence_id}` | `curator:write` |
+| POST | `/evidence/{evidence_id}/drugs/{drug_id}` | `curator:write` |
+| DELETE | `/evidence/{evidence_id}/drugs/{drug_id}` | `curator:write` |
+| POST | `/evidence/{evidence_id}/assertions` | `curator:write` |
+| DELETE | `/evidence/{evidence_id}/assertions` | `curator:write` |
+| GET | `/drugs/{drug_id}/evidence` | `knowledge:read` |
+| POST | `/drugs/{drug_id}/evidence` | `curator:write` |
+| DELETE | `/drugs/{drug_id}/evidence/{evidence_id}` | `curator:write` |
+| GET | `/curator/drugs/{slug}/evidence` | `curator:write` |
+| POST | `/curator/drugs/{slug}/evidence` | `curator:write` |
+| DELETE | `/curator/drugs/{slug}/evidence/{evidence_id}` | `curator:write` |
+
+**List query parameters:** `limit`, `offset`, `evidence_type`, `search` (not `q`). Evidence writes return `503` when Neo4j is unavailable.
+
+**Package provenance shape (draft autosave):**
+
+```json
+{
+  "entity_payload": {
+    "provenance": {
+      "created_at": "2026-07-08T00:00:00+00:00",
+      "updated_at": "2026-07-08T00:00:00+00:00",
+      "created_by": "curator@example.org",
+      "source": "manual",
+      "curator_attestation": true
+    }
+  }
+}
+```
+
+**Validation constraints (evidence-related):**
+
+| ID | Level | Summary |
+|----|-------|---------|
+| FG-C018 | biomedical | Provenance metadata required on publish |
+| FG-C028 | biomedical | Curator attestation required before publish |
+| FG-C006 | ontology | Published clinical edges require `SUPPORTED_BY` → Evidence (graph write) |
+
+Studio groups FG-C018/FG-C028 and provenance keyword matches into **Missing evidence** (Validation Center) and **Evidence readiness** (Publish wizard).
+
+**Dashboard `evidence_count`:** Returned by `GET /statistics` and `GET /dashboard` from the latest `KnowledgeSnapshot` row — not a live evidence inventory API.
+
+**E2E smoke:** `apps/studio/e2e/evidence-workflow.spec.ts` — Playwright mocks implement the Studio client contract for local CI without Neo4j.
 
 ---
 

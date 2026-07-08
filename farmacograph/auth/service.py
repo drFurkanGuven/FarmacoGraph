@@ -34,6 +34,21 @@ class TokenBundle:
     name: str | None = None
 
 
+@dataclass
+class IntrospectResult:
+    scopes: list[str]
+    roles: list[str]
+    token_type: str
+    auth_method: str
+    active: bool = True
+    user_id: str | None = None
+    organization_id: str | None = None
+    workspace_id: str | None = None
+    expires_at: int | None = None
+    email: str | None = None
+    name: str | None = None
+
+
 class AuthError(Exception):
     def __init__(self, message: str, *, status_code: int = 401) -> None:
         super().__init__(message)
@@ -124,6 +139,104 @@ class AuthService:
             pass
 
         return self._issue_tokens(subject, scopes, email=email, name=name)
+
+    async def introspect(
+        self,
+        *,
+        bearer_token: str | None = None,
+        api_key: str | None = None,
+    ) -> IntrospectResult:
+        if bearer_token:
+            if looks_like_jwt(bearer_token):
+                return await self._introspect_jwt(bearer_token)
+            context = await self._resolve_api_key(bearer_token)
+            if context is not None:
+                return await self._introspect_api_key_context(context, bearer_token)
+
+        if api_key:
+            context = await self._resolve_api_key(api_key)
+            if context is not None:
+                return await self._introspect_api_key_context(context, api_key)
+
+        raise AuthError("Invalid or missing credentials")
+
+    async def _introspect_jwt(self, token: str) -> IntrospectResult:
+        try:
+            payload = decode_token(token, self._settings, expected_type=None)
+        except jwt.ExpiredSignatureError as exc:
+            raise AuthError("Token expired") from exc
+        except jwt.InvalidTokenError as exc:
+            raise AuthError("Invalid token") from exc
+
+        token_type = payload.get("type")
+        if token_type not in (None, "access"):
+            raise AuthError("Invalid token type for introspection")
+
+        user_id: str | None = None
+        roles: list[str] = []
+        email: str | None = None
+        name: str | None = None
+        if payload.get("sub"):
+            try:
+                uid = uuid.UUID(str(payload["sub"]))
+                user_id = str(uid)
+                roles = await self._repo.get_user_roles(uid)
+                user = await self._repo.get_user_by_id(uid)
+                if user:
+                    email = user.email
+                    name = user.full_name
+            except ValueError:
+                pass
+
+        scopes = sorted(payload.get("scopes") or ["knowledge:read"])
+        exp = payload.get("exp")
+        expires_at = int(exp) if exp is not None else None
+
+        return IntrospectResult(
+            scopes=scopes,
+            roles=roles,
+            user_id=user_id,
+            token_type="bearer",
+            auth_method="jwt",
+            expires_at=expires_at,
+            email=email,
+            name=name,
+        )
+
+    async def _introspect_api_key_context(
+        self,
+        context: AuthContext,
+        api_key: str,
+    ) -> IntrospectResult:
+        prefix = extract_api_key_prefix(api_key, self._settings)
+        record = await self._repo.get_api_key_by_prefix(prefix) if prefix else None
+        expires_at: int | None = None
+        if record is not None and record.expires_at is not None:
+            expires_at = int(record.expires_at.timestamp())
+
+        email: str | None = None
+        name: str | None = None
+        roles: list[str] = []
+        user_id = str(context.user_id) if context.user_id else None
+        if context.user_id is not None:
+            roles = await self._repo.get_user_roles(context.user_id)
+            user = await self._repo.get_user_by_id(context.user_id)
+            if user:
+                email = user.email
+                name = user.full_name
+
+        return IntrospectResult(
+            scopes=sorted(context.scopes),
+            roles=roles,
+            user_id=user_id,
+            organization_id=str(context.organization_id) if context.organization_id else None,
+            workspace_id=str(context.workspace_id) if context.workspace_id else None,
+            token_type="api_key",
+            auth_method="api_key",
+            expires_at=expires_at,
+            email=email,
+            name=name,
+        )
 
     async def resolve_bearer(self, token: str) -> AuthContext | None:
         if looks_like_jwt(token):

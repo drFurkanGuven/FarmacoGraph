@@ -31,6 +31,9 @@ servers:
 
 tags:
   - name: Health
+  - name: Auth
+  - name: Dashboard
+  - name: Curator
   - name: Drugs
   - name: Entities
   - name: Clinical
@@ -42,7 +45,6 @@ tags:
   - name: Search
   - name: Modules
   - name: Future
-  - name: Auth
 
 paths:
   /auth/token:
@@ -101,6 +103,34 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /auth/introspect:
+    post:
+      tags: [Auth]
+      summary: Introspect credentials (JWT or API key)
+      operationId: introspectCredentials
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IntrospectRequest"
+      responses:
+        "200":
+          description: Credential is active
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IntrospectResponse"
+        "401":
+          description: Invalid, expired, or missing credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HttpDetailError"
+
   /health:
     get:
       tags: [Health]
@@ -112,24 +142,529 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/HealthResponse"
+                $ref: "#/components/schemas/HealthEnvelopeResponse"
+
+  /info:
+    get:
+      tags: [Health]
+      summary: Public API discovery
+      operationId: apiInfo
+      responses:
+        "200":
+          description: API metadata and documentation links
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfoEnvelopeResponse"
+
+  /dashboard:
+    get:
+      tags: [Dashboard]
+      summary: Curation Studio operational dashboard
+      operationId: getDashboard
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: module
+          in: query
+          schema: { type: string, default: cardiovascular }
+      responses:
+        "200":
+          description: Dashboard aggregate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /audit-logs:
+    get:
+      tags: [Dashboard]
+      summary: List audit log entries
+      operationId: listAuditLogs
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/DashboardLimit"
+        - $ref: "#/components/parameters/PageOffset"
+        - name: resource_type
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Audit log list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditLogListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /jobs:
+    get:
+      tags: [Dashboard]
+      summary: List background jobs
+      operationId: listJobs
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/DashboardLimit"
+        - $ref: "#/components/parameters/PageOffset"
+        - name: status
+          in: query
+          schema: { type: string }
+        - name: job_type
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Job list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /curator/drugs:
+    get:
+      tags: [Curator]
+      summary: Browse drugs for curation
+      operationId: listCuratorDrugs
+      security:
+        - BearerAuth: [curator:write]
+      parameters:
+        - name: module
+          in: query
+          schema: { type: string, default: cardiovascular }
+        - name: search
+          in: query
+          schema: { type: string, default: "" }
+        - name: status
+          in: query
+          schema: { type: string }
+        - name: workflow_state
+          in: query
+          schema: { type: string }
+        - name: sort
+          in: query
+          schema: { type: string, default: slug }
+        - $ref: "#/components/parameters/PageLimit"
+        - $ref: "#/components/parameters/PageOffset"
+      responses:
+        "200":
+          description: Curator drug browser rows
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CuratorDrugListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /curator/drugs/{slug}/workflows:
+    post:
+      tags: [Curator]
+      summary: Open or create workflow for a drug slug
+      operationId: openDrugWorkflow
+      security:
+        - BearerAuth: [curator:write]
+      parameters:
+        - $ref: "#/components/parameters/DrugSlug"
+      responses:
+        "201":
+          description: Workflow opened
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DrugWorkflowOpenResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /curator/drugs/{slug}/package:
+    get:
+      tags: [Curator]
+      summary: Get draft package for a drug slug
+      operationId: getDrugPackage
+      security:
+        - BearerAuth: [curator:write]
+      parameters:
+        - $ref: "#/components/parameters/DrugSlug"
+      responses:
+        "200":
+          description: Draft package
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DrugPackageResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /curator/drugs/{slug}/evidence:
+    get:
+      tags: [Curator, Evidence]
+      summary: List evidence for a drug by curriculum slug
+      operationId: listCuratorDrugEvidence
+      security:
+        - BearerAuth: [curator:write]
+      parameters:
+        - $ref: "#/components/parameters/DrugSlug"
+      responses:
+        "200":
+          description: Drug evidence attachments
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvidenceListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [Curator, Evidence]
+      summary: Attach evidence to a drug by slug
+      operationId: attachCuratorDrugEvidence
+      security:
+        - BearerAuth: [curator:write]
+      parameters:
+        - $ref: "#/components/parameters/DrugSlug"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AttachDrugEvidenceRequest"
+      responses:
+        "201":
+          description: Evidence attached
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvidenceDrugLinkResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          description: Neo4j unavailable
+
+  /curator/drugs/{slug}/evidence/{evidence_id}:
+    delete:
+      tags: [Curator, Evidence]
+      summary: Detach evidence from a drug by slug
+      operationId: detachCuratorDrugEvidence
+      security:
+        - BearerAuth: [curator:write]
+      parameters:
+        - $ref: "#/components/parameters/DrugSlug"
+        - name: evidence_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Evidence detached
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvidenceDrugLinkResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /curator/workflows:
+    post:
+      tags: [Curator]
+      summary: Create draft workflow
+      operationId: createWorkflow
+      security:
+        - BearerAuth: [curator:write]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWorkflowRequest"
+      responses:
+        "201":
+          description: Workflow created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowEnvelopeResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /curator/workflows/{workflow_id}:
+    get:
+      tags: [Curator]
+      summary: Get workflow by ID
+      operationId: getWorkflow
+      security:
+        - BearerAuth: [curator:write]
+      parameters:
+        - $ref: "#/components/parameters/WorkflowId"
+      responses:
+        "200":
+          description: Workflow detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowEnvelopeResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /curator/workflows/{workflow_id}/timeline:
+    get:
+      tags: [Curator]
+      summary: Workflow activity timeline
+      operationId: getWorkflowTimeline
+      security:
+        - BearerAuth: [curator:write]
+      parameters:
+        - $ref: "#/components/parameters/WorkflowId"
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+        - name: offset
+          in: query
+          schema: { type: integer, minimum: 0, default: 0 }
+      responses:
+        "200":
+          description: Chronological audit events for the workflow
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowTimelineResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /curator/workflows/{workflow_id}/package:
+    put:
+      tags: [Curator]
+      summary: Save draft package
+      operationId: saveWorkflowPackage
+      security:
+        - BearerAuth: [curator:write]
+      parameters:
+        - $ref: "#/components/parameters/WorkflowId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublishRequest"
+      responses:
+        "200":
+          description: Draft saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowSaveResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /curator/workflows/{workflow_id}/submit:
+    post:
+      tags: [Curator]
+      summary: Submit workflow for review
+      operationId: submitWorkflow
+      security:
+        - BearerAuth: [curator:write]
+      parameters:
+        - $ref: "#/components/parameters/WorkflowId"
+      responses:
+        "200":
+          description: Workflow submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowEnvelopeResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /curator/workflows/{workflow_id}/approve:
+    post:
+      tags: [Curator]
+      summary: Approve workflow
+      operationId: approveWorkflow
+      security:
+        - BearerAuth: [curator:publish]
+      parameters:
+        - $ref: "#/components/parameters/WorkflowId"
+      responses:
+        "200":
+          description: Workflow approved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowEnvelopeResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /curator/workflows/{workflow_id}/publish:
+    post:
+      tags: [Curator]
+      summary: Publish approved workflow to graph
+      operationId: publishWorkflow
+      security:
+        - BearerAuth: [curator:publish]
+      parameters:
+        - $ref: "#/components/parameters/WorkflowId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublishRequest"
+      responses:
+        "200":
+          description: Workflow published
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublishWorkflowResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /curator/queue:
+    get:
+      tags: [Curator]
+      summary: Review queue
+      operationId: getCuratorQueue
+      security:
+        - BearerAuth: [curator:write]
+      parameters:
+        - name: state
+          in: query
+          schema: { type: string, default: review }
+        - $ref: "#/components/parameters/DashboardLimit"
+      responses:
+        "200":
+          description: Queued workflows
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /curator/validate:
+    post:
+      tags: [Curator]
+      summary: Dry-run publish validation
+      operationId: validatePackage
+      security:
+        - BearerAuth: [curator:write]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublishRequest"
+      responses:
+        "200":
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationResultResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /curator/validation-summary:
+    get:
+      tags: [Curator]
+      summary: Validation job summary
+      operationId: getValidationSummary
+      security:
+        - BearerAuth: [curator:write]
+      responses:
+        "200":
+          description: Validation summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationSummaryResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /curator/stubs/cardiovascular:
+    get:
+      tags: [Curator]
+      summary: Structural cardiovascular stub template
+      operationId: getCardiovascularStub
+      security:
+        - BearerAuth: [curator:write]
+      responses:
+        "200":
+          description: Stub publish package
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StubPackageResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
 
   /drugs:
     get:
       tags: [Drugs]
       summary: List drugs
       operationId: listDrugs
+      security:
+        - BearerAuth: []
       parameters:
         - $ref: "#/components/parameters/PageLimit"
         - $ref: "#/components/parameters/PageOffset"
-        - name: class
-          in: query
-          schema: { type: string }
         - name: module
           in: query
           schema: { type: string }
-        - $ref: "#/components/parameters/ContentLayers"
-        - $ref: "#/components/parameters/ResponseMode"
+        - $ref: "#/components/parameters/DatasetVersion"
       responses:
         "200":
           description: Drug list
@@ -137,16 +672,19 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/DrugListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
 
-  /drugs/{id}:
+  /drugs/{drug_id}:
     get:
       tags: [Drugs]
       summary: Get drug by ID
       operationId: getDrug
+      security:
+        - BearerAuth: []
       parameters:
-        - $ref: "#/components/parameters/EntityId"
-        - $ref: "#/components/parameters/ContentLayers"
-        - $ref: "#/components/parameters/ResponseMode"
+        - $ref: "#/components/parameters/DrugId"
+        - $ref: "#/components/parameters/DatasetVersion"
       responses:
         "200":
           description: Drug detail
@@ -154,16 +692,94 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/DrugDetailResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
 
-  /drugs/{id}/graph:
+  /drugs/{drug_id}/evidence:
+    get:
+      tags: [Drugs, Evidence]
+      summary: List evidence attached to a drug
+      operationId: listDrugEvidence
+      security:
+        - BearerAuth: [knowledge:read]
+      parameters:
+        - $ref: "#/components/parameters/DrugId"
+        - $ref: "#/components/parameters/DatasetVersion"
+      responses:
+        "200":
+          description: Drug evidence attachments
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvidenceListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [Drugs, Evidence]
+      summary: Attach evidence to a drug
+      operationId: attachDrugEvidence
+      security:
+        - BearerAuth: [curator:write]
+      parameters:
+        - $ref: "#/components/parameters/DrugId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AttachDrugEvidenceRequest"
+      responses:
+        "201":
+          description: Evidence attached
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvidenceDrugLinkResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          description: Neo4j unavailable
+
+  /drugs/{drug_id}/evidence/{evidence_id}:
+    delete:
+      tags: [Drugs, Evidence]
+      summary: Detach evidence from a drug
+      operationId: detachDrugEvidence
+      security:
+        - BearerAuth: [curator:write]
+      parameters:
+        - $ref: "#/components/parameters/DrugId"
+        - name: evidence_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Evidence detached
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvidenceDrugLinkResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /drugs/{drug_id}/graph:
     get:
       tags: [Graph, Drugs]
       summary: Drug neighborhood subgraph
       operationId: getDrugGraph
       parameters:
-        - $ref: "#/components/parameters/EntityId"
+        - $ref: "#/components/parameters/DrugId"
         - name: depth
           in: query
           schema: { type: integer, minimum: 1, maximum: 3, default: 2 }
@@ -180,13 +796,13 @@ paths:
               schema:
                 $ref: "#/components/schemas/GraphResponse"
 
-  /drugs/{id}/mechanism:
+  /drugs/{drug_id}/mechanism:
     get:
       tags: [Graph, Drugs]
       summary: Mechanism DAG
       operationId: getDrugMechanism
       parameters:
-        - $ref: "#/components/parameters/EntityId"
+        - $ref: "#/components/parameters/DrugId"
       responses:
         "200":
           description: Mechanism DAG
@@ -215,13 +831,13 @@ paths:
               schema:
                 $ref: "#/components/schemas/EducationListResponse"
 
-  /drugs/{id}/prerequisites:
+  /drugs/{drug_id}/prerequisites:
     get:
       tags: [Learning, Drugs]
       summary: Learning prerequisite graph
       operationId: getDrugPrerequisites
       parameters:
-        - $ref: "#/components/parameters/EntityId"
+        - $ref: "#/components/parameters/DrugId"
       responses:
         "200":
           description: Prerequisite graph
@@ -360,13 +976,75 @@ paths:
               schema:
                 $ref: "#/components/schemas/MechanismDAGResponse"
 
-  /evidence/{id}:
+  /evidence:
+    get:
+      tags: [Evidence]
+      summary: List evidence nodes
+      operationId: listEvidence
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PageLimit"
+        - $ref: "#/components/parameters/PageOffset"
+        - name: search
+          in: query
+          schema: { type: string }
+        - name: evidence_type
+          in: query
+          schema:
+            $ref: "#/components/schemas/EvidenceType"
+        - $ref: "#/components/parameters/DatasetVersion"
+      responses:
+        "200":
+          description: Evidence list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvidenceListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [Evidence]
+      summary: Create evidence node
+      operationId: createEvidence
+      security:
+        - BearerAuth: [curator:write]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEvidenceRequest"
+      responses:
+        "201":
+          description: Evidence created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvidenceDetailResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "503":
+          description: Neo4j unavailable for graph writes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HttpDetailError"
+
+  /evidence/{evidence_id}:
     get:
       tags: [Evidence]
       summary: Get evidence node
       operationId: getEvidence
+      security:
+        - BearerAuth: []
       parameters:
-        - $ref: "#/components/parameters/EntityId"
+        - $ref: "#/components/parameters/EvidenceId"
+        - $ref: "#/components/parameters/DatasetVersion"
       responses:
         "200":
           description: Evidence detail
@@ -374,6 +1052,175 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/EvidenceDetailResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [Evidence]
+      summary: Update evidence node
+      operationId: updateEvidence
+      security:
+        - BearerAuth: [curator:write]
+      parameters:
+        - $ref: "#/components/parameters/EvidenceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateEvidenceRequest"
+      responses:
+        "200":
+          description: Evidence updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvidenceDetailResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          description: Neo4j unavailable for graph writes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HttpDetailError"
+
+  /evidence/{evidence_id}/drugs/{drug_id}:
+    post:
+      tags: [Evidence, Drugs]
+      summary: Attach evidence to a drug via SUPPORTED_BY
+      operationId: attachEvidenceToDrug
+      security:
+        - BearerAuth: [curator:write]
+      parameters:
+        - $ref: "#/components/parameters/EvidenceId"
+        - $ref: "#/components/parameters/DrugId"
+      responses:
+        "201":
+          description: Evidence attached to drug
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvidenceDrugLinkResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          description: Neo4j unavailable for graph writes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HttpDetailError"
+    delete:
+      tags: [Evidence, Drugs]
+      summary: Detach evidence from a drug
+      operationId: detachEvidenceFromDrug
+      security:
+        - BearerAuth: [curator:write]
+      parameters:
+        - $ref: "#/components/parameters/EvidenceId"
+        - $ref: "#/components/parameters/DrugId"
+      responses:
+        "200":
+          description: Evidence detached from drug
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvidenceDrugLinkResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          description: Neo4j unavailable for graph writes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HttpDetailError"
+
+  /evidence/{evidence_id}/assertions:
+    post:
+      tags: [Evidence]
+      summary: Attach evidence to a clinical assertion (relationship edge)
+      operationId: attachEvidenceToAssertion
+      security:
+        - BearerAuth: [curator:write]
+      parameters:
+        - $ref: "#/components/parameters/EvidenceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AttachAssertionRequest"
+      responses:
+        "201":
+          description: Evidence attached to assertion
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvidenceAssertionLinkResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          description: Neo4j unavailable for graph writes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HttpDetailError"
+    delete:
+      tags: [Evidence]
+      summary: Detach evidence from a clinical assertion
+      operationId: detachEvidenceFromAssertion
+      security:
+        - BearerAuth: [curator:write]
+      parameters:
+        - $ref: "#/components/parameters/EvidenceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AttachAssertionRequest"
+      responses:
+        "200":
+          description: Evidence detached from assertion
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvidenceAssertionLinkResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          description: Neo4j unavailable for graph writes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HttpDetailError"
 
   /laboratory-tests:
     get:
@@ -589,14 +1436,42 @@ components:
       in: path
       required: true
       schema: { type: string, format: uuid }
+    DrugId:
+      name: drug_id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    DrugSlug:
+      name: slug
+      in: path
+      required: true
+      schema: { type: string }
+    WorkflowId:
+      name: workflow_id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    EvidenceId:
+      name: evidence_id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
     PageLimit:
       name: limit
       in: query
       schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+    DashboardLimit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
     PageOffset:
       name: offset
       in: query
       schema: { type: integer, minimum: 0, default: 0 }
+    DatasetVersion:
+      name: dataset_version
+      in: query
+      schema: { type: string }
     ContentLayers:
       name: layers
       in: query
@@ -618,7 +1493,25 @@ components:
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/ErrorResponse"
+            $ref: "#/components/schemas/HttpDetailError"
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/HttpDetailError"
+    Forbidden:
+      description: Missing required scope
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/HttpDetailError"
+    BadRequest:
+      description: Invalid request or workflow state
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/HttpDetailError"
 
   securitySchemes:
     BearerAuth:
@@ -668,9 +1561,274 @@ components:
         email: { type: string, nullable: true }
         name: { type: string, nullable: true }
 
+    IntrospectRequest:
+      type: object
+      properties:
+        api_key:
+          type: string
+          description: API key when not sent via Authorization or X-API-Key header
+        access_token:
+          type: string
+          description: JWT when not sent via Authorization header
+
+    IntrospectResponse:
+      type: object
+      required: [active, scopes, roles, token_type, auth_method]
+      properties:
+        active: { type: boolean, example: true }
+        scopes:
+          type: array
+          items: { type: string }
+        roles:
+          type: array
+          items: { type: string }
+        user_id: { type: string, format: uuid, nullable: true }
+        organization_id: { type: string, format: uuid, nullable: true }
+        workspace_id: { type: string, format: uuid, nullable: true }
+        token_type:
+          type: string
+          enum: [bearer, api_key]
+        auth_method:
+          type: string
+          enum: [jwt, api_key]
+        expires_at:
+          type: integer
+          nullable: true
+          description: Unix timestamp when the credential expires
+        email: { type: string, nullable: true }
+        name: { type: string, nullable: true }
+
+    HttpDetailError:
+      type: object
+      properties:
+        detail:
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: object
+
+    HealthEnvelopeResponse:
+      type: object
+      properties:
+        data: { $ref: "#/components/schemas/HealthData" }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    InfoEnvelopeResponse:
+      type: object
+      properties:
+        data: { type: object, additionalProperties: true }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    DashboardResponse:
+      type: object
+      properties:
+        data: { type: object, additionalProperties: true }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    AuditLogListResponse:
+      type: object
+      properties:
+        data: { type: array, items: { type: object } }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    JobListResponse:
+      type: object
+      properties:
+        data: { type: array, items: { type: object } }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    CuratorDrugListResponse:
+      type: object
+      properties:
+        data: { type: array, items: { type: object } }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    DrugWorkflowOpenResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            workflow: { type: object }
+            package: { type: object }
+            validation: { type: object }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    DrugPackageResponse:
+      type: object
+      properties:
+        data: { type: object }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    CreateWorkflowRequest:
+      type: object
+      required: [entity_id, entity_type]
+      properties:
+        entity_id: { type: string, format: uuid }
+        entity_type: { type: string }
+        notes: { type: string, nullable: true }
+
+    WorkflowItem:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        entity_id: { type: string }
+        entity_type: { type: string }
+        state: { type: string }
+
+    WorkflowEnvelopeResponse:
+      type: object
+      properties:
+        data: { $ref: "#/components/schemas/WorkflowItem" }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    WorkflowTimelineEntry:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        kind: { type: string }
+        action: { type: string }
+        timestamp: { type: string, format: date-time, nullable: true }
+        actor_id: { type: string, format: uuid, nullable: true }
+        detail: { type: string, nullable: true }
+        diff: { type: object, additionalProperties: true }
+
+    WorkflowTimelineResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/WorkflowTimelineEntry" }
+        meta:
+          type: object
+          properties:
+            api_version: { type: string }
+            count: { type: integer }
+            workflow_id: { type: string, format: uuid }
+            limit: { type: integer }
+            offset: { type: integer }
+
+    GraphWriteResult:
+      type: object
+      properties:
+        available: { type: boolean }
+        status: { type: string }
+
+    PublishValidationSummary:
+      type: object
+      properties:
+        valid: { type: boolean }
+        publish_ready: { type: boolean }
+
+    WorkflowSnapshotRef:
+      type: object
+      properties:
+        id: { type: string, format: uuid, nullable: true }
+        version_tag: { type: string, nullable: true }
+        status: { type: string, nullable: true }
+        module: { type: string, nullable: true }
+        released_at: { type: string, format: date-time, nullable: true }
+        entity_count: { type: integer, nullable: true }
+        relationship_count: { type: integer, nullable: true }
+
+    PublishResultData:
+      type: object
+      properties:
+        workflow: { $ref: "#/components/schemas/WorkflowItem" }
+        published_slug: { type: string, nullable: true }
+        dataset_version: { type: string, nullable: true }
+        published_at: { type: string, format: date-time, nullable: true }
+        graph_write: { $ref: "#/components/schemas/GraphWriteResult" }
+        snapshot: { $ref: "#/components/schemas/WorkflowSnapshotRef", nullable: true }
+        validation_summary: { $ref: "#/components/schemas/PublishValidationSummary" }
+
+    PublishWorkflowResponse:
+      type: object
+      properties:
+        data: { $ref: "#/components/schemas/PublishResultData" }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    PublishRequest:
+      type: object
+      required: [entity_payload]
+      properties:
+        entity_payload: { type: object }
+        related_entities: { type: array, items: { type: object } }
+        relationships: { type: array, items: { type: object } }
+        dataset_version: { type: string }
+        module: { type: string, nullable: true }
+        create_snapshot: { type: boolean, default: false }
+
+    WorkflowSaveResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            workflow: { $ref: "#/components/schemas/WorkflowItem" }
+            validation: { type: object }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    WorkflowListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/WorkflowItem" }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    ValidationResultResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [valid, issues]
+          properties:
+            valid: { type: boolean }
+            issues:
+              type: array
+              items:
+                type: object
+                properties:
+                  constraint_id: { type: string, nullable: true }
+                  level: { type: string }
+                  severity: { type: string }
+                  message: { type: string }
+                  field: { type: string, nullable: true }
+                  entity_id: { type: string, nullable: true }
+                  relationship_type: { type: string, nullable: true }
+        meta:
+          type: object
+          properties:
+            api_version: { type: string }
+            error_count: { type: integer }
+
+    ValidationSummaryResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [failed_count, pending_count, recent_failures]
+          properties:
+            failed_count: { type: integer }
+            pending_count: { type: integer }
+            recent_failures:
+              type: array
+              items: { type: object, additionalProperties: true }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    StubPackageResponse:
+      type: object
+      properties:
+        data: { type: object }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
     ResponseMeta:
       type: object
-      required: [dataset_version, api_version]
+      required: [api_version]
       properties:
         dataset_version: { type: string, example: "2026.1.0" }
         ontology_version: { type: string, example: "1.0.0" }
@@ -682,6 +1840,10 @@ components:
             enum: [biomedical, education, learning]
         language: { type: string, default: en }
         api_version: { type: string, example: v1 }
+        count: { type: integer }
+        total: { type: integer }
+        limit: { type: integer }
+        offset: { type: integer }
 
     EntitySummary:
       type: object
@@ -698,13 +1860,20 @@ components:
           enum: [biomedical, education, learning]
         external_ids: { type: object, additionalProperties: true }
 
-    HealthResponse:
+    HealthData:
       type: object
+      required: [status, checks]
       properties:
-        status: { type: string, example: ok }
+        status:
+          type: string
+          enum: [ok, degraded]
+        checks:
+          type: object
+          properties:
+            postgresql: { type: string }
+            neo4j: { type: string }
+            latest_snapshot: { type: string, nullable: true }
         dataset_version: { type: string, nullable: true }
-        neo4j: { type: string, example: connected }
-        postgresql: { type: string, example: connected }
 
     DrugListResponse:
       type: object
@@ -837,10 +2006,119 @@ components:
         data: { type: object }
         meta: { $ref: "#/components/schemas/ResponseMeta" }
 
+    EvidenceType:
+      type: string
+      enum:
+        - pubmed_article
+        - fda_label
+        - ema_smpc
+        - who_guideline
+        - nice_guideline
+        - rct
+        - meta_analysis
+        - systematic_review
+        - review_article
+        - clinical_guideline
+        - expert_consensus
+        - textbook
+
+    EvidenceListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { type: object, additionalProperties: true }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
     EvidenceDetailResponse:
       type: object
       properties:
-        data: { type: object }
+        data: { type: object, additionalProperties: true }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    CreateEvidenceRequest:
+      type: object
+      required: [title, evidence_type]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 500 }
+        evidence_type: { $ref: "#/components/schemas/EvidenceType" }
+        slug:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        quality_score: { type: number, minimum: 0, maximum: 1, default: 0.5 }
+        extract: { type: string, nullable: true }
+        supports_claim: { type: string, nullable: true }
+        journal: { type: string, nullable: true }
+        year: { type: integer, minimum: 1800, maximum: 2100, nullable: true }
+        authors:
+          type: array
+          items: { type: string }
+        dataset_version: { type: string, nullable: true }
+
+    UpdateEvidenceRequest:
+      type: object
+      properties:
+        title: { type: string, minLength: 1, maxLength: 500 }
+        evidence_type: { $ref: "#/components/schemas/EvidenceType" }
+        slug:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        quality_score: { type: number, minimum: 0, maximum: 1 }
+        extract: { type: string, nullable: true }
+        supports_claim: { type: string, nullable: true }
+        journal: { type: string, nullable: true }
+        year: { type: integer, minimum: 1800, maximum: 2100, nullable: true }
+        authors:
+          type: array
+          items: { type: string }
+        dataset_version: { type: string, nullable: true }
+
+    AttachDrugEvidenceRequest:
+      type: object
+      required: [evidence_id]
+      properties:
+        evidence_id: { type: string, format: uuid }
+
+    AttachAssertionRequest:
+      type: object
+      required: [source_id, source_type, relationship_type, target_id, target_type]
+      properties:
+        source_id: { type: string, format: uuid }
+        source_type: { type: string, description: "Neo4j label, e.g. Drug" }
+        relationship_type: { type: string, description: "Clinical relationship type, e.g. TREATS" }
+        target_id: { type: string, format: uuid }
+        target_type: { type: string, description: "Neo4j label, e.g. Disease" }
+
+    EvidenceDrugLinkData:
+      type: object
+      required: [evidence_id, drug_id]
+      properties:
+        evidence_id: { type: string, format: uuid }
+        drug_id: { type: string, format: uuid }
+        attached: { type: boolean }
+        detached: { type: boolean }
+
+    EvidenceDrugLinkResponse:
+      type: object
+      properties:
+        data: { $ref: "#/components/schemas/EvidenceDrugLinkData" }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    EvidenceAssertionLinkData:
+      type: object
+      required: [evidence_id, source_id, relationship_type, target_id]
+      properties:
+        evidence_id: { type: string, format: uuid }
+        source_id: { type: string, format: uuid }
+        relationship_type: { type: string }
+        target_id: { type: string, format: uuid }
+        attached: { type: boolean }
+        detached: { type: boolean }
+
+    EvidenceAssertionLinkResponse:
+      type: object
+      properties:
+        data: { $ref: "#/components/schemas/EvidenceAssertionLinkData" }
         meta: { $ref: "#/components/schemas/ResponseMeta" }
 
     FlashcardListResponse:

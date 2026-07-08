@@ -1,9 +1,10 @@
 "use client";
 
+import { useMutation } from "@tanstack/react-query";
 import { useApiClient } from "@/lib/hooks/use-api-client";
 import { fetchDashboard, resolveModuleSlug } from "../dashboard";
 import type { CompareInput, CreateWorkflowInput, PublishPackageInput } from "../types";
-import { defaultQueryOptions, DASHBOARD_REFRESH_MS } from "./config";
+import { defaultMutationOptions, defaultQueryOptions, DASHBOARD_REFRESH_MS } from "./config";
 import { apiQueryKeys } from "./keys";
 import { useApiQuery } from "./optimistic";
 
@@ -105,6 +106,15 @@ export function useWorkflow(workflowId: string) {
   );
 }
 
+export function useWorkflowTimeline(workflowId: string, options?: { limit?: number; offset?: number }) {
+  const client = useApiClient();
+  return useApiQuery(
+    apiQueryKeys.workflowTimeline(workflowId, options),
+    () => client.getWorkflowTimeline(workflowId, options),
+    { ...defaultQueryOptions, enabled: Boolean(workflowId) },
+  );
+}
+
 export function useDrug(drugId: string) {
   const client = useApiClient();
   return useApiQuery(
@@ -148,6 +158,32 @@ export function useDrugPackage(slug: string) {
     () => client.getDrugPackage(slug),
     { ...defaultQueryOptions, enabled: Boolean(slug) },
   );
+}
+
+export function useDrugWorkflowState(slug: string) {
+  const client = useApiClient();
+  return useApiQuery(
+    apiQueryKeys.drugWorkflowState(slug),
+    () => client.getDrugWorkflowState(slug),
+    { ...defaultQueryOptions, enabled: Boolean(slug) },
+  );
+}
+
+export function useOpenDrugWorkflow() {
+  const client = useApiClient();
+  return useMutation({
+    mutationFn: (slug: string) => client.openDrugWorkflow(slug),
+    ...defaultMutationOptions,
+  });
+}
+
+export function useSaveWorkflowPackage() {
+  const client = useApiClient();
+  return useMutation({
+    mutationFn: (input: { workflowId: string; body: PublishPackageInput }) =>
+      client.saveWorkflowPackage(input.workflowId, input.body),
+    ...defaultMutationOptions,
+  });
 }
 
 export type { CreateWorkflowInput, PublishPackageInput, CompareInput };

@@ -141,6 +141,22 @@ curl -s -X POST http://127.0.0.1:8000/api/v1/auth/token \
 
 **Studio route guards:** `/knowledge/*` and `/validation` require `curator:write`. Use a token with curator scopes or sign in via `/login`.
 
+### Curator workflow in Studio
+
+| Route | Purpose |
+|-------|---------|
+| `/knowledge/drugs` | Drug Browser — browse, filter, open editor |
+| `/knowledge/drugs/[id]` | Drug Editor — sectioned fields, autosave to curator draft |
+| `/validation` | Validation Center — review blocking issues before publish |
+
+**Autosave:** Field edits debounce (800ms) to `PUT /api/v1/curator/workflows/{id}/package`. Validation debounces separately (600ms) to `POST /api/v1/curator/validate`. Implementation: `apps/studio/src/components/drug-editor/`.
+
+**Publish transitions** (`submit` → `approve` → `publish`) are available via the curator API but not yet in Studio UI (Studio 4.4).
+
+### Deprecated: manual JSON workflow
+
+Do **not** use `scripts/dev-only/` (`publish-drug.sh`, `publish-stub.sh`) or edit `staging/` JSON for production curation. These remain for pipeline testing, CI, and emergency recovery only. See [scripts/dev-only/README.md](../scripts/dev-only/README.md).
+
 Studio scripts:
 
 | Command | Purpose |
@@ -240,9 +256,9 @@ See [architecture.md](architecture.md) and [phase3-infrastructure.md](phase3-inf
 
 ## Common tasks
 
-### Publish a structural stub (development)
+### Publish a structural stub (development only)
 
-See [phase4-curator.md](phase4-curator.md) for the curator workflow curl examples. Requires `curator:write` and `curator:publish` scopes (JWT in development).
+See [phase4-curator.md](phase4-curator.md) for curator workflow curl examples, or use `scripts/dev-only/publish-stub.sh` for one-time bootstrap. Requires `curator:write` and `curator:publish` scopes. For ongoing curation, use Curation Studio.
 
 ### Enable Neo4j search
 

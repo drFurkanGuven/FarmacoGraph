@@ -21,7 +21,7 @@ Read [docs/architecture.md](docs/architecture.md) and [docs/api-first.md](docs/a
 | **Code** | API, Studio, validators, tests — see Development below |
 | **Documentation** | Fix or extend `docs/`, `README.md`, OpenAPI spec |
 | **Ontology** | Propose relationship or constraint changes via PR |
-| **Curation** | Use [Curation Studio](docs/curation-studio.md) (when editors ship) or curator API |
+| **Curation** | Use [Curation Studio](docs/curation-studio.md) or the curator API |
 | **Issues** | Bug reports, feature requests, architecture discussions |
 
 ---
@@ -100,7 +100,9 @@ grouped error counts by rule ID.
 | API endpoint | `tests/api/` or `tests/integration/` |
 | Curator workflow | `tests/curator/` |
 | Validator rule | `tests/validation/` |
-| Studio utility | `apps/studio/src/**/__tests__/` |
+| Studio utility / component | `apps/studio/src/**/__tests__/` |
+| Drug browser / editor | `apps/studio/src/components/drugs/__tests__/`, `drug-editor/__tests__/` |
+| Validation center | `apps/studio/src/components/validation/__tests__/` |
 
 Run before submitting:
 
@@ -113,7 +115,7 @@ cd apps/studio && npx vitest run
 
 ## Curation contributions
 
-**Do not** add production knowledge via `scripts/dev-only/` or raw JSON commits unless explicitly requested for bootstrap fixtures.
+**Do not** add production knowledge via `scripts/dev-only/` or raw JSON commits unless explicitly requested for bootstrap fixtures. Those scripts are **deprecated for curators** — development, CI, and emergency recovery only.
 
 The curator workflow is:
 
@@ -121,7 +123,7 @@ The curator workflow is:
 draft → review → approved → published
 ```
 
-Use the curator API (`/api/v1/curator/*`) or Curation Studio. All packages pass validators before publish. See [docs/phase4-curator.md](docs/phase4-curator.md).
+**Canonical path:** Curation Studio (`/knowledge/drugs`, `/knowledge/drugs/[id]`, `/validation`) autosaves drafts via `PUT /api/v1/curator/workflows/{id}/package`. Alternatively, use the curator API directly. All packages pass validators before publish. See [docs/phase4-curator.md](docs/phase4-curator.md) and [docs/studio-roadmap.md](docs/studio-roadmap.md#canonical-autosave-workflow).
 
 `staging/` is for development fixtures only.
 

@@ -46,7 +46,7 @@ flowchart TB
 
 | Surface | Status | Contract source |
 |---------|--------|-----------------|
-| **REST** | Phase 3 | `openapi/openapi.yaml` |
+| **REST** | **Live** — auth, curator, dashboard, drugs, search | `openapi/openapi.yaml` |
 | **GraphQL** | Future | Ontology-derived schema |
 | **MCP** | Future | Tool manifest for LLM agents |
 | **SPARQL** | Future | Read-only RDF endpoint |

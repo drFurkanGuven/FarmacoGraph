@@ -20,7 +20,13 @@ export const apiQueryKeys = {
   curatorDrugs: (filters: Record<string, unknown>) =>
     [...apiQueryKeys.all, "curator-drugs", filters] as const,
   drugPackage: (slug: string) => [...apiQueryKeys.all, "drug-package", slug] as const,
+  drugWorkflowState: (slug: string) => [...apiQueryKeys.all, "drug-workflow-state", slug] as const,
   workflow: (workflowId: string) => [...apiQueryKeys.all, "workflow", workflowId] as const,
+  workflowTimeline: (workflowId: string, pagination?: { limit?: number; offset?: number }) =>
+    [...apiQueryKeys.all, "workflow-timeline", workflowId, pagination ?? {}] as const,
   explain: (drug: string, effect?: string) =>
     [...apiQueryKeys.all, "explain", drug, effect ?? ""] as const,
+  evidenceSearch: (q: string, limit?: number) =>
+    [...apiQueryKeys.all, "evidence-search", q, limit ?? 100] as const,
+  evidence: (id: string) => [...apiQueryKeys.all, "evidence", id] as const,
 };

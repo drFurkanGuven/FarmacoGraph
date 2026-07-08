@@ -12,6 +12,25 @@ export interface TokenResponse {
   name?: string | null;
 }
 
+export interface IntrospectResponse {
+  active: boolean;
+  scopes: AuthScope[];
+  roles: string[];
+  user_id?: string | null;
+  organization_id?: string | null;
+  workspace_id?: string | null;
+  token_type: "bearer" | "api_key";
+  auth_method: "jwt" | "api_key";
+  expires_at?: number | null;
+  email?: string | null;
+  name?: string | null;
+}
+
+export interface IntrospectInput {
+  apiKey?: string;
+  accessToken?: string;
+}
+
 export interface AuthApiErrorBody {
   detail?: string | { msg: string }[];
   message?: string;
@@ -39,7 +58,11 @@ function normalizeDetail(body: AuthApiErrorBody | null, status: number): string 
   return `Authentication failed (${status})`;
 }
 
-async function postAuth<T>(path: string, body: Record<string, unknown>): Promise<T> {
+async function postAuth<T>(
+  path: string,
+  body: Record<string, unknown>,
+  extraHeaders?: Record<string, string>,
+): Promise<T> {
   const url = `${getBaseUrl().replace(/\/$/, "")}${path}`;
   const response = await fetch(url, {
     method: "POST",
@@ -47,6 +70,7 @@ async function postAuth<T>(path: string, body: Record<string, unknown>): Promise
       Accept: "application/json",
       "Content-Type": "application/json",
       "X-FarmacoGraph-Client": "studio",
+      ...extraHeaders,
     },
     body: JSON.stringify(body),
   });
@@ -102,10 +126,24 @@ export const authApi = {
     });
   },
 
-  async introspectApiKey(apiKey: string): Promise<{ scopes: AuthScope[]; name?: string; email?: string }> {
-    return postAuth<{ scopes: AuthScope[]; name?: string; email?: string }>("/auth/introspect", {
-      api_key: apiKey,
-    });
+  async introspect(input: IntrospectInput = {}): Promise<IntrospectResponse> {
+    const headers: Record<string, string> = {};
+    const body: Record<string, unknown> = {};
+
+    if (input.accessToken) {
+      headers.Authorization = `Bearer ${input.accessToken}`;
+      body.access_token = input.accessToken;
+    } else if (input.apiKey) {
+      headers.Authorization = `Bearer ${input.apiKey}`;
+      headers["X-API-Key"] = input.apiKey;
+      body.api_key = input.apiKey;
+    }
+
+    return postAuth<IntrospectResponse>("/auth/introspect", body, headers);
+  },
+
+  async introspectApiKey(apiKey: string): Promise<IntrospectResponse> {
+    return this.introspect({ apiKey });
   },
 };
 

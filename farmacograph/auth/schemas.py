@@ -26,3 +26,26 @@ class TokenResponse(BaseModel):
     scopes: list[str] = Field(default_factory=list)
     email: str | None = None
     name: str | None = None
+
+
+class IntrospectRequest(BaseModel):
+    api_key: str | None = Field(default=None, description="API key when not sent via header")
+    access_token: str | None = Field(
+        default=None, description="JWT when not sent via Authorization header"
+    )
+
+
+class IntrospectResponse(BaseModel):
+    active: bool = True
+    scopes: list[str] = Field(default_factory=list)
+    roles: list[str] = Field(default_factory=list)
+    user_id: str | None = None
+    organization_id: str | None = None
+    workspace_id: str | None = None
+    token_type: str = Field(description="Credential kind: bearer (JWT) or api_key")
+    auth_method: str = Field(description="Resolution path: jwt or api_key")
+    expires_at: int | None = Field(
+        default=None, description="Unix timestamp when credential expires"
+    )
+    email: str | None = None
+    name: str | None = None

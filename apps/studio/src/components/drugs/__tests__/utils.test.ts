@@ -3,6 +3,7 @@ import type { CurriculumData } from "@/lib/api/types";
 import {
   buildDrugRows,
   confidenceLevelFromScore,
+  drugEditorHref,
   filterDrugRows,
   paginateDrugRows,
   sortDrugRows,
@@ -10,6 +11,13 @@ import {
   validationStatusFromRow,
 } from "../utils";
 import { DEFAULT_DRUG_BROWSER_FILTERS } from "../types";
+
+describe("drugEditorHref", () => {
+  it("builds the studio editor route from a slug", () => {
+    expect(drugEditorHref("ramipril")).toBe("/knowledge/drugs/ramipril");
+    expect(drugEditorHref("ace inhibitor")).toBe("/knowledge/drugs/ace%20inhibitor");
+  });
+});
 
 describe("confidenceLevelFromScore", () => {
   it("maps API confidence scores to levels", () => {

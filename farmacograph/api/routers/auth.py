@@ -4,10 +4,16 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
 
 from farmacograph.api.deps import get_auth_service
-from farmacograph.auth.schemas import RefreshRequest, TokenRequest, TokenResponse
+from farmacograph.auth.schemas import (
+    IntrospectRequest,
+    IntrospectResponse,
+    RefreshRequest,
+    TokenRequest,
+    TokenResponse,
+)
 from farmacograph.auth.service import AuthError, AuthService
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
@@ -60,20 +66,42 @@ async def refresh_token(
     )
 
 
-@router.post("/introspect")
-async def introspect_api_key(
-    body: dict,
+@router.post("/introspect", response_model=IntrospectResponse)
+async def introspect_credentials(
     auth_service: Annotated[AuthService, Depends(get_auth_service)],
-) -> dict:
-    api_key = body.get("api_key")
-    if not api_key:
-        raise HTTPException(status_code=400, detail="api_key is required")
+    body: IntrospectRequest | None = None,
+    authorization: Annotated[str | None, Header()] = None,
+    x_api_key: Annotated[str | None, Header(alias="X-API-Key")] = None,
+) -> IntrospectResponse:
+    bearer_token = body.access_token if body else None
+    api_key = body.api_key if body else None
+
+    if authorization and authorization.lower().startswith("bearer "):
+        token = authorization[7:].strip()
+        if token and not bearer_token:
+            bearer_token = token
+
+    if x_api_key and not api_key:
+        api_key = x_api_key
+
+    if not bearer_token and not api_key:
+        raise HTTPException(status_code=401, detail="Authentication required")
+
     try:
-        bundle = await auth_service.login_api_key(str(api_key))
+        result = await auth_service.introspect(bearer_token=bearer_token, api_key=api_key)
     except AuthError as exc:
         raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
-    return {
-        "scopes": bundle.scopes,
-        "email": bundle.email,
-        "name": bundle.name,
-    }
+
+    return IntrospectResponse(
+        active=result.active,
+        scopes=result.scopes,
+        roles=result.roles,
+        user_id=result.user_id,
+        organization_id=result.organization_id,
+        workspace_id=result.workspace_id,
+        token_type=result.token_type,
+        auth_method=result.auth_method,
+        expires_at=result.expires_at,
+        email=result.email,
+        name=result.name,
+    )

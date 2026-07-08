@@ -7,6 +7,7 @@ from typing import Any
 from farmacograph.core.exceptions import ValidationError
 from farmacograph.models.pharmacologic import Drug
 from farmacograph.validators.base import ValidationLevel, ValidationResult
+from farmacograph.validators.evidence_validator import EvidenceValidator
 from farmacograph.validators.ontology_validator import OntologyValidator
 from farmacograph.validators.registry import ValidatorRegistry, get_default_registry
 from farmacograph.validators.schema_validator import SchemaValidator
@@ -27,6 +28,7 @@ def validate_publish_package(
     """Run schema, biomedical, and per-edge ontology validation."""
     registry = _registry_with_drug_schema()
     ontology = OntologyValidator()
+    evidence = EvidenceValidator()
     result = ValidationResult(valid=True, issues=[])
 
     if entity_payload.get("entity_type") == "Drug":
@@ -34,6 +36,12 @@ def validate_publish_package(
             registry.validate_all(
                 entity_payload,
                 levels=[ValidationLevel.SCHEMA, ValidationLevel.BIOMEDICAL],
+            )
+        )
+        result = result.merge(
+            evidence.validate_package(
+                entity_payload,
+                relationships=relationships,
             )
         )
 
@@ -55,5 +63,7 @@ def require_valid_publish_package(
         relationships=relationships,
     )
     if not result.valid:
-        messages = "; ".join(f"{i.constraint_id or i.level}: {i.message}" for i in result.errors[:5])
+        messages = "; ".join(
+            f"{i.constraint_id or i.level}: {i.message}" for i in result.errors[:5]
+        )
         raise ValidationError(f"Publish validation failed: {messages}")

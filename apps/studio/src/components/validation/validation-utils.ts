@@ -12,7 +12,7 @@ import type {
 const LEVELS = new Set<ValidationLevel>(["schema", "ontology", "biomedical", "educational"]);
 const SEVERITIES = new Set<ValidationSeverity>(["error", "warning", "info"]);
 
-const EVIDENCE_CONSTRAINT_IDS = new Set(["FG-C018", "FG-C028"]);
+const EVIDENCE_CONSTRAINT_IDS = new Set(["FG-C012", "FG-C018", "FG-C019", "FG-C020", "FG-C026", "FG-C028"]);
 const EVIDENCE_KEYWORDS = /\b(evidence|provenance|attestation|source)\b/i;
 
 /** Map drug relationship keys to ontology target entity types. */

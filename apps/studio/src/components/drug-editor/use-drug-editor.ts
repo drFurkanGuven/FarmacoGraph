@@ -5,7 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "@/lib/api";
 import { apiQueryKeys } from "@/lib/api/react-query/keys";
 import { useApiClient } from "@/lib/hooks/use-api-client";
-import { loadCuratorDrugPackage, validateDrugPackage } from "./api";
+import { loadCuratorDrugPackage, validateDrugPackage, formatDrugEditorLoadError } from "./api";
 import { ensureDraftWorkflow } from "./autosave";
 import {
   AUTOSAVE_DEBOUNCE_MS,
@@ -28,6 +28,7 @@ export function useDrugEditor({ drugId }: UseDrugEditorOptions) {
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
   const [snapshot, setSnapshot] = useState<DrugEditorSnapshot>(() => ({
     drugId,
     workflow: null,
@@ -78,7 +79,7 @@ export function useDrugEditor({ drugId }: UseDrugEditorOptions) {
             workflowRef.current = workflowEnvelope.data;
           }
 
-          const result = await saveDrugPackage(client, drugId, workflowId, pkg);
+          const result = await saveDrugPackage(client, workflowId, pkg);
 
           setSnapshot((current) => ({
             ...current,
@@ -87,11 +88,18 @@ export function useDrugEditor({ drugId }: UseDrugEditorOptions) {
             saveError: null,
             lastSavedAt: result.savedAt,
             lastSaveStrategy: result.strategy,
+            validation: result.validation ?? current.validation,
             dirtySections: clearDirtySection(current.dirtySections, sectionId),
           }));
 
           await queryClient.invalidateQueries({ queryKey: apiQueryKeys.drug(drugId) });
+          await queryClient.invalidateQueries({ queryKey: apiQueryKeys.drugPackage(drugId) });
           await queryClient.invalidateQueries({ queryKey: apiQueryKeys.curatorQueue("draft") });
+          if (workflowRef.current?.id) {
+            await queryClient.invalidateQueries({
+              queryKey: apiQueryKeys.workflow(workflowRef.current.id),
+            });
+          }
         } catch (error) {
           const message = error instanceof ApiError ? error.message : "Autosave failed";
           setSnapshot((current) => ({
@@ -134,8 +142,7 @@ export function useDrugEditor({ drugId }: UseDrugEditorOptions) {
         runValidation(pkg);
       } catch (error) {
         if (cancelled) return;
-        const message = error instanceof ApiError ? error.message : "Failed to load drug editor";
-        setLoadError(message);
+        setLoadError(formatDrugEditorLoadError(error, drugId));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -146,7 +153,7 @@ export function useDrugEditor({ drugId }: UseDrugEditorOptions) {
     return () => {
       cancelled = true;
     };
-  }, [client, drugId, runValidation]);
+  }, [client, drugId, runValidation, reloadToken]);
 
   useEffect(() => {
     return () => {
@@ -186,7 +193,7 @@ export function useDrugEditor({ drugId }: UseDrugEditorOptions) {
     const sectionId = snapshot.dirtySections[0] ?? snapshot.activeSectionId;
     runSave.flush();
     if (!runSave.pending()) {
-      void saveDrugPackage(client, drugId, workflowRef.current?.id ?? null, packageRef.current)
+      void saveDrugPackage(client, workflowRef.current?.id ?? null, packageRef.current)
         .then((result) => {
           setSnapshot((current) => ({
             ...current,
@@ -194,6 +201,7 @@ export function useDrugEditor({ drugId }: UseDrugEditorOptions) {
             saveError: null,
             lastSavedAt: result.savedAt,
             lastSaveStrategy: result.strategy,
+            validation: result.validation ?? current.validation,
             dirtySections: clearDirtySection(current.dirtySections, sectionId),
           }));
         })
@@ -203,6 +211,10 @@ export function useDrugEditor({ drugId }: UseDrugEditorOptions) {
         });
     }
   }, [client, drugId, runSave, snapshot.activeSectionId, snapshot.dirtySections]);
+
+  const retryLoad = useCallback(() => {
+    setReloadToken((value) => value + 1);
+  }, []);
 
   const activeSection = getSectionById(snapshot.activeSectionId) ?? getSectionById(DEFAULT_SECTION_ID)!;
 
@@ -214,5 +226,6 @@ export function useDrugEditor({ drugId }: UseDrugEditorOptions) {
     setActiveSection,
     updateField,
     retrySave,
+    retryLoad,
   };
 }

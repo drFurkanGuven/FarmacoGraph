@@ -25,6 +25,9 @@ class SnapshotService:
         self._ontology_version = ontology_version
         self._api_version = api_version
 
+    async def get_by_version(self, version_tag: str) -> KnowledgeSnapshot | None:
+        return await self._snapshots.get_by_version(version_tag)
+
     async def create_module_snapshot(
         self,
         module: str,

@@ -35,6 +35,7 @@ def _base_entity(
             "updated_at": _NOW.isoformat(),
             "created_by": "curator-system",
             "source": "manual",
+            "curator_attestation": True,
         },
         "versioning": {
             "dataset_version": dataset_version,
@@ -105,6 +106,11 @@ def build_cardiovascular_publish_package(
             "target_type": "Disease",
             "source_id": CV_STUB_DRUG_ID,
             "target_id": CV_STUB_DISEASE_ID,
+            "properties": {
+                "confidence_score": 0.9,
+                "evidence_level": "expert_consensus",
+                "explanation": "Structural stub — expert consensus placeholder for CI.",
+            },
         },
         {
             "relationship_type": "HAS_MECHANISM_ROOT",
@@ -112,6 +118,11 @@ def build_cardiovascular_publish_package(
             "target_type": "MechanismFragment",
             "source_id": CV_STUB_DRUG_ID,
             "target_id": CV_STUB_MECHANISM_ID,
+            "properties": {
+                "confidence_score": 0.9,
+                "evidence_level": "expert_consensus",
+                "explanation": "Structural stub — expert consensus placeholder for CI.",
+            },
         },
     ]
 

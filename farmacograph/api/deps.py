@@ -14,6 +14,7 @@ from farmacograph.core.container import Container, get_container
 from farmacograph.services.compare import CompareService
 from farmacograph.services.curriculum import CurriculumService
 from farmacograph.services.drugs import DrugService
+from farmacograph.services.evidence import EvidenceService
 from farmacograph.services.explain import ExplainService
 from farmacograph.services.health import HealthService
 from farmacograph.services.info import InfoService
@@ -46,6 +47,12 @@ def get_info_service(container: Annotated[Container, Depends(get_app_container)]
 
 def get_drug_service(container: Annotated[Container, Depends(get_app_container)]) -> DrugService:
     return container.drug_service
+
+
+def get_evidence_service(
+    container: Annotated[Container, Depends(get_app_container)],
+) -> EvidenceService:
+    return container.evidence_service
 
 
 def get_explain_service(

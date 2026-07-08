@@ -1,6 +1,6 @@
 # FarmacoGraph Studio
 
-Next.js Curation Studio — Phase 4.1 foundation complete; Phase 4.2 editors in progress.
+Next.js Curation Studio — secure curation path live (drug browser, drug editor, validation center).
 
 ## Quick start
 
@@ -27,36 +27,56 @@ Sign in at http://localhost:3000/login (API key or password) or paste credential
 
 ## Status
 
-### Functional routes
+### Live routes
 
 | Route | Feature |
 |-------|---------|
 | `/` | Dashboard — ops metrics, curator queue, validation summary, jobs |
-| `/login` | Sign in via `POST /api/v1/auth/token` |
-| `/settings` | Manual JWT/API key, session scopes |
+| `/login` | Sign in via `POST /api/v1/auth/token` (password or API key grant) |
+| `/settings` | Manual JWT/API key, session scopes, API URL |
 | `/search` | Global drug search |
+| `/knowledge/drugs` | **Drug Browser** — list, filter, sort, pagination, workflow status |
+| `/knowledge/drugs/[id]` | **Drug Editor** — sectioned fields, autosave, live validation, context panel |
+| `/validation` | **Validation Center** — summary stats, grouped issues, publish readiness |
 
-### Placeholder routes (API client ready)
+### Placeholder routes
 
-| Route | Planned milestone | API methods prepared |
-|-------|-------------------|----------------------|
-| `/knowledge/drugs` | 4.2.2 Drug List | `drugs()`, `getDrug()`, `curatorQueue()` |
-| `/knowledge/*` (other) | 4.2 editors | `createWorkflow()`, entity hooks |
-| `/validation` | 4.3 Validation Center | `validatePackage()`, `validation-summary` |
-| `/graph` | 4.3 Graph Explorer | graph projection endpoints (API planned) |
-| `/snapshots` | 4.4 Publish wizard | `approveWorkflow()`, `publishWorkflow()` |
-| `/activity`, `/users` | 4.5 | `audit-logs`, admin (planned) |
+| Route | Planned milestone | Notes |
+|-------|-------------------|-------|
+| `/knowledge/diseases`, `/evidence`, `/education`, `/mechanisms` | 4.2+ entity editors | Placeholder pages |
+| `/graph` | 4.3 Graph Explorer | Cytoscape.js |
+| `/snapshots` | 4.4 Publish wizard | `submitWorkflow`, `approveWorkflow`, `publishWorkflow` in client |
+| `/activity`, `/users` | 4.5 | Admin views |
 
 ## Authentication
 
 Two-layer protection:
 
 1. **Middleware** (`src/middleware.ts`) — cookie check, redirect to `/login?returnTo=…`
-2. **Client `AuthGate`** (`src/lib/auth/guards.tsx`) — scope/role enforcement
+2. **Client `AuthGate`** (`src/lib/auth/guards.tsx`) — scope/role enforcement per route
 
-Session: `localStorage` + `farmacograph.studio.authenticated` cookie. API calls attach `Authorization: Bearer <accessToken|apiKey>`.
+| Flow | Endpoint / header |
+|------|-------------------|
+| Password login | `POST /auth/token` with `grant_type: password` |
+| API key login | `POST /auth/token` with `grant_type: api_key` |
+| Token refresh | `POST /auth/refresh` (automatic on 401) |
+| Direct API key | `Authorization: Bearer fg_…` or `X-API-Key` header |
 
-See `src/lib/auth/README.md` for integration details.
+Session: `localStorage` + `farmacograph.studio.authenticated` cookie.
+
+**Protected routes:** `/knowledge/*` and `/validation` require `curator:write`; `/snapshots` requires `curator:publish`.
+
+## Autosave (Drug Editor)
+
+Canonical draft persistence uses the curator workflow API:
+
+1. Open workflow — `POST /curator/drugs/{slug}/workflows` (slug) or find/create via queue (UUID)
+2. Autosave — `PUT /curator/workflows/{id}/package` (800ms debounce)
+3. Validate — `POST /curator/validate` (600ms debounce)
+
+Key files: `src/components/drug-editor/autosave.ts`, `use-drug-editor.ts`.
+
+Submit/approve/publish are **not** exposed in the editor UI yet — use the curator API or wait for Studio 4.4.
 
 ## Documentation
 

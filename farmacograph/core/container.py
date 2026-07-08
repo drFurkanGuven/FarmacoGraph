@@ -13,6 +13,7 @@ from farmacograph.db.postgres.session import create_session_factory
 from farmacograph.events.bus import EventBus
 from farmacograph.repositories.audit import AuditRepository
 from farmacograph.repositories.curator import CuratorRepository
+from farmacograph.repositories.evidence import EvidenceRepository
 from farmacograph.repositories.graph import GraphRepository
 from farmacograph.repositories.graph_writer import GraphWriter
 from farmacograph.repositories.jobs import JobRepository
@@ -24,6 +25,7 @@ from farmacograph.services.curator import CuratorService
 from farmacograph.services.curriculum import CurriculumService
 from farmacograph.services.dashboard import DashboardService
 from farmacograph.services.drugs import DrugService
+from farmacograph.services.evidence import EvidenceService
 from farmacograph.services.explain import ExplainService
 from farmacograph.services.health import HealthService
 from farmacograph.services.info import InfoService
@@ -53,12 +55,14 @@ class Container:
     outbox_repo: OutboxRepository = field(init=False)
     audit_repo: AuditRepository = field(init=False)
     curator_repo: CuratorRepository = field(init=False)
+    evidence_repo: EvidenceRepository = field(init=False)
     graph_writer: GraphWriter = field(init=False)
 
     # Services
     health_service: HealthService = field(init=False)
     info_service: InfoService = field(init=False)
     drug_service: DrugService = field(init=False)
+    evidence_service: EvidenceService = field(init=False)
     explain_service: ExplainService = field(init=False)
     compare_service: CompareService = field(init=False)
     learning_service: LearningService = field(init=False)
@@ -84,6 +88,7 @@ class Container:
         self.audit_repo = AuditRepository(self.session_factory)
         self.curator_repo = CuratorRepository(self.session_factory)
         self.graph_writer = GraphWriter(self.neo4j)
+        self.evidence_repo = EvidenceRepository(self.neo4j, self.graph_writer)
 
         self.health_service = HealthService(
             settings=self.settings,
@@ -93,6 +98,11 @@ class Container:
         )
         self.info_service = InfoService(self.settings, self.snapshot_repo, self.graph_repo)
         self.drug_service = DrugService(graph_repo=self.graph_repo, settings=self.settings)
+        self.evidence_service = EvidenceService(
+            evidence_repo=self.evidence_repo,
+            audit_repo=self.audit_repo,
+            settings=self.settings,
+        )
         self.explain_service = ExplainService(graph_repo=self.graph_repo)
         self.compare_service = CompareService(graph_repo=self.graph_repo)
         self.learning_service = LearningService(graph_repo=self.graph_repo)
