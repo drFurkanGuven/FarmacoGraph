@@ -8,6 +8,8 @@ const nextConfig: NextConfig = {
   output: "standalone",
   basePath: basePath || undefined,
   assetPrefix: basePath || undefined,
+  // Match nginx /studio/ — avoids redirect loop with Safari (trailing slash ping-pong)
+  trailingSlash: Boolean(basePath),
 };
 
 export default nextConfig;
