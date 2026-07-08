@@ -82,7 +82,7 @@ STUDIO_BODY="$(cat /tmp/fg-smoke-body.$$ 2>/dev/null || true)"
 if echo "${STUDIO_HEADERS}" | grep -qiE '^HTTP/[^ ]+ 3[0-9]{2}'; then
   LOC=$(echo "${STUDIO_HEADERS}" | grep -i '^location:' | head -1 | tr -d '\r')
   # Single hop to login is OK; loop (returnTo=/login) is not.
-  if echo "${LOC}" | grep -qiE 'returnTo=(%2Flogin|\/login)'; then
+  if echo "${LOC}" | grep -qiE 'returnTo=(%2Flogin|/login)'; then
     fail "/studio/ redirect loop signature: ${LOC}"
   elif echo "${LOC}" | grep -qi '/studio/login'; then
     if echo "${LOC}" | grep -qiE 'returnTo=%2F($|&)'; then
@@ -116,7 +116,7 @@ LOGIN_NOFOLLOW_CODE=$(echo "${LOGIN_HEADERS}" | awk 'toupper($0) ~ /^HTTP\// {pr
 
 # Redirect loop signature seen in the wild: 307 → /studio/login/?returnTo=%2Flogin%2F forever
 LOGIN_LOOP=0
-if echo "${LOGIN_LOC}" | grep -qiE 'returnTo=(%2Flogin|\/login)'; then
+if echo "${LOGIN_LOC}" | grep -qiE 'returnTo=(%2Flogin|/login)'; then
   fail "/studio/login/ redirect loop signature: ${LOGIN_LOC}"
   LOGIN_LOOP=1
 fi
@@ -194,6 +194,18 @@ if echo "${COMBINED}" | grep -qiE 'https?://(127\.0\.0\.1|localhost|host\.docker
   fail "HTML references loopback/localhost API — browsers on curator PCs cannot reach it"
 else
   pass "No localhost/loopback API URLs spotted in Studio HTML"
+fi
+
+# --- 6. Build fingerprint (proves new image was deployed) ---
+echo ""
+echo "--- build fingerprint ---"
+BUILD_META=$(curl_meta "${BASE_URL}/studio/build-id.txt")
+BUILD_CODE="${BUILD_META%%|*}"
+BUILD_BODY="$(cat /tmp/fg-smoke-body.$$ 2>/dev/null || true)"
+if [[ "${BUILD_CODE}" == "200" && -n "${BUILD_BODY}" ]]; then
+  pass "build-id.txt present: $(echo "${BUILD_BODY}" | head -c 80 | tr -d '\n')"
+else
+  fail "build-id.txt missing (HTTP ${BUILD_CODE}) — Studio image is stale; rebuild with --no-cache"
 fi
 
 rm -f /tmp/fg-smoke-body.$$ /tmp/fg-smoke-err.$$

@@ -2,20 +2,19 @@ import { NextResponse, type NextRequest } from "next/server";
 import { AUTH_COOKIE_NAME } from "@/lib/auth/storage";
 import {
   isLoginLoopLocation,
-  isLoginPath,
   resolveAuthMiddleware,
   safeReturnTo,
 } from "@/lib/auth/routes";
 
+/**
+ * Auth gate for Studio (runs with basePath stripped — pathnames are `/`, `/login/`, …).
+ *
+ * `/login` is excluded from `config.matcher` so middleware never runs on the login
+ * page. That makes the production loop
+ * `307 Location: /login/?returnTo=%2Flogin%2F` impossible at the matcher layer.
+ */
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-
-  // Hard stop: login is always public. Never set returnTo from this path.
-  // (Historical bug: PUBLIC_ROUTES.has("/login/") was false → 307 → returnTo=/login/)
-  if (isLoginPath(pathname)) {
-    return NextResponse.next();
-  }
-
   const authenticated = request.cookies.get(AUTH_COOKIE_NAME)?.value === "1";
   const decision = resolveAuthMiddleware(pathname, authenticated);
 
@@ -25,15 +24,11 @@ export function middleware(request: NextRequest) {
 
   const loginUrl = request.nextUrl.clone();
   loginUrl.pathname = decision.loginPath;
-  // Keep query clean — only a sanitized returnTo.
   loginUrl.search = "";
-  const returnTo = safeReturnTo(decision.returnTo);
-  loginUrl.searchParams.set("returnTo", returnTo);
+  loginUrl.searchParams.set("returnTo", safeReturnTo(decision.returnTo));
 
   const response = NextResponse.redirect(loginUrl);
-  const location = response.headers.get("location");
-  if (isLoginLoopLocation(location)) {
-    // Last-resort guard: never ship the loop Location header.
+  if (isLoginLoopLocation(response.headers.get("location"))) {
     const fallback = request.nextUrl.clone();
     fallback.pathname = decision.loginPath;
     fallback.search = "";
@@ -46,12 +41,15 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * With basePath `/studio`, the common negative-lookahead matcher alone does
-     * NOT run on the app root (`/studio/` → pathname `/`). Explicit `/` required.
-     * Static assets under `/_next/static` stay unmatched (public).
-     * Login stays public via isLoginPath (never Location: /login/?returnTo=/login/).
+     * Explicit `/` — required under basePath `/studio` (Next otherwise skips root).
+     *
+     * Negative lookahead MUST include `login` so `/login` and `/login/` never enter
+     * middleware. Without that, a stale isProtectedPath("/login/") → true caused:
+     *   GET /studio/login/ → 307 → /studio/login/?returnTo=%2Flogin%2F
+     *
+     * Static assets stay unmatched (public).
      */
     "/",
-    "/((?!_next/static|_next/image|favicon.ico|robots.txt|manifest\\.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!login(?:/|$)|_next/static|_next/image|favicon\\.ico|robots\\.txt|manifest\\.webmanifest|build-id\\.txt|studio-build\\.json|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

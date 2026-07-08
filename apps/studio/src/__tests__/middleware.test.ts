@@ -16,8 +16,9 @@ describe("middleware matcher", () => {
     expect(config.matcher).toContain("/");
   });
 
-  it("excludes _next/static from matcher", () => {
+  it("excludes login from matcher so middleware never runs on /login/", () => {
     const patterns = config.matcher.join(" ");
+    expect(patterns).toMatch(/\(\?!login/);
     expect(patterns).toContain("_next/static");
   });
 });
@@ -31,7 +32,8 @@ describe("middleware auth redirect", () => {
     expect(isLoginLoopLocation(location)).toBe(false);
   });
 
-  it("does not redirect /login or /login/ (loop signature)", () => {
+  it("if somehow invoked on /login/, must not redirect (safety net)", () => {
+    // Matcher excludes login in production; this asserts resolve path is still safe.
     expect(middleware(request("/login")).status).toBe(200);
     expect(middleware(request("/login/")).headers.get("location")).toBeNull();
     const looped = middleware(request("/login/?returnTo=%2Flogin%2F"));

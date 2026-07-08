@@ -291,10 +291,12 @@ if [[ "$NO_PULL" != true ]]; then
 fi
 
 if [[ "$FAST" != true ]]; then
+  STUDIO_BUILD_ID="$(git rev-parse --short HEAD 2>/dev/null || date -u +%Y%m%dT%H%M%SZ)"
   echo "→ docker compose build --no-cache studio (bakes NEXT_PUBLIC_API_URL + NEXT_PUBLIC_BASE_PATH)"
   echo "  Note: plain 'docker compose up -d --build api studio' is NOT enough after URL/basePath"
   echo "  changes — Compose may reuse cached layers that still embed the old public env."
-  docker compose build --no-cache studio
+  echo "  Build id: ${STUDIO_BUILD_ID}"
+  docker compose build --no-cache --build-arg "FG_STUDIO_BUILD_ID=${STUDIO_BUILD_ID}" studio
 fi
 
 echo "→ docker compose up -d --build ${SERVICES}"

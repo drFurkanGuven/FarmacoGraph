@@ -14,6 +14,7 @@ COPY . .
 # Runtime -e alone will NOT fix a wrong baked API URL or basePath in JS chunks.
 ARG NEXT_PUBLIC_API_URL=https://farmacograph.furkanguven.space/api/v1
 ARG NEXT_PUBLIC_BASE_PATH=/studio
+ARG FG_STUDIO_BUILD_ID=
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_BASE_PATH=$NEXT_PUBLIC_BASE_PATH
 
@@ -38,6 +39,10 @@ RUN echo "Building Studio with NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL} NEXT_P
     } \
     console.log('Pre-build env OK'); \
   " \
+  && BUILD_ID="${FG_STUDIO_BUILD_ID:-login-matcher-$(date -u +%Y%m%dT%H%M%SZ)}" \
+  && mkdir -p public \
+  && printf '%s\n' "$BUILD_ID" > public/build-id.txt \
+  && printf '%s\n' "{\"buildId\":\"$BUILD_ID\",\"loginMatcherExcluded\":true,\"fix\":\"login-never-in-middleware-matcher\"}" > public/studio-build.json \
   && npm run build \
   && node -e " \
     const fs = require('fs'); \
@@ -50,6 +55,39 @@ RUN echo "Building Studio with NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL} NEXT_P
     } \
     console.log('Verified routes-manifest basePath:', actual || '(root)'); \
     console.log('Baked NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL); \
+    const id = fs.readFileSync('public/build-id.txt', 'utf8').trim(); \
+    if (!id) { console.error('build-id.txt missing'); process.exit(1); } \
+    console.log('Studio build-id:', id); \
+  " \
+  && node -e " \
+    const fs = require('fs'); \
+    const path = require('path'); \
+    const candidates = [ \
+      '.next/server/middleware.js', \
+      '.next/server/src/middleware.js', \
+      '.next/server/middleware-manifest.json', \
+    ]; \
+    let found = false; \
+    for (const f of candidates) { \
+      if (!fs.existsSync(f)) continue; \
+      found = true; \
+      const src = fs.readFileSync(f, 'utf8'); \
+      if (f.endsWith('.json')) { \
+        const j = JSON.parse(src); \
+        const sorted = JSON.stringify(j); \
+        if (!sorted.includes('login')) { \
+          console.error('middleware-manifest.json does not mention login exclusion — check matcher'); \
+          process.exit(1); \
+        } \
+        console.log('Verified middleware-manifest mentions login exclusion'); \
+      } else if (!src.includes('returnTo') && !src.includes('AUTH_COOKIE')) { \
+        console.error('middleware.js missing auth redirect helpers'); \
+        process.exit(1); \
+      } else { \
+        console.log('Verified middleware bundle:', f); \
+      } \
+    } \
+    if (!found) console.warn('WARN: no middleware artifact found to fingerprint'); \
   "
 
 FROM node:20-alpine AS runner
