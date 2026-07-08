@@ -9,16 +9,116 @@
       "organ_system": "cardiovascular"
     },
     {
+      "id": "b1000001-0000-4000-8010-000000000002",
+      "entity_type": "DrugClass",
+      "slug": "ace-inhibitors",
+      "label": "ACE inhibitors",
+      "description": "FILL_BY_CURATOR",
+      "organ_system": "cardiovascular"
+    },
+    {
+      "id": "b1000001-0000-4000-8010-000000000003",
+      "entity_type": "DrugClass",
+      "slug": "arbs",
+      "label": "Angiotensin receptor blockers",
+      "description": "FILL_BY_CURATOR",
+      "organ_system": "cardiovascular"
+    },
+    {
+      "id": "b1000001-0000-4000-8010-000000000004",
+      "entity_type": "DrugClass",
+      "slug": "calcium-channel-blockers",
+      "label": "Calcium channel blockers",
+      "description": "FILL_BY_CURATOR",
+      "organ_system": "cardiovascular"
+    },
+    {
+      "id": "b1000001-0000-4000-8010-000000000005",
+      "entity_type": "DrugClass",
+      "slug": "loop-diuretics",
+      "label": "Loop diuretics",
+      "description": "FILL_BY_CURATOR",
+      "organ_system": "cardiovascular"
+    },
+    {
+      "id": "b1000001-0000-4000-8010-000000000006",
+      "entity_type": "DrugClass",
+      "slug": "antiarrhythmics",
+      "label": "Antiarrhythmics",
+      "description": "FILL_BY_CURATOR",
+      "organ_system": "cardiovascular"
+    },
+    {
+      "id": "b1000001-0000-4000-8010-000000000007",
+      "entity_type": "DrugClass",
+      "slug": "anticoagulants",
+      "label": "Anticoagulants",
+      "description": "FILL_BY_CURATOR",
+      "organ_system": "cardiovascular"
+    },
+    {
+      "id": "b1000001-0000-4000-8010-000000000008",
+      "entity_type": "DrugClass",
+      "slug": "antiplatelets",
+      "label": "Antiplatelets",
+      "description": "FILL_BY_CURATOR",
+      "organ_system": "cardiovascular"
+    },
+    {
+      "id": "b1000001-0000-4000-8010-000000000009",
+      "entity_type": "DrugClass",
+      "slug": "statins",
+      "label": "Statins",
+      "description": "FILL_BY_CURATOR",
+      "organ_system": "cardiovascular"
+    },
+    {
+      "id": "b1000001-0000-4000-8010-000000000010",
+      "entity_type": "DrugClass",
+      "slug": "nitrates",
+      "label": "Nitrates",
+      "description": "FILL_BY_CURATOR",
+      "organ_system": "cardiovascular"
+    },
+    {
+      "id": "b1000001-0000-4000-8010-000000000011",
+      "entity_type": "DrugClass",
+      "slug": "inotropes-vasodilators",
+      "label": "Inotropes and vasodilators",
+      "description": "FILL_BY_CURATOR",
+      "organ_system": "cardiovascular"
+    },
+    {
+      "id": "b1000001-0000-4000-8010-000000000012",
+      "entity_type": "DrugClass",
+      "slug": "other-cardiovascular",
+      "label": "Other cardiovascular agents",
+      "description": "FILL_BY_CURATOR",
+      "organ_system": "cardiovascular"
+    },
+    {
       "id": "d1000001-0000-4000-8010-000000000001",
       "entity_type": "Disease",
       "slug": "hypertension",
       "label": "Hypertension"
     },
     {
+      "id": "d1000001-0000-4000-8010-000000000002",
+      "entity_type": "Disease",
+      "slug": "angina-pectoris",
+      "label": "Angina pectoris"
+    },
+    {
       "id": "m1000001-0000-4000-8010-000000000001",
       "entity_type": "MechanismFragment",
       "slug": "beta-adrenergic-blockade",
       "label": "Beta-adrenergic blockade"
+    },
+    {
+      "id": "m1000001-0000-4000-8010-000000000002",
+      "entity_type": "MechanismFragment",
+      "slug": "ace-inhibition",
+      "label": "ACE inhibition"
     }
   ]
 }

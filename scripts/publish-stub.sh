@@ -2,31 +2,12 @@
 # Publish cardiovascular structural stub via curator API (pipeline test).
 set -euo pipefail
 
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# shellcheck source=scripts/lib/api.sh
+source "$ROOT/scripts/lib/api.sh"
+
 BASE="${FG_API_URL:-http://127.0.0.1:8001}"
 ENTITY_ID="00000000-0000-4000-8000-000000000001"
-
-curl_json() {
-  local method="$1"
-  local url="$2"
-  local body="${3:-}"
-  local tmp
-  tmp=$(mktemp)
-  local code
-  if [[ -n "$body" ]]; then
-    code=$(curl -sS -o "$tmp" -w "%{http_code}" -X "$method" "$url" \
-      -H "Content-Type: application/json" -d "$body")
-  else
-    code=$(curl -sS -o "$tmp" -w "%{http_code}" -X "$method" "$url")
-  fi
-  if [[ "$code" -ge 400 ]]; then
-    echo "ERROR HTTP $code $method $url" >&2
-    cat "$tmp" >&2
-    rm -f "$tmp"
-    exit 1
-  fi
-  cat "$tmp"
-  rm -f "$tmp"
-}
 
 echo "→ API: $BASE"
 
@@ -68,4 +49,5 @@ curl_json GET "$BASE/api/v1/drugs?module=cardiovascular" | python3 -m json.tool 
 echo ""
 curl_json GET "$BASE/api/v1/search?q=structural" | python3 -m json.tool
 echo ""
-echo "✓ Done. Try: https://farmacograph.furkanguven.space/search?q=structural"
+echo "✓ Done. Next: ./scripts/bootstrap-cv.sh or publish real drugs with ./scripts/publish-drug.sh"
+

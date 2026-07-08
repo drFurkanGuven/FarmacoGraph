@@ -54,5 +54,40 @@ if typer is not None:
         typer.echo(f"Module: {stats['module']}")
         typer.echo(f"Total slugs: {stats['total_slugs']}")
         typer.echo(f"By status: {stats['by_status']}")
+
+    @app.command("next-drugs")
+    def next_drugs_cmd(
+        limit: int = typer.Option(10, "--limit", "-n"),
+    ) -> None:
+        """List next pending drugs in the curation queue."""
+        from farmacograph.curator.drug_package import list_pending_drugs
+
+        for row in list_pending_drugs(limit=limit):
+            pkg = "ready" if row["package_exists"] else "missing JSON"
+            typer.echo(f"{row['slug']:22}  {row['category']:28}  ({pkg})")
+
+    @app.command("init-drug-entry")
+    def init_drug_entry_cmd(
+        slug: str = typer.Option(..., "--slug", "-s"),
+        overwrite: bool = typer.Option(False, "--overwrite"),
+    ) -> None:
+        """Create staging/cardiovascular/drugs/{slug}.json skeleton."""
+        from farmacograph.curator.drug_package import init_drug_entry
+
+        path = init_drug_entry(slug, overwrite=overwrite)
+        typer.echo(f"Created {path}")
+
+    @app.command("mark-published")
+    def mark_published_cmd(
+        slug: str = typer.Option(..., "--slug", "-s"),
+    ) -> None:
+        """Mark a slug as published in curriculum.yaml."""
+        from farmacograph.curator.drug_package import mark_curriculum_published
+
+        if mark_curriculum_published(slug):
+            typer.echo(f"✓ {slug} → published in curriculum.yaml")
+        else:
+            typer.echo(f"No change for {slug} (not found or already published)")
+            raise typer.Exit(1)
 else:
     app = None  # type: ignore[assignment]

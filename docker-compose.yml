@@ -65,6 +65,7 @@ services:
     volumes:
       - ./farmacograph:/app/farmacograph:ro
       - ./ontology:/app/ontology:ro
+      - ./staging:/app/staging:ro
 
 volumes:
   pgdata:

@@ -22,6 +22,33 @@ farmacograph curriculum-stats --module cardiovascular
 
 AI çıktısı → curator doğrular → `curator_attestation: true` → validate → publish.
 
+## Phased rollout (63 drugs)
+
+| Faz | Ne | Komut |
+|-----|-----|--------|
+| **0** | Platform test (structural stub) | `./scripts/bootstrap-cv.sh` |
+| **1** | Pilot ilaç — metoprolol | Curator doldurur → `publish-drug.sh` |
+| **2** | Kategori batch (ör. beta-blockers) | `init-drug-entry --slug propranolol` → doldur → publish |
+| **3** | Shared node genişletme | `shared/nodes.index.json` güncelle |
+| **4** | Modül tamamlama | 63/63 + snapshot `create_snapshot: true` |
+
+```bash
+# Sunucuda (ilk kurulum)
+cd /opt/FarmacoGraph && git pull
+./scripts/bootstrap-cv.sh
+
+# Sıradaki ilaçlar
+python3 -m farmacograph next-drugs -n 10
+
+# Yeni iskelet JSON
+python3 -m farmacograph init-drug-entry --slug propranolol
+
+# Doldurulmuş paket yayınla
+./scripts/publish-drug.sh staging/cardiovascular/drugs/metoprolol.json --mark-curriculum
+```
+
+**Önemli:** Farmakoloji içeriği curator doldurur; repo otomatik üretmez. `FILL_BY_CURATOR` alanları publish öncesi tamamlanmalı ve `curator_attestation: true` olmalı.
+
 ## Per-drug workflow
 
 ### 1. Copy template

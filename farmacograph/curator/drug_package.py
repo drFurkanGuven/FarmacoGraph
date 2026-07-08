@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -15,6 +16,25 @@ from farmacograph.validators.base import ValidationResult
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 CV_CURRICULUM_PATH = PROJECT_ROOT / "staging" / "cardiovascular" / "curriculum.yaml"
 CV_TEMPLATE_PATH = PROJECT_ROOT / "staging" / "cardiovascular" / "drug-entry.template.json"
+CV_DRUGS_DIR = PROJECT_ROOT / "staging" / "cardiovascular" / "drugs"
+CV_NODES_INDEX_PATH = PROJECT_ROOT / "staging" / "cardiovascular" / "shared" / "nodes.index.json"
+DRUG_ENTITY_NAMESPACE = uuid.UUID("a1000001-0000-4000-8000-000000000000")
+
+# Shared nodes to wire when initializing a drug entry per curriculum category.
+CATEGORY_SHARED_NODE_SLUGS: dict[str, list[str]] = {
+    "beta-blockers": ["beta-blockers", "hypertension", "angina-pectoris", "beta-adrenergic-blockade"],
+    "ace-inhibitors": ["ace-inhibitors", "hypertension", "ace-inhibition"],
+    "arbs": ["arbs", "hypertension"],
+    "calcium-channel-blockers": ["calcium-channel-blockers", "hypertension", "angina-pectoris"],
+    "diuretics": ["loop-diuretics", "hypertension"],
+    "antiarrhythmics": ["antiarrhythmics"],
+    "anticoagulants": ["anticoagulants"],
+    "antiplatelets": ["antiplatelets"],
+    "statins": ["statins"],
+    "nitrates": ["nitrates", "angina-pectoris"],
+    "inotropes-vasodilators": ["inotropes-vasodilators"],
+    "other-cardiovascular": ["other-cardiovascular"],
+}
 
 
 class DrugPublishPackage(BaseModel):
@@ -78,3 +98,202 @@ def curriculum_stats(curriculum: dict[str, Any]) -> dict[str, Any]:
         "by_status": by_status,
         "categories": categories,
     }
+
+
+def drug_entity_id(slug: str) -> str:
+    return str(uuid.uuid5(DRUG_ENTITY_NAMESPACE, slug))
+
+
+def find_drug_in_curriculum(
+    slug: str, curriculum: dict[str, Any] | None = None
+) -> tuple[dict[str, Any], dict[str, Any]] | None:
+    """Return (drug_entry, category) for slug, or None."""
+    data = curriculum or load_curriculum()
+    for category in data.get("categories", []):
+        for drug in category.get("drugs", []):
+            if drug.get("slug") == slug:
+                return drug, category
+    return None
+
+
+def list_pending_drugs(
+    *,
+    limit: int | None = None,
+    curriculum: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    pending: list[dict[str, Any]] = []
+    data = curriculum or load_curriculum()
+    for category in data.get("categories", []):
+        for drug in category.get("drugs", []):
+            if drug.get("status", "pending") == "pending":
+                pending.append(
+                    {
+                        "slug": drug["slug"],
+                        "category": category.get("slug"),
+                        "category_name": category.get("name"),
+                        "package_path": str(CV_DRUGS_DIR / f"{drug['slug']}.json"),
+                        "package_exists": (CV_DRUGS_DIR / f"{drug['slug']}.json").is_file(),
+                    }
+                )
+                if limit and len(pending) >= limit:
+                    return pending
+    return pending
+
+
+def load_nodes_index(path: str | Path | None = None) -> dict[str, Any]:
+    index_path = Path(path) if path else CV_NODES_INDEX_PATH
+    return json.loads(index_path.read_text(encoding="utf-8"))
+
+
+def _nodes_by_slug(index: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    return {entity["slug"]: entity for entity in index.get("entities", [])}
+
+
+def mark_curriculum_published(
+    slug: str,
+    *,
+    curriculum_path: str | Path | None = None,
+) -> bool:
+    """Set slug status to published in curriculum.yaml. Returns True if updated."""
+    path = Path(curriculum_path) if curriculum_path else CV_CURRICULUM_PATH
+    curriculum = yaml.safe_load(path.read_text(encoding="utf-8"))
+    found = find_drug_in_curriculum(slug, curriculum)
+    if found is None:
+        return False
+    drug, _ = found
+    if drug.get("status") == "published":
+        return False
+    drug["status"] = "published"
+    path.write_text(yaml.safe_dump(curriculum, sort_keys=False, allow_unicode=True), encoding="utf-8")
+    return True
+
+
+def init_drug_entry(slug: str, *, overwrite: bool = False) -> Path:
+    """Create drugs/{slug}.json skeleton from curriculum + shared nodes index."""
+    located = find_drug_in_curriculum(slug)
+    if located is None:
+        raise ValueError(f"Slug not in curriculum: {slug}")
+
+    _, category = located
+    category_slug = category.get("slug", "")
+    out_path = CV_DRUGS_DIR / f"{slug}.json"
+    if out_path.exists() and not overwrite:
+        raise FileExistsError(f"Already exists: {out_path}")
+
+    index = _nodes_by_slug(load_nodes_index())
+    shared_slugs = CATEGORY_SHARED_NODE_SLUGS.get(category_slug, [])
+    related_entities: list[dict[str, Any]] = []
+    rel_map: dict[str, list[str]] = {
+        "BELONGS_TO": [],
+        "TREATS": [],
+        "HAS_MECHANISM_ROOT": [],
+    }
+    relationships: list[dict[str, Any]] = []
+    drug_id = drug_entity_id(slug)
+    label = slug.replace("-", " ").title()
+
+    for node_slug in shared_slugs:
+        node = index.get(node_slug)
+        if node is None:
+            continue
+        entity = {
+            "id": node["id"],
+            "entity_type": node["entity_type"],
+            "slug": node["slug"],
+            "label": node["label"],
+            "description": node.get("description", "FILL_BY_CURATOR"),
+            "status": "published",
+            "dataset_version": "2026.1.0",
+            "provenance": {
+                "created_at": "FILL_BY_CURATOR",
+                "updated_at": "FILL_BY_CURATOR",
+                "created_by": "FILL_CURATOR_USER_ID",
+                "source": "ai_assisted_draft",
+            },
+            "versioning": {
+                "dataset_version": "2026.1.0",
+                "valid_from": "2026-07-07",
+                "status": "published",
+            },
+        }
+        if node["entity_type"] == "DrugClass":
+            entity["organ_system"] = node.get("organ_system", "cardiovascular")
+            rel_map["BELONGS_TO"].append(node["id"])
+            relationships.append(
+                {
+                    "relationship_type": "BELONGS_TO",
+                    "source_type": "Drug",
+                    "target_type": "DrugClass",
+                    "source_id": drug_id,
+                    "target_id": node["id"],
+                }
+            )
+        elif node["entity_type"] == "Disease":
+            rel_map["TREATS"].append(node["id"])
+            relationships.append(
+                {
+                    "relationship_type": "TREATS",
+                    "source_type": "Drug",
+                    "target_type": "Disease",
+                    "source_id": drug_id,
+                    "target_id": node["id"],
+                }
+            )
+        elif node["entity_type"] == "MechanismFragment":
+            rel_map["HAS_MECHANISM_ROOT"].append(node["id"])
+            relationships.append(
+                {
+                    "relationship_type": "HAS_MECHANISM_ROOT",
+                    "source_type": "Drug",
+                    "target_type": "MechanismFragment",
+                    "source_id": drug_id,
+                    "target_id": node["id"],
+                }
+            )
+        related_entities.append(entity)
+
+    package = {
+        "module": "cardiovascular",
+        "dataset_version": "2026.1.0",
+        "create_snapshot": False,
+        "entity_payload": {
+            "id": drug_id,
+            "entity_type": "Drug",
+            "slug": slug,
+            "label": label,
+            "generic_name": label,
+            "module": "cardiovascular",
+            "routes": ["FILL_BY_CURATOR"],
+            "half_life": "FILL_BY_CURATOR",
+            "protein_binding": "FILL_BY_CURATOR",
+            "bioavailability": "FILL_BY_CURATOR",
+            "onset": "FILL_BY_CURATOR",
+            "duration": "FILL_BY_CURATOR",
+            "has_black_box_warning": False,
+            "is_high_alert": False,
+            "status": "published",
+            "dataset_version": "2026.1.0",
+            "external_ids": {"rxnorm": "FILL_BY_CURATOR", "atc": ["FILL_BY_CURATOR"]},
+            "provenance": {
+                "created_at": "FILL_BY_CURATOR",
+                "updated_at": "FILL_BY_CURATOR",
+                "created_by": "FILL_CURATOR_USER_ID",
+                "source": "ai_assisted_draft",
+                "imported_from": "FILL_BY_CURATOR",
+                "curator_attestation": False,
+            },
+            "versioning": {
+                "dataset_version": "2026.1.0",
+                "ontology_version": "1.0.0",
+                "valid_from": "2026-07-07",
+                "status": "published",
+            },
+            "relationships": rel_map,
+        },
+        "related_entities": related_entities,
+        "relationships": relationships,
+    }
+
+    CV_DRUGS_DIR.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(package, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    return out_path

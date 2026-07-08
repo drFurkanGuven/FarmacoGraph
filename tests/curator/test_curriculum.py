@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 
 import pytest
@@ -9,9 +10,13 @@ import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 
 from farmacograph.curator.drug_package import (
+    CV_CURRICULUM_PATH,
     CV_TEMPLATE_PATH,
     curriculum_stats,
+    init_drug_entry,
+    list_pending_drugs,
     load_curriculum,
+    mark_curriculum_published,
     validate_package_file,
 )
 from farmacograph.curator.publish_validator import validate_publish_package
@@ -29,6 +34,42 @@ def test_curriculum_loads_slugs():
     assert stats["module"] == "cardiovascular"
     assert stats["total_slugs"] == 63
     assert stats["by_status"].get("pending", 0) == 63
+
+
+def test_list_pending_drugs():
+    pending = list_pending_drugs(limit=3)
+    assert len(pending) == 3
+    assert pending[0]["slug"] == "ramipril"
+    assert "package_exists" in pending[0]
+
+
+def test_init_drug_entry_propranolol(tmp_path, monkeypatch):
+    from farmacograph.curator import drug_package as dp
+
+    drugs_dir = tmp_path / "drugs"
+    monkeypatch.setattr(dp, "CV_DRUGS_DIR", drugs_dir)
+    path = dp.init_drug_entry("propranolol")
+    assert path.exists()
+    package = json.loads(path.read_text())
+    assert package["entity_payload"]["slug"] == "propranolol"
+    assert package["entity_payload"]["relationships"]["BELONGS_TO"]
+
+
+def test_mark_curriculum_published(tmp_path, monkeypatch):
+    import shutil
+
+    from farmacograph.curator import drug_package as dp
+
+    curriculum_copy = tmp_path / "curriculum.yaml"
+    shutil.copy(CV_CURRICULUM_PATH, curriculum_copy)
+    monkeypatch.setattr(dp, "CV_CURRICULUM_PATH", curriculum_copy)
+
+    assert dp.mark_curriculum_published("ramipril") is True
+    curriculum = dp.load_curriculum(curriculum_copy)
+    found = dp.find_drug_in_curriculum("ramipril", curriculum)
+    assert found is not None
+    assert found[0]["status"] == "published"
+    assert dp.mark_curriculum_published("ramipril") is False
 
 
 def test_template_fails_validation():
