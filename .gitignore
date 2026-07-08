@@ -38,3 +38,8 @@ htmlcov/
 
 # Logs
 *.log
+
+# Node (Curation Studio)
+node_modules/
+apps/studio/.next/
+apps/studio/out/

@@ -1,6 +1,7 @@
-# Phase 4 — Curator Workflow & Dev Environment
+# FarmacoGraph Phase 4 — Backend Foundation
 
-> Infrastructure for knowledge curation. No real pharmacology data.
+> Curator workflow API, validation, graph writer — **foundation for Curation Studio**.  
+> **Product UI:** [curation-studio.md](curation-studio.md)
 
 ## Phase 4.1 — Docker Compose
 

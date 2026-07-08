@@ -33,9 +33,9 @@ AI çıktısı → curator doğrular → `curator_attestation: true` → validat
 | **4** | Modül tamamlama | 63/63 + snapshot `create_snapshot: true` |
 
 ```bash
-# Sunucuda (ilk kurulum)
+# Sunucuda (dev/bootstrap only — not for curators)
 cd /opt/FarmacoGraph && git pull
-./scripts/bootstrap-cv.sh
+./scripts/dev-only/bootstrap-cv.sh
 
 # Sıradaki ilaçlar
 python3 -m farmacograph next-drugs -n 10

@@ -1,6 +1,9 @@
-# Cardiovascular Module — Phase 4.4 / 4.5
+# Cardiovascular Module — dev fixtures only
 
-Structural stub (4.4) + real curation queue (4.5). **No pharmacology in repo until curator fills JSON files.**
+> **Official workflow:** [Curation Studio](../../docs/curation-studio.md) (`apps/studio`)  
+> Do not use this directory for production curation.
+
+Structural stub (4.4) + curriculum queue metadata. JSON drug packages here are **bootstrap fixtures**, not the authoring interface.
 
 ## Phase 4.4 — Structural stub bootstrap
 

@@ -3,9 +3,9 @@
 # Usage: ./scripts/publish-drug.sh staging/cardiovascular/drugs/metoprolol.json [--mark-curriculum]
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-# shellcheck source=scripts/lib/api.sh
-source "$ROOT/scripts/lib/api.sh"
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+# shellcheck source=scripts/dev-only/lib/api.sh
+source "$ROOT/scripts/dev-only/lib/api.sh"
 export PYTHONPATH="${ROOT}${PYTHONPATH:+:$PYTHONPATH}"
 
 BASE="${FG_API_URL:-http://127.0.0.1:8001}"

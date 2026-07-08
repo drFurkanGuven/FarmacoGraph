@@ -12,9 +12,12 @@ FarmacoGraph is not a pharmacology database. It is a **long-term biomedical know
 | Phase 2 — Foundation (schemas, validators, API contract) | **Complete** |
 | Platform Architecture Review | **Complete** |
 | **Phase 3 — Infrastructure** | **Complete** |
-| **Phase 4 — Curator & Dev Environment** | **Complete** |
-| Phase 4.4 — Cardiovascular structural stub | **Complete** |
-| **Phase 4.5 — CV curation tooling** | **Ready** |
+| **Phase 4 Backend Foundation** (curator API, validation, graph writer) | **Complete** |
+| **Phase 4 Studio 4.1** (Curation Studio shell + dashboard) | **Complete** |
+| Phase 4 Studio 4.2+ (editors, publish wizard) | Planned |
+
+> **Primary product:** [Curation Studio](docs/curation-studio.md) (`apps/studio`) — the official knowledge authoring interface.  
+> JSON/bootstrap scripts in `scripts/dev-only/` are **deprecated** for curators.
 
 ## Core Principle
 
@@ -32,6 +35,7 @@ No client — including first-party apps — accesses Neo4j or PostgreSQL direct
 | **API yol haritası** | [docs/api-roadmap.md](docs/api-roadmap.md) |
 | **Discovery** | `GET /api/v1/info` |
 | **Search UI** | https://farmacograph.furkanguven.space/search |
+| **Curation Studio** (local) | `cd apps/studio && npm run dev` → http://localhost:3000 |
 
 Early access: okuma endpoint’leri API key olmadan denenebilir. Key ve kurumsal erişim → getting-started rehberi.
 
@@ -93,6 +97,8 @@ docker compose up -d postgres neo4j
 | [Graph Specification](docs/graph-specification.md) | Neo4j model |
 | [OpenAPI Contract](openapi/openapi.yaml) | REST API specification |
 | [Phase 3 Infrastructure](docs/phase3-infrastructure.md) | Platform implementation guide |
+| **[Curation Studio](docs/curation-studio.md)** | **Primary product — knowledge authoring UI** |
+| [Phase 4 Backend](docs/phase4-curator.md) | Curator workflow API (foundation for Studio) |
 | [Product Roadmap](docs/product/roadmap.md) | Long-term product milestones |
 
 ## Platform Specifications
