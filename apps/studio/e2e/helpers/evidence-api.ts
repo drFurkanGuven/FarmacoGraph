@@ -98,19 +98,39 @@ function attachmentPayload(record: MockEvidenceRecord) {
 
 /**
  * Playwright mocks for Drug Editor evidence workflow on ramipril.
- * Implements the Studio client contract (`/curator/drugs/{slug}/evidence`, `/evidence`).
+ * Implements Studio client paths: `/drugs/{slug}/evidence`, `/evidence`, `/search?types=evidence`.
  */
 export async function mockEvidenceWorkflowApi(page: Page): Promise<void> {
   let curatorAttestation = false;
   let currentPackage = createRamiprilPackage(false);
-  const attachments: MockEvidenceRecord[] = [];
+  const attachments: MockEvidenceRecord[] = [CATALOG_EVIDENCE];
   const catalog = new Map<string, MockEvidenceRecord>([[CATALOG_EVIDENCE.id, CATALOG_EVIDENCE]]);
   let nextEvidenceId = 2;
 
   await page.route("**/api/v1/**", async (route) => {
     const url = new URL(route.request().url());
-    const path = url.pathname.replace(/\/api\/v1\/?/, "");
+    const path = url.pathname.replace(/\/api\/v1\/?/, "").replace(/\/$/, "");
     const method = route.request().method();
+
+    if (method === "OPTIONS") {
+      return route.fulfill({
+        status: 204,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Authorization, X-API-Key",
+        },
+      });
+    }
+
+    function readJsonBody(): Record<string, unknown> {
+      try {
+        const body = route.request().postDataJSON();
+        return body && typeof body === "object" && !Array.isArray(body) ? (body as Record<string, unknown>) : {};
+      } catch {
+        return {};
+      }
+    }
 
     if (path === "modules") {
       return json(route, {
@@ -199,11 +219,95 @@ export async function mockEvidenceWorkflowApi(page: Page): Promise<void> {
       });
     }
 
+    if (path === "statistics" || path === "dashboard") {
+      return json(route, {
+        data: { evidence_count: catalog.size, statistics: { evidence_count: catalog.size } },
+        meta: {},
+      });
+    }
+
+    if (path.startsWith("search")) {
+      const query = url.searchParams.get("q") ?? "";
+      const types = url.searchParams.get("types") ?? "";
+      if (types.includes("evidence") && query) {
+        const results = [...catalog.values()]
+          .filter((entry) => entry.title.toLowerCase().includes(query.toLowerCase()))
+          .map((entry) => ({
+            entity: {
+              id: entry.id,
+              type: "Evidence",
+              slug: entry.id,
+              label: entry.title,
+              evidence_type: entry.evidence_type,
+              quality_score: entry.quality_score,
+              year: entry.year,
+              status: entry.status,
+            },
+            score: 1,
+          }));
+        return json(route, { data: results, meta: { count: results.length, total: results.length } });
+      }
+      return json(route, { data: [], meta: { count: 0, total: 0 } });
+    }
+
     if (path === "curator/validation-summary") {
       return json(route, {
         data: { failed_count: 0, pending_count: 0, recent_failures: [] },
         meta: { api_version: "v1" },
       });
+    }
+
+    if ((path === "drugs/ramipril/evidence" || path === `drugs/${RAMIPRIL_ENTITY_ID}/evidence`) && method === "GET") {
+      return json(route, {
+        data: attachments.map((record) => attachmentPayload(record)),
+        meta: { count: attachments.length, total: attachments.length },
+      });
+    }
+
+    if ((path === "drugs/ramipril/evidence" || path === `drugs/${RAMIPRIL_ENTITY_ID}/evidence`) && method === "POST") {
+      const body = readJsonBody();
+      const evidenceId = typeof body.evidence_id === "string" ? body.evidence_id : null;
+      const record = evidenceId ? catalog.get(evidenceId) : undefined;
+      if (!record) {
+        return json(route, { error: { code: "not_found", message: "Evidence not found." } }, 404);
+      }
+      if (!attachments.some((entry) => entry.id === record.id)) {
+        attachments.push(record);
+      }
+      return json(route, { data: attachmentPayload(record), meta: {} }, 201);
+    }
+
+    if (path.startsWith("drugs/ramipril/evidence/") && method === "DELETE") {
+      const evidenceId = path.split("/").pop()!;
+      const index = attachments.findIndex((entry) => entry.id === evidenceId);
+      if (index >= 0) {
+        attachments.splice(index, 1);
+      }
+      return json(route, { data: { detached: true }, meta: {} });
+    }
+
+    if (path.startsWith("evidence/") && method === "POST" && path.includes("/drugs/ramipril")) {
+      const evidenceId = path.split("/")[1]!;
+      const record = catalog.get(evidenceId);
+      if (!record) {
+        return json(route, { error: { code: "not_found", message: "Evidence not found." } }, 404);
+      }
+      if (!attachments.some((entry) => entry.id === record.id)) {
+        attachments.push(record);
+      }
+      return json(route, {
+        data: { ...attachmentPayload(record), attached_at: "2026-07-08T10:00:00+00:00" },
+        meta: {},
+      }, 201);
+    }
+
+    if (path.startsWith("evidence/") && method === "GET" && !path.includes("/drugs/")) {
+      const evidenceId = path.split("/")[1]!;
+      const record = catalog.get(evidenceId);
+      if (!record) {
+        return json(route, { error: { code: "not_found", message: "Evidence not found." } }, 404);
+      }
+      return json(route, { data: record, meta: {} });
     }
 
     if (path === "curator/drugs/ramipril/evidence" && method === "GET") {
@@ -214,8 +318,9 @@ export async function mockEvidenceWorkflowApi(page: Page): Promise<void> {
     }
 
     if (path === "curator/drugs/ramipril/evidence" && method === "POST") {
-      const body = route.request().postDataJSON() as { evidence_id?: string };
-      const record = body.evidence_id ? catalog.get(body.evidence_id) : undefined;
+      const body = readJsonBody();
+      const evidenceId = typeof body.evidence_id === "string" ? body.evidence_id : null;
+      const record = evidenceId ? catalog.get(evidenceId) : undefined;
       if (!record) {
         return json(route, { error: { code: "not_found", message: "Evidence not found." } }, 404);
       }
@@ -234,37 +339,37 @@ export async function mockEvidenceWorkflowApi(page: Page): Promise<void> {
       return json(route, { data: { detached: true }, meta: {} });
     }
 
-    if (path === "evidence" && method === "GET") {
-      const query = url.searchParams.get("q") ?? url.searchParams.get("search") ?? "";
-      const results = [...catalog.values()].filter((entry) =>
-        query ? entry.title.toLowerCase().includes(query.toLowerCase()) : true,
-      );
-      return json(route, {
-        data: results,
-        meta: { count: results.length, total: results.length, limit: 20, offset: 0 },
-      });
-    }
+    if (path === "evidence" || path.startsWith("evidence/")) {
+      if (method === "GET" && (path === "evidence" || path === "evidence/")) {
+        const query = url.searchParams.get("q") ?? url.searchParams.get("search") ?? "";
+        const drugId = url.searchParams.get("drug_id");
+        let results = [...catalog.values()];
+        if (drugId === "ramipril") {
+          results = attachments;
+        } else if (query) {
+          results = results.filter((entry) => entry.title.toLowerCase().includes(query.toLowerCase()));
+        }
+        return json(route, {
+          data: results,
+          meta: { count: results.length, total: results.length, limit: 20, offset: 0 },
+        });
+      }
 
-    if (path === "evidence" && method === "POST") {
-      const body = route.request().postDataJSON() as {
-        title?: string;
-        evidence_type?: string;
-        quality_score?: number;
-        year?: number | null;
-        extract?: string | null;
-      };
-      const id = `a1000000-0000-4000-8000-${String(nextEvidenceId++).padStart(12, "0")}`;
-      const record: MockEvidenceRecord = {
-        id,
-        title: body.title ?? "Untitled evidence",
-        evidence_type: body.evidence_type ?? "review_article",
-        quality_score: typeof body.quality_score === "number" ? body.quality_score : 0.5,
-        year: typeof body.year === "number" ? body.year : null,
-        status: "draft",
-        extract: body.extract ?? null,
-      };
-      catalog.set(id, record);
-      return json(route, { data: record, meta: {} }, 201);
+      if (method === "POST" && (path === "evidence" || path === "evidence/")) {
+        const body = readJsonBody();
+        const id = `a1000000-0000-4000-8000-${String(nextEvidenceId++).padStart(12, "0")}`;
+        const record: MockEvidenceRecord = {
+          id,
+          title: typeof body.title === "string" ? body.title : "Untitled evidence",
+          evidence_type: typeof body.evidence_type === "string" ? body.evidence_type : "review_article",
+          quality_score: typeof body.quality_score === "number" ? body.quality_score : 0.5,
+          year: typeof body.year === "number" ? body.year : null,
+          status: "draft",
+          extract: typeof body.extract === "string" ? body.extract : null,
+        };
+        catalog.set(id, record);
+        return json(route, { data: record, meta: {} }, 201);
+      }
     }
 
     return json(route, { data: null, meta: {} });

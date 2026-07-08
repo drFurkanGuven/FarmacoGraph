@@ -157,15 +157,15 @@ flowchart LR
 | Publish wizard evidence readiness | Drug Editor → Publish | **Live** — blockers, missing, low-confidence |
 | Global Evidence Manager | `/knowledge/evidence` | **Live** — `EvidenceBrowser` (search, filters, create) |
 | Evidence list/create API | `GET/POST /api/v1/evidence` | **Live** (Neo4j required for writes) |
-| Drug evidence list (OpenAPI) | `GET /drugs/{id}/evidence` | **Gap** — Studio calls `/curator/drugs/{slug}/evidence` instead |
-| Drug attach (backend) | `POST /evidence/{id}/drugs/{drug_id}` | **Live** — UUID drug id; Studio client uses slug path |
+| Drug evidence list (OpenAPI) | `GET /drugs/{id}/evidence` | **Studio client** — tries OpenAPI path first, falls back to `GET /evidence?drug_id=` |
+| Drug attach | `POST /drugs/{id}/evidence` or `POST /evidence/{id}/drugs/{drug_id}` | **Studio client** — OpenAPI path first, then implemented evidence router |
 | Assertion `SUPPORTED_BY` UI | Mechanism / relationship editors | **Planned** (4.3+) |
 
 **Client-side attestation gate:** `computePublishReady` requires `entity_payload.provenance.curator_attestation === true` in addition to `valid: true` from the validator.
 
 **Tests:** Unit — `drug-editor/__tests__/package.test.ts`, `drug-editor/__tests__/evidence-helpers.test.ts`, `publish-wizard/validation/__tests__/evidence-gating.test.ts`. E2E — `apps/studio/e2e/evidence-workflow.spec.ts` (Playwright mocks).
 
-**Gaps (honest):** Studio client drug-evidence paths do not match all routed backend endpoints; assertion-level attach not in UI; Neo4j required for evidence writes in production API; context panel shows summary only (full editor in Evidence section).
+**Gaps (honest):** OpenAPI drug-evidence list/attach routes may not be routed in FastAPI yet — Studio client tries them first, then falls back to `/evidence/{id}/drugs/{drug_id}`; attach/create dialog E2E needs mock path alignment for POST mutations (smoke uses pre-seeded `GET /drugs/{slug}/evidence`); assertion-level attach not in UI; Neo4j required for evidence writes in production API.
 
 ### Studio 4.4 — Publish and release
 

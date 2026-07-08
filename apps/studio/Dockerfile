@@ -75,4 +75,8 @@ COPY --from=builder /app/.next ./.next
 USER nextjs
 EXPOSE 3000
 
-CMD ["npm", "run", "start"]
+# Full `.next` + `next start` (not `output: 'standalone'`). Empty public HTML with
+# working `/studio/_next/*` is almost never missing server.js — check nginx
+# `Connection` / `$connection_upgrade` (see deploy/nginx/farmacograph.conf).
+# Bind all interfaces; PORT comes from ENV / compose.
+CMD ["npm", "run", "start", "--", "--hostname", "0.0.0.0", "--port", "3000"]

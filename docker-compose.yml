@@ -97,6 +97,19 @@ services:
       # Must match build-time args (especially basePath for asset/routes serving)
       NEXT_PUBLIC_API_URL: ${FG_STUDIO_API_URL:-https://farmacograph.furkanguven.space/api/v1}
       NEXT_PUBLIC_BASE_PATH: ${FG_STUDIO_BASE_PATH:-/studio}
+    # Document responses (not HEAD). Empty *public* HTML with working /_next is almost
+    # always nginx Connection: upgrade — probe inside the container (bypass nginx).
+    # Accept 200 HTML or a single 307 to /login that is not the returnTo=/login loop.
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"const http=require('http');const base=process.env.NEXT_PUBLIC_BASE_PATH||'/studio';const path=base+'/';const req=http.get({host:'127.0.0.1',port:process.env.PORT||3000,path,headers:{Accept:'text/html',Connection:'close'}},res=>{let n=0;res.on('data',c=>n+=c.length);res.on('end',()=>{const loc=String(res.headers.location||'');const ok200=res.statusCode===200&&n>200;const ok307=res.statusCode>=300&&res.statusCode<400&&/\\/login\\/?($|\\?)/.test(loc)&&!/[?&]returnTo=(%2Flogin%2F|\\/login\\/?)/i.test(loc);process.exit(ok200||ok307?0:1);});});req.on('error',()=>process.exit(1));\"",
+        ]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
 
 volumes:
   pgdata:

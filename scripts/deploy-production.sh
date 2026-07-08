@@ -332,20 +332,55 @@ fi
 
 STUDIO_BASE="$(get_env_var FG_STUDIO_BASE_PATH)"
 STUDIO_BASE=${STUDIO_BASE:-/studio}
+# Hit the Studio container via host port (bypass nginx). HEAD alone is insufficient:
+# Next can return empty GET bodies through a bad nginx Connection: upgrade while
+# HEAD / static /_next still looks fine.
 STUDIO_HEALTH_URL="http://127.0.0.1:${STUDIO_PORT}${STUDIO_BASE}/"
+STUDIO_LOGIN_URL="http://127.0.0.1:${STUDIO_PORT}${STUDIO_BASE}/login/"
+STUDIO_TMP="$(mktemp)"
+STUDIO_HDR="$(mktemp)"
+trap 'rm -f "${STUDIO_TMP}" "${STUDIO_HDR}"' EXIT
 
-echo "→ Waiting for Studio on ${STUDIO_HEALTH_URL}..."
+echo "→ Waiting for Studio on ${STUDIO_HEALTH_URL} (direct port, bypass nginx)..."
 STUDIO_OK=false
+STUDIO_DETAIL=""
 for _ in $(seq 1 30); do
-  if curl -sfI "${STUDIO_HEALTH_URL}" >/dev/null 2>&1; then
+  # Prefer public login page. Fall back to /studio/ redirect that is not a login loop.
+  CODE="$(curl -sS -D "${STUDIO_HDR}" -o "${STUDIO_TMP}" -w '%{http_code}' \
+    --max-redirs 0 \
+    -H 'Accept: text/html' \
+    -H 'Connection: close' \
+    "${STUDIO_LOGIN_URL}" 2>/dev/null || echo 000)"
+  BYTES="$(wc -c <"${STUDIO_TMP}" | tr -d ' ')"
+  if [[ "$CODE" == "200" && "$BYTES" -gt 200 ]] && grep -qiE '<html|<!doctype' "${STUDIO_TMP}"; then
     STUDIO_OK=true
+    STUDIO_DETAIL="login 200 HTML (${BYTES} bytes)"
+    break
+  fi
+  # Middleware not-yet-fixed may 307 /login/?returnTo=/login/ — still prove Next is alive
+  # via a protected path redirect that does not loop.
+  CODE2="$(curl -sS -D "${STUDIO_HDR}" -o "${STUDIO_TMP}" -w '%{http_code}' \
+    --max-redirs 0 \
+    -H 'Accept: text/html' \
+    -H 'Connection: close' \
+    "${STUDIO_HEALTH_URL}" 2>/dev/null || echo 000)"
+  BYTES2="$(wc -c <"${STUDIO_TMP}" | tr -d ' ')"
+  LOC2="$(awk 'tolower($1)=="location:"{print $2}' "${STUDIO_HDR}" 2>/dev/null | tr -d '\r' | tail -1)"
+  if [[ "$CODE2" == "200" && "$BYTES2" -gt 200 ]] && grep -qiE '<html|<!doctype' "${STUDIO_TMP}"; then
+    STUDIO_OK=true
+    STUDIO_DETAIL="/studio/ 200 HTML (${BYTES2} bytes)"
+    break
+  fi
+  if [[ "$CODE2" =~ ^30[78]$ ]] && [[ "$LOC2" == *"/login"* ]] && [[ "$LOC2" != *"returnTo=%2Flogin"* ]] && [[ "$LOC2" != *"returnTo=/login"* ]]; then
+    STUDIO_OK=true
+    STUDIO_DETAIL="/studio/ ${CODE2} → ${LOC2}"
     break
   fi
   sleep 2
 done
 
 if [[ "$STUDIO_OK" == true ]]; then
-  echo "✓ Studio responding on ${STUDIO_HEALTH_URL}"
+  echo "✓ Studio container healthy: ${STUDIO_DETAIL}"
   if docker compose exec -T studio node -e " \
     const m = require('./.next/routes-manifest.json'); \
     const expected = '${STUDIO_BASE}'; \
@@ -361,8 +396,11 @@ if [[ "$STUDIO_OK" == true ]]; then
     exit 1
   fi
 else
-  echo "✗ Studio did not respond on ${STUDIO_HEALTH_URL}" >&2
+  echo "✗ Studio container did not serve HTML or a clean auth redirect on :${STUDIO_PORT}" >&2
   echo "  Check: docker compose logs studio --tail 50" >&2
+  echo "  If direct :${STUDIO_PORT} is OK but https://${PUBLIC_URL#https://}/studio/ is 200 empty:" >&2
+  echo "    → nginx Connection: upgrade bug — run ./scripts/install-nginx.sh" >&2
+  echo "  (deploy/nginx/farmacograph.conf uses map \$http_upgrade \$connection_upgrade)" >&2
   docker compose exec -T studio node -e " \
     try { const m=require('./.next/routes-manifest.json'); console.log('routes-manifest basePath:', m.basePath); } catch (e) { console.error(e.message); } \
   " 2>/dev/null || true
@@ -370,10 +408,16 @@ else
 fi
 
 echo ""
-echo "Deploy complete."
-echo "  Studio: ${PUBLIC_URL}/studio/"
-echo "  Login:  ${PUBLIC_URL}/studio/login/"
-echo "  API:    ${API_URL}/health"
+echo "Deploy complete (containers)."
+echo "  Quick rebuild: docker compose up -d --build api studio"
+echo "  After FG_STUDIO_* change: docker compose build --no-cache studio && docker compose up -d studio"
+echo "  Studio (direct): http://127.0.0.1:${STUDIO_PORT}${STUDIO_BASE}/"
+echo "  Studio (public): ${PUBLIC_URL}/studio/"
+echo "  Login:           ${PUBLIC_URL}/studio/login/"
+echo "  API:             ${API_URL}/health"
+echo ""
+echo "If public /studio/ is 200 with an empty body while direct :${STUDIO_PORT} returns HTML/redirect,"
+echo "nginx is emptying document responses — run: ./scripts/install-nginx.sh"
 echo ""
 echo "Next (required once): create a curator — production does not auto-seed users."
 echo "  ./scripts/create-curator.sh --email curator@farmacograph.local"
