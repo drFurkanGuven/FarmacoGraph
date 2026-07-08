@@ -2,150 +2,150 @@
 
 Studio URL: **https://farmacograph.furkanguven.space/studio/**
 
-## Server (Fedora, `/opt/FarmacoGraph`)
+## Canonical production bootstrap
 
-**One-command deploy** (writes `.env`, pulls, builds, starts stack):
-
-```bash
-cd /opt/FarmacoGraph
-chmod +x scripts/deploy-production.sh
-./scripts/deploy-production.sh
-```
-
-Options:
-
-```bash
-./scripts/deploy-production.sh --env-only          # only create/update .env
-./scripts/deploy-production.sh --no-pull         # skip git pull
-./scripts/deploy-production.sh --public-url https://your-domain.example
-```
-
-Manual equivalent:
+Run on the Fedora host (`/opt/FarmacoGraph`):
 
 ```bash
 cd /opt/FarmacoGraph
 git pull
+chmod +x scripts/*.sh
+./scripts/migrate-schema.sh
+./scripts/deploy-production.sh
+./scripts/create-curator.sh --email curator@farmacograph.local
+./scripts/install-nginx.sh
+```
 
-# Build & start API + Studio (first studio build ~2–3 min)
-docker compose up -d --build api studio
+Then open **https://farmacograph.furkanguven.space/studio/login/** in a browser (prefer a private window after JWT secret rotation).
 
-docker compose ps
-curl -sI http://127.0.0.1:3001/studio/ | head -5
+| Symptom | Meaning | Fix |
+|---------|---------|-----|
+| `/studio/` loads, `/api/v1/dashboard` → **401** without login | **Expected** — Studio/API auth works | Sign in |
+| Login → “Invalid email or password” | Production has **no curator** (seeds are `development`/`test` only) | `./scripts/create-curator.sh --email …` |
+| Login OK but `/dashboard` → **500** | Schema drift (`draft_package_json` missing) | `./scripts/migrate-schema.sh` then restart API |
+| Chunk 404 under `/studio/_next/static/...` | Studio image missing runtime `basePath=/studio` | `./scripts/deploy-production.sh` (no `--fast`) |
+
+**Do not confuse “Studio is broken” with “production has no user.”** Studio serving HTML while login fails almost always means the curator bootstrap step was skipped.
+
+## Deploy options
+
+```bash
+./scripts/deploy-production.sh --env-only          # only create/update .env
+./scripts/deploy-production.sh --no-pull           # skip git pull
+./scripts/deploy-production.sh --fast              # skip studio --no-cache rebuild
+./scripts/deploy-production.sh --public-url https://your-domain.example
+```
+
+`deploy-production.sh` will **refuse to start** if:
+
+- `FG_ENVIRONMENT` is not `production`
+- `FG_JWT_SECRET_KEY` is missing, short, or a known insecure default
+- `FG_DATABASE_URL` is empty or sqlite
+- `FG_NEO4J_ENABLED=true` but Neo4j URI/user/password are incomplete
+
+## Create curator
+
+Production does **not** auto-seed users.
+
+```bash
+# Interactive password prompt (not echoed, never printed)
+./scripts/create-curator.sh --email curator@farmacograph.local
+
+# Non-interactive
+./scripts/create-curator.sh --email curator@farmacograph.local --password 'YourStrongPassword'
+
+# Custom display name
+./scripts/create-curator.sh --email curator@farmacograph.local --name 'FarmacoGraph Curator'
+```
+
+Scopes granted: `knowledge:read`, `knowledge:search`, `knowledge:explain`, `education:read`, `curator:write`, `curator:publish`.
+
+Use a strong password (≥12 chars) and rotate it after the first smoke test.
+
+## Schema migrate
+
+```bash
+./scripts/migrate-schema.sh
+```
+
+Idempotent and non-destructive. Ensures operational tables exist and adds:
+
+```sql
+ALTER TABLE curator_workflows
+  ADD COLUMN IF NOT EXISTS draft_package_json JSONB;
 ```
 
 ## Nginx
 
 ```bash
+./scripts/install-nginx.sh
+# or:
 sudo cp deploy/nginx/farmacograph.conf /etc/nginx/conf.d/farmacograph.conf
-sudo nginx -t
-sudo systemctl reload nginx
+sudo nginx -t && sudo systemctl reload nginx
 ```
 
-## First curator (required in production)
+Studio is served at `/studio/` (trailing slash). API is same-origin at `/api/v1`. The browser must **not** call `127.0.0.1` / `localhost` / `host.docker.internal`.
 
-Production does **not** seed users. Create one on the server before logging in from your PC:
+## Browser smoke test
 
-```bash
-cd /opt/FarmacoGraph
-chmod +x scripts/create-curator.sh scripts/migrate-schema.sh
-./scripts/migrate-schema.sh
-./scripts/create-curator.sh --email you@example.com --password 'YourStrongPassword'
-```
-
-Then open **https://farmacograph.furkanguven.space/studio/login/** in your browser.
-
-Studio requires login for the whole app (dashboard included). Unauthenticated visitors are redirected to `/login`.
-
-A browser console **401 on `/dashboard`** without a session is normal. A **500 on `/dashboard`** usually means Postgres is missing `curator_workflows.draft_package_json` — run `./scripts/migrate-schema.sh` (or redeploy; API startup now patches this column).
-
-## Verify
-
-### Studio curation path (live)
-
-- Studio: https://farmacograph.furkanguven.space/studio/
-- API health: https://farmacograph.furkanguven.space/api/v1/health
-- Login → Drug Browser → Drug Editor (`/knowledge/drugs/{slug}`) → autosave → validation
-- Validation Center (`/validation`) — publish readiness panel, queue dry-runs
-- Dashboard loads queue/stats from the same-origin API (`/api/v1`)
-
-### Publish workflow (Studio)
-
-Login → Drug Browser → Drug Editor → autosave → validate → **Publish** button → submit / approve / publish. Requires `curator:publish` for approve and publish steps.
-
-Workflow transitions run in the Drug Editor **Publish wizard**. The right sidebar shows workflow state and an activity timeline (`GET /api/v1/curator/workflows/{id}/timeline`).
-
-```
-draft → review → approved → published
-```
-
-| Step | Endpoint | Scope |
-|------|----------|-------|
-| Autosave draft | `PUT /api/v1/curator/workflows/{id}/package` | `curator:write` |
-| Submit for review | `POST /api/v1/curator/workflows/{id}/submit` | `curator:write` |
-| Approve | `POST /api/v1/curator/workflows/{id}/approve` | `curator:publish` |
-| Publish to graph | `POST /api/v1/curator/workflows/{id}/publish` | `curator:publish` |
-
-Obtain a JWT with `curator:publish` via `POST /api/v1/auth/token` (password or API key grant). Full reference: [api.md §1.3](api.md#13-curator-publish-workflow).
-
-**Do not use in production curation:** `scripts/dev-only/publish-drug.sh`, `publish-stub.sh`, `bootstrap-cv.sh`, or manual `staging/` JSON edits. These are dev-only / deprecated bootstrap tools. See [scripts/dev-only/README.md](../scripts/dev-only/README.md).
+1. Open `/studio/` — anonymous users must be redirected to login (no dashboard panel).
+2. Open `/studio/login/`.
+3. Log in with the curator created above.
+4. Open dashboard — loads without 500.
+5. Open Drug Browser.
+6. Open **ramipril** (or another curriculum slug).
+7. Confirm autosave / validate UI loads.
+8. Open Evidence section.
+9. Open Publish Wizard.
+10. If login still fails after a JWT secret change, use a private window or clear site data for the origin.
 
 ## Environment (`.env` — auto-written by `scripts/deploy-production.sh`)
 
 ```env
+FG_ENVIRONMENT=production
+FG_ENV=production
 FG_HOST_STUDIO_PORT=3001
 FG_STUDIO_API_URL=https://farmacograph.furkanguven.space/api/v1
 FG_STUDIO_BASE_PATH=/studio
 FG_NEO4J_ENABLED=true
+FG_DATABASE_URL=postgresql+asyncpg://farmacograph:farmacograph@postgres:5432/farmacograph
 FG_JWT_SECRET_KEY=<auto-generated-or-preserved>
-FG_ENVIRONMENT=production
+FG_SEED_DEV_USERS=false
 ```
 
 **Production requirements:**
 
-- Non-default `FG_JWT_SECRET_KEY` (script generates on first run; startup fails if missing or default)
+- Non-default `FG_JWT_SECRET_KEY` (script generates on first run; API startup also refuses defaults)
 - `FG_NEO4J_ENABLED=true` for evidence writes and publish to the knowledge graph
 - PostgreSQL for auth, workflow state, and draft packages
+- At least one curator via `create-curator.sh`
+
+## Auth expectations (do not weaken)
+
+- Protected Studio routes require login.
+- Unauthenticated `GET /api/v1/dashboard` → **401** is correct.
+- Making `/dashboard` public to silence 401s is **not** allowed.
 
 ## Troubleshooting
 
 ### 404 / ChunkLoadError on `/studio/_next/static/...`
 
-`next start` re-loads `next.config.ts` at runtime. If `NEXT_PUBLIC_BASE_PATH` is missing in the **runner** container, Next serves at `/` even when `routes-manifest.json` still says `/studio`. Symptom:
-
-```text
-curl -sSI http://127.0.0.1:3001/studio/   → 404
-curl -sSI http://127.0.0.1:3001/          → 200
-docker compose exec studio node -e "console.log(require('./.next/routes-manifest.json').basePath)"
-# → /studio   (build OK, runtime config wrong)
-```
-
-**Fix on the server:**
+`next start` re-loads `next.config.ts` at runtime. If `NEXT_PUBLIC_BASE_PATH` is missing in the **runner** container, Next serves at `/` even when `routes-manifest.json` still says `/studio`.
 
 ```bash
-cd /opt/FarmacoGraph
-git pull
-./scripts/deploy-production.sh
-```
-
-The deploy script rebuilds Studio with `--no-cache` and verifies `routes-manifest.json` has `"basePath": "/studio"`.
-
-Manual check:
-
-```bash
-curl -sSI http://127.0.0.1:3001/studio/ | head -3          # expect HTTP/1.1 200
-curl -sSI http://127.0.0.1:3001/ | head -3                 # expect HTTP/1.1 404
+curl -sSI http://127.0.0.1:3001/studio/ | head -3          # expect 200
+curl -sSI http://127.0.0.1:3001/ | head -3                 # expect 404
 docker compose exec studio node -e "console.log(require('./.next/routes-manifest.json').basePath)"
 # → /studio
 ```
 
-After redeploy, hard-refresh the browser (cached HTML may reference old chunk hashes).
+Fix: `./scripts/deploy-production.sh` (rebuild Studio without `--fast`), then hard-refresh the browser.
 
 ```bash
 docker compose logs studio --tail 50
 docker compose logs api --tail 30
-curl -s http://127.0.0.1:3001/studio/ | head -20
 ```
 
 If Studio build fails (memory): `docker system prune` and retry with swap enabled.
 
-**Publish failures:** Check API logs for validation errors (`400`), workflow state mismatches (`Cannot publish from state: …`), or Neo4j connectivity (`FG_NEO4J_ENABLED`). Inspect `GET /api/v1/curator/queue?state=review` and `GET /api/v1/curator/validation-summary`.
+**Publish failures:** Check API logs for validation errors (`400`), workflow state mismatches, or Neo4j connectivity. Inspect `GET /api/v1/curator/queue?state=review` and `GET /api/v1/curator/validation-summary`.

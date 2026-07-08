@@ -68,11 +68,15 @@ Dev auto-seed (`curator@farmacograph.local` / `curator-dev-password`) runs only 
 
 ```bash
 cd /opt/FarmacoGraph
-chmod +x scripts/create-curator.sh
-./scripts/create-curator.sh --email you@example.com --password 'YourStrongPassword'
+./scripts/migrate-schema.sh
+./scripts/deploy-production.sh
+./scripts/create-curator.sh --email curator@farmacograph.local
+./scripts/install-nginx.sh
 ```
 
-Then open https://farmacograph.furkanguven.space/studio/login/ from your browser (not only from the server). Dashboard `GET /api/v1/dashboard` returns **401** until you sign in — that is expected.
+`create-curator.sh` prompts for a password when `--password` is omitted and **never prints** the password.
+
+Then open https://farmacograph.furkanguven.space/studio/login/ from your browser. Dashboard `GET /api/v1/dashboard` returns **401** until you sign in — that is expected (Studio is not broken).
 
 If login succeeds but API calls still 401, the browser may hold a JWT signed with an old `FG_JWT_SECRET_KEY`. Clear site data for the origin or use a private window.
 

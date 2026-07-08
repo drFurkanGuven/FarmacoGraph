@@ -29,6 +29,17 @@ describe("resolveStudioApiUrl", () => {
     expect(resolveStudioApiUrl()).toBe("https://farmacograph.furkanguven.space/api/v1");
   });
 
+  it("rejects host.docker.internal baked into production builds", () => {
+    process.env.NEXT_PUBLIC_API_URL = "http://host.docker.internal:8001/api/v1";
+    vi.stubGlobal("window", {
+      location: {
+        hostname: "farmacograph.furkanguven.space",
+        origin: "https://farmacograph.furkanguven.space",
+      },
+    });
+    expect(resolveStudioApiUrl()).toBe("https://farmacograph.furkanguven.space/api/v1");
+  });
+
   it("keeps loopback for local studio hostname", () => {
     process.env.NEXT_PUBLIC_API_URL = "http://127.0.0.1:8001/api/v1";
     vi.stubGlobal("window", {

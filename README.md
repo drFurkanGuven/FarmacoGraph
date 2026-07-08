@@ -86,6 +86,23 @@ Enable Neo4j in `.env`: `FG_NEO4J_ENABLED=true`
 ./scripts/dev.sh test
 ```
 
+### Production bootstrap (Fedora `/opt/FarmacoGraph`)
+
+```bash
+cd /opt/FarmacoGraph
+git pull
+./scripts/migrate-schema.sh
+./scripts/deploy-production.sh
+./scripts/create-curator.sh --email curator@farmacograph.local
+./scripts/install-nginx.sh
+```
+
+Then sign in at https://farmacograph.furkanguven.space/studio/login/
+
+**Important:** Production does **not** seed curator users. A working Studio UI with failed login usually means `create-curator.sh` was not run — not that Studio is broken. Unauthenticated `/api/v1/dashboard` → **401** is expected.
+
+Full guide: [Deploy (Studio)](docs/deploy-studio.md)
+
 Full setup: [Development Guide](docs/development.md)
 
 ## Architecture
