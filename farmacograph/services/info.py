@@ -71,5 +71,10 @@ class InfoService:
                 "drugs": "/api/v1/drugs",
                 "search": "/api/v1/search",
                 "modules": "/api/v1/modules",
+                "studio": "/studio/",
+            },
+            "studio": {
+                "url": "/studio/",
+                "description": "Curation Studio — primary knowledge authoring interface",
             },
         }

@@ -43,6 +43,7 @@ def create_app() -> FastAPI:
             "Explainable biomedical knowledge platform for medical education. "
             "**The API is the product.**\n\n"
             "### Links\n"
+            "- [**Curation Studio**](/studio/) — primary curator interface (knowledge authoring)\n"
             "- [Search UI](/search) — public drug search\n"
             "- [Getting Started / API Access](https://github.com/drFurkanGuven/FarmacoGraph/blob/main/docs/getting-started.md)\n"
             "- [API Roadmap (phased)](https://github.com/drFurkanGuven/FarmacoGraph/blob/main/docs/api-roadmap.md)\n"
