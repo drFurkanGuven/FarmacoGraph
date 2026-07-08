@@ -64,48 +64,36 @@ else
   fail "API health expected 200 + status=ok; got HTTP ${HEALTH_CODE}, body=$(echo "${BODY}" | head -c 200)"
 fi
 
-# --- 2. Studio root ---
+# --- 2. Studio root (unauthenticated → single 307 to login, not empty 200) ---
 echo ""
 echo "--- /studio/ ---"
 STUDIO_HEADERS=$(curl_headers_nofollow "${BASE_URL}/studio/")
-STUDIO_META=$(curl_meta "${BASE_URL}/studio/")
-STUDIO_CODE="${STUDIO_META%%|*}"
-REST="${STUDIO_META#*|}"
-STUDIO_REDIRS="${REST%%|*}"
-REST="${REST#*|}"
-STUDIO_SIZE="${REST%%|*}"
-REST="${REST#*|}"
-STUDIO_FINAL="${REST%%|*}"
-STUDIO_CT="${REST#*|}"
-STUDIO_BODY="$(cat /tmp/fg-smoke-body.$$ 2>/dev/null || true)"
+STUDIO_NOFOLLOW_CODE=$(echo "${STUDIO_HEADERS}" | awk 'toupper($0) ~ /^HTTP\// {print $2; exit}')
+STUDIO_LOC=$(echo "${STUDIO_HEADERS}" | grep -i '^location:' | head -1 | tr -d '\r' || true)
 
-if echo "${STUDIO_HEADERS}" | grep -qiE '^HTTP/[^ ]+ 3[0-9]{2}'; then
-  LOC=$(echo "${STUDIO_HEADERS}" | grep -i '^location:' | head -1 | tr -d '\r')
-  # Single hop to login is OK; loop (returnTo=/login) is not.
-  if echo "${LOC}" | grep -qiE 'returnTo=(%2Flogin|/login)'; then
-    fail "/studio/ redirect loop signature: ${LOC}"
-  elif echo "${LOC}" | grep -qi '/studio/login'; then
-    if echo "${LOC}" | grep -qiE 'returnTo=%2F($|&)'; then
-      pass "/studio/ redirects to login with returnTo=/ (${LOC})"
-    else
-      pass "/studio/ redirects toward login (${LOC})"
-    fi
+if echo "${STUDIO_LOC}" | grep -qiE 'returnTo=(%2Flogin|/login)'; then
+  fail "/studio/ redirect loop signature: ${STUDIO_LOC}"
+elif [[ "${STUDIO_NOFOLLOW_CODE}" =~ ^30[78]$ ]]; then
+  if echo "${STUDIO_LOC}" | grep -qi '/studio/login'; then
+    pass "/studio/ → ${STUDIO_NOFOLLOW_CODE} login redirect (${STUDIO_LOC})"
   else
-    warn "/studio/ redirects (${LOC})"
+    fail "/studio/ expected redirect to /studio/login/; got ${STUDIO_NOFOLLOW_CODE} ${STUDIO_LOC}"
   fi
-fi
-
-if [[ "${STUDIO_REDIRS}" -ge "${MAX_REDIRS}" ]]; then
-  fail "/studio/ redirected ${STUDIO_REDIRS} times (possible redirect loop) → ${STUDIO_FINAL}"
-elif [[ "${STUDIO_CODE}" != "200" ]]; then
-  fail "/studio/ expected HTTP 200 after redirects; got ${STUDIO_CODE} → ${STUDIO_FINAL}"
-elif [[ "${STUDIO_SIZE}" -lt 200 ]]; then
-  fail "/studio/ returned empty/tiny body (${STUDIO_SIZE} bytes) — white screen likely (HTML never served)"
-elif ! echo "${STUDIO_BODY}" | grep -qiE '<html|<!doctype'; then
-  fail "/studio/ HTTP ${STUDIO_CODE} but response is not HTML (ct=${STUDIO_CT}, bytes=${STUDIO_SIZE})"
+elif [[ "${STUDIO_NOFOLLOW_CODE}" == "200" ]]; then
+  # Empty 200 on /studio/ usually means nginx Connection: upgrade bug or stale Studio.
+  STUDIO_SIZE=$(curl -sS --max-redirs 0 --max-time "${CURL_TIMEOUT}" -o /tmp/fg-smoke-body.$$ -w '%{size_download}' "${BASE_URL}/studio/" || echo 0)
+  STUDIO_BODY="$(cat /tmp/fg-smoke-body.$$ 2>/dev/null || true)"
+  if [[ "${STUDIO_SIZE}" -lt 200 ]]; then
+    fail "/studio/ returned empty/tiny body (${STUDIO_SIZE} bytes) — reload nginx + rebuild Studio"
+  elif ! echo "${STUDIO_BODY}" | grep -qiE '<html|<!doctype'; then
+    fail "/studio/ HTTP 200 but not HTML (${STUDIO_SIZE} bytes)"
+  else
+    pass "/studio/ HTTP 200, HTML ${STUDIO_SIZE} bytes"
+  fi
 else
-  pass "/studio/ HTTP ${STUDIO_CODE}, HTML ${STUDIO_SIZE} bytes, redirects=${STUDIO_REDIRS}"
+  fail "/studio/ unexpected HTTP ${STUDIO_NOFOLLOW_CODE}"
 fi
+STUDIO_BODY=""
 
 # --- 3. Studio login ---
 echo ""
@@ -199,11 +187,18 @@ fi
 # --- 6. Build fingerprint (proves new image was deployed) ---
 echo ""
 echo "--- build fingerprint ---"
-BUILD_META=$(curl_meta "${BASE_URL}/studio/build-id.txt")
-BUILD_CODE="${BUILD_META%%|*}"
-BUILD_BODY="$(cat /tmp/fg-smoke-body.$$ 2>/dev/null || true)"
-if [[ "${BUILD_CODE}" == "200" && -n "${BUILD_BODY}" ]]; then
-  pass "build-id.txt present: $(echo "${BUILD_BODY}" | head -c 80 | tr -d '\n')"
+BUILD_HEADERS=$(curl_headers_nofollow "${BASE_URL}/studio/build-id.txt")
+BUILD_CODE=$(echo "${BUILD_HEADERS}" | awk 'toupper($0) ~ /^HTTP\// {print $2; exit}')
+BUILD_LOC=$(echo "${BUILD_HEADERS}" | grep -i '^location:' | head -1 | tr -d '\r' || true)
+if [[ "${BUILD_CODE}" =~ ^30[0-9]$ ]]; then
+  fail "build-id.txt redirected (${BUILD_CODE}) ${BUILD_LOC} — middleware/nginx stale; rebuild Studio + reload nginx"
+elif [[ "${BUILD_CODE}" == "200" ]]; then
+  BUILD_BODY=$(curl -sS --max-redirs 0 --max-time "${CURL_TIMEOUT}" "${BASE_URL}/studio/build-id.txt" 2>/dev/null || true)
+  if [[ -n "${BUILD_BODY}" ]]; then
+    pass "build-id.txt present: $(echo "${BUILD_BODY}" | head -c 80 | tr -d '\n')"
+  else
+    fail "build-id.txt HTTP 200 but empty — rebuild Studio with --no-cache"
+  fi
 else
   fail "build-id.txt missing (HTTP ${BUILD_CODE}) — Studio image is stale; rebuild with --no-cache"
 fi

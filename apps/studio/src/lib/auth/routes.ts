@@ -31,17 +31,23 @@ export const ROUTE_GUARDS: Record<string, RouteGuardConfig> = {
 
 const DEFAULT_AUTH_GUARD: RouteGuardConfig = { requireAuth: true };
 
+/** Production Studio is always served under /studio unless overridden. */
+export function studioBasePath(): string {
+  const fromEnv = (process.env.NEXT_PUBLIC_BASE_PATH ?? "").trim();
+  if (fromEnv) return fromEnv.replace(/\/+$/, "");
+  return "/studio";
+}
+
 export const LOGIN_PATH = "/login";
 
 /**
  * Production Studio uses Next `trailingSlash: true` with basePath `/studio`.
  * Middleware normally sees paths without the basePath (`/login/`), but normalize
- * defensively strips a configured basePath and trailing slashes before matching.
+ * defensively strips basePath (env or `/studio` fallback) and trailing slashes.
  */
 export function normalizePathname(pathname: string): string {
-  // Pathname should never include query/hash; strip defensively if callers pass a URL.
   let path = (pathname || "/").split(/[?#]/, 1)[0] || "/";
-  const base = (process.env.NEXT_PUBLIC_BASE_PATH ?? "").replace(/\/+$/, "");
+  const base = studioBasePath();
   if (base && (path === base || path.startsWith(`${base}/`))) {
     path = path.slice(base.length) || "/";
   }

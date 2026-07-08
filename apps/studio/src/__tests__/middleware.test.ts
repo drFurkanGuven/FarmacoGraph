@@ -33,12 +33,17 @@ describe("middleware auth redirect", () => {
   });
 
   it("if somehow invoked on /login/, must not redirect (safety net)", () => {
-    // Matcher excludes login in production; this asserts resolve path is still safe.
     expect(middleware(request("/login")).status).toBe(200);
     expect(middleware(request("/login/")).headers.get("location")).toBeNull();
     const looped = middleware(request("/login/?returnTo=%2Flogin%2F"));
     expect(looped.headers.get("location")).toBeNull();
     expect(looped.status).toBe(200);
+  });
+
+  it("does not redirect /studio/login/ when basePath is in pathname", () => {
+    const res = middleware(request("/studio/login/"));
+    expect(res.status).toBe(200);
+    expect(res.headers.get("location")).toBeNull();
   });
 
   it("allows authenticated sessions through `/`", () => {

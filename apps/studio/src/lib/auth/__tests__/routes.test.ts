@@ -28,6 +28,15 @@ describe("normalizePathname", () => {
     else process.env.NEXT_PUBLIC_BASE_PATH = previous;
   });
 
+  it("strips /studio basePath when NEXT_PUBLIC_BASE_PATH is unset (edge runtime)", () => {
+    const previous = process.env.NEXT_PUBLIC_BASE_PATH;
+    delete process.env.NEXT_PUBLIC_BASE_PATH;
+    expect(normalizePathname("/studio/login/")).toBe("/login");
+    expect(normalizePathname("/studio/login")).toBe("/login");
+    if (previous === undefined) delete process.env.NEXT_PUBLIC_BASE_PATH;
+    else process.env.NEXT_PUBLIC_BASE_PATH = previous;
+  });
+
   it("strips accidental query/hash from pathname-like input", () => {
     expect(normalizePathname("/login/?returnTo=%2F")).toBe("/login");
   });
