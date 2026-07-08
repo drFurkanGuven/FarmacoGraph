@@ -11,7 +11,15 @@ export {
   scopesFromRoles,
   ROLE_SCOPES,
 } from "./roles";
-export { matchRouteGuard, isProtectedPath, ROUTE_GUARDS, LOGIN_PATH, loginRedirectUrl } from "./routes";
+export {
+  matchRouteGuard,
+  isProtectedPath,
+  isLoginPath,
+  normalizePathname,
+  ROUTE_GUARDS,
+  LOGIN_PATH,
+  loginRedirectUrl,
+} from "./routes";
 export type { RouteGuardConfig } from "./routes";
 export { decodeJwtPayload, jwtScopes, isTokenExpired } from "./tokens";
 export { GUEST_SESSION, isSessionAuthenticated } from "./storage";
