@@ -23,6 +23,11 @@ class SchemaValidator(BaseValidator):
         self.model = model
 
     def validate(self, data: Any) -> ValidationResult:
+        if isinstance(data, dict):
+            expected_type = self.model.model_fields["entity_type"].default
+            if data.get("entity_type") != expected_type:
+                return ValidationResult(valid=True, issues=[])
+
         issues: list[ValidationIssue] = []
         try:
             self.model.model_validate(data)

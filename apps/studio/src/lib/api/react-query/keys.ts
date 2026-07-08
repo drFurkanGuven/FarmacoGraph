@@ -19,6 +19,13 @@ export const apiQueryKeys = {
   curatorQueue: (state: string) => [...apiQueryKeys.all, "curator-queue", state] as const,
   curatorDrugs: (filters: Record<string, unknown>) =>
     [...apiQueryKeys.all, "curator-drugs", filters] as const,
+  curatorDiseases: (filters: Record<string, unknown>) =>
+    [...apiQueryKeys.all, "curator-diseases", filters] as const,
+  diseases: (filters?: Record<string, unknown>) =>
+    [...apiQueryKeys.all, "diseases", filters ?? {}] as const,
+  diseasePackage: (slug: string) => [...apiQueryKeys.all, "disease-package", slug] as const,
+  diseaseWorkflowState: (slug: string) =>
+    [...apiQueryKeys.all, "disease-workflow-state", slug] as const,
   drugPackage: (slug: string) => [...apiQueryKeys.all, "drug-package", slug] as const,
   drugWorkflowState: (slug: string) => [...apiQueryKeys.all, "drug-workflow-state", slug] as const,
   workflow: (workflowId: string) => [...apiQueryKeys.all, "workflow", workflowId] as const,

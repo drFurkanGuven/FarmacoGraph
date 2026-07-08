@@ -215,7 +215,7 @@ FarmacoGraph has crossed a meaningful curation milestone: a curator can work **e
 | `README.md` | **Updated** | Marks Phase 4 Studio 5 complete; evidence workflow described |
 | `docs/curation-studio.md` | **Mostly current** | Evidence workflow section live; still labels 4.2.4 "partial" |
 | `docs/studio-roadmap.md` | **Mostly current** | Evidence Manager marked partial with honest gaps |
-| `docs/api.md` | **Partially stale** | §1.4 accurate; line 62 still says `GET /drugs/{drug_id}/evidence` is "OpenAPI only" — **contradicts §1.4 and implementation** |
+| `docs/api.md` | **Reconciled later** | §1.4 accurate; drug evidence routes are now documented as implemented |
 | `apps/studio/README.md` | **Stale** | Lines 46–48 still list `/evidence` and publish wizard as placeholder |
 | `evidence-form.tsx` UI copy | **Stale** | Claims "Evidence write endpoints are not yet available" — **false** since Sprint 5 API |
 | `openapi/openapi.yaml` | **Synced** | Evidence + drug evidence routes present |

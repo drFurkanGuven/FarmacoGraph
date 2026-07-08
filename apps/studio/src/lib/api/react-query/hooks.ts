@@ -151,6 +151,23 @@ export function useCuratorDrugs(options?: {
   );
 }
 
+export function useCuratorDiseases(options?: {
+  search?: string;
+  status?: string;
+  workflowState?: string;
+  sort?: string;
+  limit?: number;
+  offset?: number;
+}) {
+  const client = useApiClient();
+  const filters = options ?? {};
+  return useApiQuery(
+    apiQueryKeys.curatorDiseases(filters),
+    () => client.curatorDiseases(options),
+    defaultQueryOptions,
+  );
+}
+
 export function useDrugPackage(slug: string) {
   const client = useApiClient();
   return useApiQuery(
@@ -165,6 +182,15 @@ export function useDrugWorkflowState(slug: string) {
   return useApiQuery(
     apiQueryKeys.drugWorkflowState(slug),
     () => client.getDrugWorkflowState(slug),
+    { ...defaultQueryOptions, enabled: Boolean(slug) },
+  );
+}
+
+export function useDiseaseWorkflowState(slug: string) {
+  const client = useApiClient();
+  return useApiQuery(
+    apiQueryKeys.diseaseWorkflowState(slug),
+    () => client.getDiseaseWorkflowState(slug),
     { ...defaultQueryOptions, enabled: Boolean(slug) },
   );
 }

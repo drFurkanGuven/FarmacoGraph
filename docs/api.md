@@ -34,9 +34,16 @@ The OpenAPI file at `openapi/openapi.yaml` describes the **full contract** (impl
 | GET | `/api/v1/explain` | `knowledge:explain` | Reasoning chain |
 | POST | `/api/v1/compare` | `knowledge:read` | Drug comparison |
 | GET | `/api/v1/drugs/{drug_slug}/prerequisites` | `knowledge:read` | Learning prerequisites |
+| GET | `/api/v1/diseases` | `knowledge:read` | Disease catalog (bootstrap nodes index) |
+| GET | `/api/v1/diseases/{disease_id}` | `knowledge:read` | Disease detail by canonical UUID |
 | GET | `/api/v1/curator/drugs` | `curator:write` | Curator drug browser |
+| GET | `/api/v1/curator/drugs/{slug}/workflow-state` | `curator:write` | Drug workflow aggregate |
 | POST | `/api/v1/curator/drugs/{slug}/workflows` | `curator:write` | Open/create workflow for slug |
 | GET | `/api/v1/curator/drugs/{slug}/package` | `curator:write` | Load draft package |
+| GET | `/api/v1/curator/diseases` | `curator:write` | Curator disease browser |
+| POST | `/api/v1/curator/diseases/{slug}/workflows` | `curator:write` | Open/create disease workflow |
+| GET | `/api/v1/curator/diseases/{slug}/package` | `curator:write` | Load disease draft package |
+| GET | `/api/v1/curator/diseases/{slug}/workflow-state` | `curator:write` | Disease workflow aggregate |
 | PUT | `/api/v1/curator/workflows/{id}/package` | `curator:write` | **Canonical autosave** |
 | POST | `/api/v1/curator/validate` | `curator:write` | Dry-run validation |
 | GET | `/api/v1/curator/stubs/cardiovascular` | `curator:write` | Structural stub template |
@@ -59,9 +66,9 @@ The OpenAPI file at `openapi/openapi.yaml` describes the **full contract** (impl
 
 ### Planned (in OpenAPI, not yet routed)
 
-Entity endpoints (`/drug-classes`, `/diseases`, `/pathways/{id}`, …), drug-scoped evidence list (`GET /drugs/{drug_id}/evidence` — OpenAPI only), clinical queries (`/interactions`), education (`/flashcards`, `/cases`), graph projection (`/drugs/{id}/graph`, `POST /graph/query`), version management (`/version`), and AI endpoints (`POST /rag`, `POST /tutor`).
+Entity endpoints (`/drug-classes`, `/diseases`, `/pathways/{id}`, …), clinical queries (`/interactions`), education (`/flashcards`, `/cases`), graph projection (`/drugs/{id}/graph`, `POST /graph/query`), version management (`/version`), and AI endpoints (`POST /rag`, `POST /tutor`).
 
-> **Note:** Core evidence CRUD and attach routes under `/evidence` are **implemented** — see [§1.4](#14-evidence-workflow-status).
+> **Note:** Core evidence CRUD, UUID drug evidence routes under `/drugs/{drug_id}/evidence`, curator slug routes under `/curator/drugs/{slug}/evidence`, and evidence-centric attach routes under `/evidence/{evidence_id}/drugs/{drug_id}` are **implemented** — see [§1.4](#14-evidence-workflow-status).
 
 ### Auth (current)
 

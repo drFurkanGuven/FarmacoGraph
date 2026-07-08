@@ -199,7 +199,7 @@ sequenceDiagram
 | `POST /auth/token` | Issue JWT pair (`password` or `api_key` grant) | **Live** |
 | `POST /auth/refresh` | Rotate access token | **Live** |
 | Bearer validation | JWT decode or API key hash lookup | **Live** |
-| `POST /auth/introspect` | API key scope lookup without full login | Planned |
+| `POST /auth/introspect` | JWT/API key scope lookup without full login | **Live** |
 | Self-service key management | `admin:api_keys` CRUD | Planned |
 
 **Security rules:**

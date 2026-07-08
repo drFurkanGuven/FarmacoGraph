@@ -19,11 +19,13 @@ The Curation Studio is the official interface for authoring, reviewing, validati
 | `/knowledge/drugs` | **Complete** | Drug Browser — merges `GET /drugs`, `GET /search`, `GET /modules`, `GET /curator/queue`; opens editor at `/knowledge/drugs/{slug\|id}` |
 | `/knowledge/drugs/[id]` | **Complete** | Drug Editor — sectioned fields, debounced autosave (`PUT .../package`), live validation |
 | `/validation` | **Complete** | Validation Center — `GET /curator/validation-summary`, queue dry-runs via `POST /curator/validate` |
-| `/knowledge/diseases`, `/education`, `/mechanisms` | **Placeholder** | Studio 4.2+ |
+| `/knowledge/diseases` | **Connected** | Disease browser for shared disease nodes and curator workflows |
+| `/knowledge/education`, `/knowledge/mechanisms` | **Connected surface** | Read-only navigation surface; editor/API contracts deferred |
 | `/knowledge/evidence` | **Complete** | Evidence manager — browse/search/create via `GET/POST /evidence` |
-| `/graph` | **Placeholder** | Studio 4.3 — Graph Explorer |
-| `/snapshots` | **Placeholder** | Studio 4.4 |
-| `/activity`, `/users` | **Placeholder** | Soon |
+| `/graph` | **Connected surface** | Preview/navigation surface; graph query explorer deferred |
+| `/snapshots` | **Connected** | Dashboard snapshot marker + recently published workflows |
+| `/activity` | **Connected** | Audit log + background jobs surface |
+| `/users` | **Placeholder** | Admin view deferred |
 
 **Shell features (complete):** sidebar navigation, dark mode, command palette (⌘K), workspace switcher, error boundaries, loading skeletons, typed API client with retries, React Query data layer, Docker production build, two-layer route protection (middleware + client guards).
 
@@ -91,7 +93,7 @@ gantt
 | `FarmacoGraphClient` with retries and error normalization | Done |
 | Dashboard with curator queue and system health | Done |
 | Global search page | Done |
-| Placeholder pages for future modules | Done |
+| Connected surfaces for future modules | Done — deferred editors route back into live Drug/Evidence/Validation workflow |
 | Docker standalone build | Done |
 
 ### Studio 4.2 — Knowledge editors (drug path complete)
@@ -100,9 +102,9 @@ gantt
 |-------------|----------------|--------|
 | **4.2.2 Drug Browser** | `GET /drugs`, `GET /search`, `GET /modules`, `GET /curator/queue` | **Complete** |
 | **4.2.3 Drug Editor** (Obsidian-style) | `POST /curator/drugs/{slug}/workflows`, `PUT /curator/workflows/{id}/package`, `POST /curator/validate` | **Complete** |
-| Disease / indication authoring | Entity endpoints (planned) | Placeholder page |
-| Evidence Manager | `/evidence` + drug attach endpoints | **Partial** — global browser + Drug Editor section live; API path gaps remain |
-| Educational layer editor | Education endpoints (planned) | Placeholder page |
+| Disease / indication browser | `GET /diseases`, `GET /curator/diseases` | **Connected** — browser surface; full authoring deferred |
+| Evidence Manager | `/evidence` + drug attach endpoints | **Live** — global browser + Drug Editor section; live-stack Neo4j coverage still needed |
+| Educational layer surface | Education endpoints (planned) | **Connected surface** — no fake editor until API contracts land |
 | Relationship Editor | Graph write via curator publish | Planned |
 
 #### Drug Editor layout (4.2.3 — Obsidian, not Notion)
@@ -129,8 +131,8 @@ The right panel updates as the curator edits so they always see where the drug s
 | Deliverable | Technology | Status |
 |-------------|------------|--------|
 | **Validation Center** | Grouped errors from `/curator/validate`, `/curator/validation-summary` | **Complete** |
-| Mechanism Editor | React Flow DAG | Placeholder page |
-| Graph Explorer | Cytoscape.js | Placeholder page |
+| Mechanism surface | React Flow DAG later | **Connected surface** — editor deferred |
+| Graph Explorer | Cytoscape.js later | **Connected surface** — query/canvas deferred |
 
 The Validation Center (`/validation`) surfaces summary stats, publish readiness, grouped issue sections (errors, warnings, ontology violations, missing evidence), and client-side dry-runs for up to 15 queue items. Auto-refreshes every 30 seconds.
 
@@ -157,22 +159,22 @@ flowchart LR
 | Publish wizard evidence readiness | Drug Editor → Publish | **Live** — blockers, missing, low-confidence |
 | Global Evidence Manager | `/knowledge/evidence` | **Live** — `EvidenceBrowser` (search, filters, create) |
 | Evidence list/create API | `GET/POST /api/v1/evidence` | **Live** (Neo4j required for writes) |
-| Drug evidence list (OpenAPI) | `GET /drugs/{id}/evidence` | **Studio client** — tries OpenAPI path first, falls back to `GET /evidence?drug_id=` |
-| Drug attach | `POST /drugs/{id}/evidence` or `POST /evidence/{id}/drugs/{drug_id}` | **Studio client** — OpenAPI path first, then implemented evidence router |
+| Drug evidence list | `GET /curator/drugs/{slug}/evidence` or `GET /drugs/{uuid}/evidence` | **Live** — slug editor context first; UUID route when slug is absent |
+| Drug attach/detach | `POST/DELETE /curator/drugs/{slug}/evidence` or `POST/DELETE /drugs/{uuid}/evidence` | **Live** — no unscoped `/evidence?drug_id=` fallback |
 | Assertion `SUPPORTED_BY` UI | Mechanism / relationship editors | **Planned** (4.3+) |
 
 **Client-side attestation gate:** `computePublishReady` requires `entity_payload.provenance.curator_attestation === true` in addition to `valid: true` from the validator.
 
 **Tests:** Unit — `drug-editor/__tests__/package.test.ts`, `drug-editor/__tests__/evidence-helpers.test.ts`, `publish-wizard/validation/__tests__/evidence-gating.test.ts`. E2E — `apps/studio/e2e/evidence-workflow.spec.ts` (Playwright mocks).
 
-**Gaps (honest):** OpenAPI drug-evidence list/attach routes may not be routed in FastAPI yet — Studio client tries them first, then falls back to `/evidence/{id}/drugs/{drug_id}`; attach/create dialog E2E needs mock path alignment for POST mutations (smoke uses pre-seeded `GET /drugs/{slug}/evidence`); assertion-level attach not in UI; Neo4j required for evidence writes in production API.
+**Gaps (honest):** Drug evidence routes are routed in FastAPI and covered by stricter mocks; live-stack coverage is still needed for production-like Neo4j attach/create paths. Assertion-level attach is not in UI; Neo4j is required for evidence writes in production API.
 
 ### Studio 4.4 — Publish and release
 
 | Deliverable | API dependency | Status |
 |-------------|----------------|--------|
 | Diff Viewer (draft vs published) | Snapshot comparison (planned) | Not started |
-| Snapshot Manager | `KnowledgeSnapshot` HTTP API (planned) | Placeholder `/snapshots` route |
+| Snapshot Manager | `KnowledgeSnapshot` HTTP API (planned) | `/snapshots` connected to dashboard snapshot marker; diff/release manager deferred |
 | **Publish Wizard** | `POST /curator/workflows/{id}/submit`, `/approve`, `/publish` | **Complete** — Drug Editor dialog |
 | AI Draft Assistant | External LLM plugin (draft only, never auto-publish) | Planned |
 
@@ -185,7 +187,7 @@ flowchart LR
 | Deliverable | Notes |
 |-------------|-------|
 | Role-based UI gating (`hasRole`) | Wired to JWT scopes |
-| Activity timeline | `GET /audit-logs` (partial on dashboard) |
+| Activity timeline | `GET /audit-logs`, `GET /jobs` — dedicated `/activity` surface live |
 | Background jobs panel | `GET /jobs` (partial on dashboard) |
 | E2E tests (Playwright) | `apps/studio/e2e/` — drug navigation, publish wizard, **evidence workflow** smoke |
 | Unit tests (Vitest) | API client, auth, utils |

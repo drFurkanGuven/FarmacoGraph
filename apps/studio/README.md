@@ -1,6 +1,6 @@
 # FarmacoGraph Studio
 
-Next.js Curation Studio — secure curation path live (drug browser, drug editor, validation center).
+Next.js Curation Studio — secure curation path live (drug browser, drug editor, evidence, validation, publish).
 
 ## Quick start
 
@@ -37,16 +37,21 @@ Sign in at http://localhost:3000/login (API key or password) or paste credential
 | `/search` | Global drug search |
 | `/knowledge/drugs` | **Drug Browser** — list, filter, sort, pagination, workflow status |
 | `/knowledge/drugs/[id]` | **Drug Editor** — sectioned fields, autosave, live validation, context panel |
+| `/knowledge/evidence` | **Evidence Manager** — browse, filter, create citations |
 | `/validation` | **Validation Center** — summary stats, grouped issues, publish readiness |
+| `/activity` | Audit log and background jobs surface |
+| `/snapshots` | Current snapshot marker and recently published workflows |
+| `/knowledge/diseases` | Disease browser for shared disease nodes and workflows |
+| `/knowledge/education`, `/knowledge/mechanisms`, `/graph` | Connected read-only surfaces linked to Drug Editor, Evidence, and Validation |
 
-### Placeholder routes
+### Deferred editor routes
 
 | Route | Planned milestone | Notes |
 |-------|-------------------|-------|
-| `/knowledge/diseases`, `/evidence`, `/education`, `/mechanisms` | 4.2+ entity editors | Placeholder pages |
-| `/graph` | 4.3 Graph Explorer | Cytoscape.js |
-| `/snapshots` | 4.4 Publish wizard | `submitWorkflow`, `approveWorkflow`, `publishWorkflow` in client |
-| `/activity`, `/users` | 4.5 | Admin views |
+| `/knowledge/education` | Education MVP | Read-only connected surface until education API/editor contracts land |
+| `/knowledge/mechanisms` | Mechanism editor | Connected surface until DAG and assertion evidence contracts land |
+| `/graph` | Graph Explorer | Connected preview surface until graph query endpoints land |
+| `/users` | Admin | Placeholder admin view |
 
 ## Authentication
 
@@ -76,7 +81,7 @@ Canonical draft persistence uses the curator workflow API:
 
 Key files: `src/components/drug-editor/autosave.ts`, `use-drug-editor.ts`.
 
-Submit/approve/publish are **not** exposed in the editor UI yet — use the curator API or wait for Studio 4.4.
+Submit/approve/publish are exposed in the Drug Editor **Publish wizard** with `curator:publish` gating.
 
 ## Documentation
 

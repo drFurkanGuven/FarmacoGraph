@@ -30,6 +30,17 @@ class FakeEvidenceRepo:
         rows = list(self.nodes.values())
         return rows, len(rows)
 
+    async def list_drug_evidence(self, drug_id: str) -> list[dict[str, Any]]:
+        rows = list(self.nodes.values())
+        return [
+            {
+                "evidence_id": row["id"],
+                "evidence": row,
+                "assertion": None,
+            }
+            for row in rows
+        ]
+
     async def get_evidence_by_id(self, evidence_id: uuid.UUID) -> dict[str, Any] | None:
         return self.nodes.get(str(evidence_id))
 

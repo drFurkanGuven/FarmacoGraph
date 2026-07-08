@@ -6,6 +6,13 @@ import uuid
 from typing import Any
 
 from farmacograph.core.exceptions import NotFoundError, ValidationError
+from farmacograph.curator.disease_package import (
+    CV_DISEASES_DIR,
+    build_disease_entry_package,
+    disease_entity_id,
+    list_disease_catalog,
+    load_disease_package,
+)
 from farmacograph.curator.drug_package import (
     CV_DRUGS_DIR,
     build_drug_entry_package,
@@ -364,6 +371,92 @@ class CuratorService:
         total = len(items)
         return items[offset : offset + limit], total
 
+    async def list_diseases_browser(
+        self,
+        *,
+        search: str = "",
+        status: str | None = None,
+        workflow_state: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
+        sort: str = "slug",
+    ) -> tuple[list[dict[str, Any]], int]:
+        workflows = await self._curator.list_all_workflows()
+        workflow_by_entity = {w.entity_id: w for w in workflows}
+        catalog, _ = list_disease_catalog(search=search, limit=10_000, offset=0)
+        items: list[dict[str, Any]] = []
+
+        for disease in catalog:
+            slug = disease["slug"]
+            entity_id = disease["id"]
+            workflow = workflow_by_entity.get(entity_id)
+            publication_status = disease.get("status", "published")
+
+            if status and publication_status != status:
+                continue
+            if workflow_state and (workflow is None or workflow.state != workflow_state):
+                continue
+
+            validation = self._validate_package_dict(
+                workflow.draft_package_json if workflow else None
+            )
+            items.append(
+                {
+                    "slug": slug,
+                    "label": disease["label"],
+                    "entity_id": entity_id,
+                    "module": "cardiovascular",
+                    "publication_status": publication_status,
+                    "workflow_id": str(workflow.id) if workflow else None,
+                    "workflow_state": workflow.state if workflow else None,
+                    "validation_valid": validation["valid"],
+                    "validation_errors": validation["error_count"],
+                }
+            )
+
+        reverse = sort.startswith("-")
+        key_name = sort.lstrip("-")
+        if key_name == "label":
+            items.sort(key=lambda row: row["label"].lower(), reverse=reverse)
+        else:
+            items.sort(key=lambda row: row["slug"], reverse=reverse)
+
+        total = len(items)
+        return items[offset : offset + limit], total
+
+    async def get_or_create_workflow_for_disease_slug(
+        self, slug: str, *, actor_id: uuid.UUID | None = None
+    ) -> tuple[CuratorWorkflow, dict[str, Any]]:
+        entity_id = disease_entity_id(slug)
+        workflow = await self._curator.get_by_entity(entity_id)
+        package = await self.resolve_disease_package(slug, workflow)
+        if workflow is None:
+            workflow = await self.create_draft(
+                entity_id, "Disease", notes=f"Disease slug: {slug}", actor_id=actor_id
+            )
+            workflow = await self._curator.save_draft_package(workflow.id, package)
+        elif workflow.draft_package_json is None:
+            workflow = await self._curator.save_draft_package(workflow.id, package)
+        return workflow, package
+
+    async def get_disease_package(self, slug: str) -> tuple[dict[str, Any], CuratorWorkflow | None]:
+        entity_id = disease_entity_id(slug)
+        workflow = await self._curator.get_by_entity(entity_id)
+        package = await self.resolve_disease_package(slug, workflow)
+        return package, workflow
+
+    async def resolve_disease_package(
+        self, slug: str, workflow: CuratorWorkflow | None = None
+    ) -> dict[str, Any]:
+        if workflow and workflow.draft_package_json:
+            return workflow.draft_package_json
+
+        package_path = CV_DISEASES_DIR / f"{slug}.json"
+        if package_path.is_file():
+            return load_disease_package(package_path).model_dump()
+
+        return build_disease_entry_package(slug)
+
     async def get_or_create_workflow_for_slug(
         self, slug: str, *, actor_id: uuid.UUID | None = None
     ) -> tuple[CuratorWorkflow, dict[str, Any]]:
@@ -388,8 +481,26 @@ class CuratorService:
     async def get_drug_workflow_state(self, slug: str) -> dict[str, Any]:
         """Aggregate workflow, validation, actors, and snapshot for a curriculum drug slug."""
         entity_id = drug_entity_id(slug)
+        return await self._get_entity_workflow_state(
+            slug, entity_id, package_loader=self.resolve_package
+        )
+
+    async def get_disease_workflow_state(self, slug: str) -> dict[str, Any]:
+        """Aggregate workflow, validation, actors, and snapshot for a disease slug."""
+        entity_id = disease_entity_id(slug)
+        return await self._get_entity_workflow_state(
+            slug, entity_id, package_loader=self.resolve_disease_package
+        )
+
+    async def _get_entity_workflow_state(
+        self,
+        slug: str,
+        entity_id: str,
+        *,
+        package_loader,
+    ) -> dict[str, Any]:
         workflow = await self._curator.get_by_entity(entity_id)
-        package = await self.resolve_package(slug, workflow)
+        package = await package_loader(slug, workflow)
         validation = self._validate_package_dict(package)
 
         audit_refs: dict[str, Any] = {}

@@ -12,6 +12,7 @@ from farmacograph.api.deps import get_app_container, get_evidence_service, requi
 from farmacograph.api.schemas.curator import (
     CreateWorkflowRequest,
     DrugWorkflowStateResponse,
+    EntityWorkflowStateResponse,
     PublishRequest,
     WorkflowResponse,
 )
@@ -69,6 +70,87 @@ async def list_curator_drugs(
             "offset": offset,
             "module": module,
         },
+    }
+
+
+@router.get("/diseases")
+async def list_curator_diseases(
+    service=Depends(get_curator_service),
+    _auth: Annotated[AuthContext, Depends(require_scope("curator:write"))] = None,
+    search: str = Query(""),
+    status: str | None = Query(None),
+    workflow_state: str | None = Query(None),
+    sort: str = Query("slug"),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+) -> dict:
+    data, total = await service.list_diseases_browser(
+        search=search,
+        status=status,
+        workflow_state=workflow_state,
+        sort=sort,
+        limit=limit,
+        offset=offset,
+    )
+    return {
+        "data": data,
+        "meta": {
+            "api_version": "v1",
+            "count": len(data),
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+        },
+    }
+
+
+@router.post("/diseases/{slug}/workflows", status_code=201)
+async def open_disease_workflow(
+    slug: str,
+    service=Depends(get_curator_service),
+    auth: Annotated[AuthContext, Depends(require_scope("curator:write"))] = None,
+) -> dict:
+    workflow, package = await service.get_or_create_workflow_for_disease_slug(
+        slug, actor_id=auth.user_id
+    )
+    return {
+        "data": {
+            "workflow": WorkflowResponse.from_model(workflow).model_dump(),
+            "package": package,
+            "validation": service.validate_draft_package(package),
+        },
+        "meta": {"api_version": "v1", "slug": slug},
+    }
+
+
+@router.get("/diseases/{slug}/package")
+async def get_disease_package(
+    slug: str,
+    service=Depends(get_curator_service),
+    _auth: Annotated[AuthContext, Depends(require_scope("curator:write"))] = None,
+) -> dict:
+    package, workflow = await service.get_disease_package(slug)
+    return {
+        "data": package,
+        "meta": {
+            "api_version": "v1",
+            "slug": slug,
+            "workflow_id": str(workflow.id) if workflow else None,
+            "validation": service.validate_draft_package(package),
+        },
+    }
+
+
+@router.get("/diseases/{slug}/workflow-state")
+async def get_disease_workflow_state(
+    slug: str,
+    service=Depends(get_curator_service),
+    _auth: Annotated[AuthContext, Depends(require_scope("curator:write"))] = None,
+) -> dict:
+    state = await service.get_disease_workflow_state(slug)
+    return {
+        "data": EntityWorkflowStateResponse.model_validate(state).model_dump(),
+        "meta": {"api_version": "v1", "slug": slug},
     }
 
 

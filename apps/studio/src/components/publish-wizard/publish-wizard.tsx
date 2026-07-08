@@ -46,6 +46,7 @@ export function PublishWizard({
   open,
   onOpenChange,
   drugId,
+  entityType = "Drug",
   workflow,
   package: packageInput,
   saveStatus,
@@ -59,6 +60,7 @@ export function PublishWizard({
     open,
     onOpenChange,
     drugId,
+    entityType,
     workflow,
     package: packageInput,
     saveStatus,
@@ -71,6 +73,7 @@ export function PublishWizard({
 
   const wizard = usePublishWizard({
     drugId,
+    entityType,
     workflow,
     package: packageInput,
     saveStatus,
@@ -121,7 +124,7 @@ export function PublishWizard({
             </DialogHeader>
 
             <div className="space-y-4">
-              <WorkflowStatePanel snapshot={editorSnapshot} />
+              <WorkflowStatePanel snapshot={editorSnapshot} entityType={entityType} />
 
               {wizard.ensuringWorkflow && (
                 <p className="inline-flex items-center gap-2 text-sm text-muted-foreground">

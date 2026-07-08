@@ -67,7 +67,7 @@ export const DRUG_EDITOR_SECTIONS: DrugEditorSection[] = [
         label: "Treats",
         type: "uuid-list",
         path: "entity_payload.relationships.TREATS",
-        description: "One UUID per line — Disease entity IDs.",
+        description: "Select Disease nodes from the curator catalog.",
       },
     ],
   },

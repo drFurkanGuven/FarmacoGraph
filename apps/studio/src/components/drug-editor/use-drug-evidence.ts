@@ -17,17 +17,20 @@ import {
 } from "./evidence-helpers";
 import type { CreateEvidenceInput, DrugEvidenceContext } from "./evidence-types";
 
-export const drugEvidenceQueryKey = (drugKey: string) => ["drug-editor", "evidence", drugKey] as const;
+export const drugEvidenceQueryKey = ({ drugId, entityId, slug }: DrugEvidenceContext) =>
+  ["drug-editor", "evidence", slug ?? entityId ?? drugId] as const;
 
-export function useDrugEvidence({ drugId, entityId, validation }: DrugEvidenceContext) {
+export function useDrugEvidence(context: DrugEvidenceContext) {
   const client = useApiClient();
   const queryClient = useQueryClient();
-  const drugKey = entityId || drugId;
+  const { drugId, entityId, slug, validation } = context;
+  const canResolveIdentity = Boolean(slug || entityId || drugId);
+  const queryKey = drugEvidenceQueryKey(context);
 
   const evidenceQuery = useQuery({
-    queryKey: drugEvidenceQueryKey(drugKey),
-    queryFn: () => fetchDrugEvidence(client, drugKey),
-    enabled: Boolean(drugKey),
+    queryKey,
+    queryFn: () => fetchDrugEvidence(client, context),
+    enabled: canResolveIdentity,
     staleTime: 30_000,
   });
 
@@ -42,23 +45,23 @@ export function useDrugEvidence({ drugId, entityId, validation }: DrugEvidenceCo
   );
 
   const invalidate = useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: drugEvidenceQueryKey(drugKey) });
-  }, [drugKey, queryClient]);
+    await queryClient.invalidateQueries({ queryKey });
+  }, [queryClient, queryKey]);
 
   const attachMutation = useMutation({
-    mutationFn: (evidenceId: string) => attachEvidenceToDrug(client, drugKey, evidenceId),
+    mutationFn: (evidenceId: string) => attachEvidenceToDrug(client, context, evidenceId),
     onSuccess: invalidate,
   });
 
   const detachMutation = useMutation({
-    mutationFn: (evidenceId: string) => detachEvidenceFromDrug(client, drugKey, evidenceId),
+    mutationFn: (evidenceId: string) => detachEvidenceFromDrug(client, context, evidenceId),
     onSuccess: invalidate,
   });
 
   const createMutation = useMutation({
     mutationFn: (input: CreateEvidenceInput) => createEvidenceRecord(client, input),
     onSuccess: async (created) => {
-      await attachEvidenceToDrug(client, drugKey, created.id);
+      await attachEvidenceToDrug(client, context, created.id);
       await invalidate();
     },
   });
@@ -80,7 +83,7 @@ export function useDrugEvidence({ drugId, entityId, validation }: DrugEvidenceCo
     attachMutation.isPending || detachMutation.isPending || createMutation.isPending;
 
   return {
-    drugKey,
+    drugKey: slug ?? entityId ?? drugId,
     attachments: evidenceQuery.data ?? [],
     missingRequirements,
     summary,

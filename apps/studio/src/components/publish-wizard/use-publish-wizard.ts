@@ -12,7 +12,6 @@ import { apiQueryKeys } from "@/lib/api/react-query/keys";
 import { defaultMutationOptions } from "@/lib/api/react-query/config";
 import { useApiClient } from "@/lib/hooks/use-api-client";
 import { usePermissions } from "@/lib/auth/hooks";
-import { ensureDraftWorkflow } from "@/components/drug-editor/autosave";
 import type { ValidationResult } from "@/lib/api";
 import type { SaveStatus } from "@/components/drug-editor/types";
 import {
@@ -40,6 +39,7 @@ interface WorkflowMutationResult {
 
 interface UsePublishWizardOptions {
   drugId: string;
+  entityType?: "Drug" | "Disease";
   workflow: WorkflowItem | null;
   package: PublishPackageInput;
   saveStatus: SaveStatus;
@@ -52,6 +52,7 @@ interface UsePublishWizardOptions {
 
 export function usePublishWizard({
   drugId,
+  entityType = "Drug",
   workflow,
   package: packageInput,
   saveStatus,
@@ -86,6 +87,19 @@ export function usePublishWizard({
   const hasUnsavedChanges =
     dirtySections.length > 0 || saveStatus === "pending" || saveStatus === "saving";
 
+  const ensureEntityWorkflow = useCallback(async () => {
+    if (workflowId) return workflowId;
+    const envelope =
+      entityType === "Disease"
+        ? await client.openDiseaseWorkflow(drugId)
+        : await client.openDrugWorkflow(drugId);
+    const openedWorkflow = envelope.data.workflow;
+    setWorkflowId(openedWorkflow.id);
+    setWorkflowState(openedWorkflow.state);
+    onWorkflowUpdated(openedWorkflow);
+    return openedWorkflow.id;
+  }, [client, drugId, entityType, onWorkflowUpdated, workflowId]);
+
   const invalidateWorkflowQueries = useCallback(
     async (id: string) => {
       await queryClient.invalidateQueries({ queryKey: apiQueryKeys.workflow(id) });
@@ -93,23 +107,25 @@ export function usePublishWizard({
       await queryClient.invalidateQueries({ queryKey: apiQueryKeys.curatorQueue("draft") });
       await queryClient.invalidateQueries({ queryKey: apiQueryKeys.curatorQueue("review") });
       await queryClient.invalidateQueries({ queryKey: apiQueryKeys.curatorQueue("approved") });
-      await queryClient.invalidateQueries({ queryKey: apiQueryKeys.drug(drugId) });
-      await queryClient.invalidateQueries({ queryKey: apiQueryKeys.drugPackage(drugId) });
-      await queryClient.invalidateQueries({ queryKey: apiQueryKeys.drugWorkflowState(drugId) });
+      if (entityType === "Disease") {
+        await queryClient.invalidateQueries({ queryKey: apiQueryKeys.curatorDiseases({}) });
+        await queryClient.invalidateQueries({ queryKey: apiQueryKeys.diseasePackage(drugId) });
+        await queryClient.invalidateQueries({ queryKey: apiQueryKeys.diseaseWorkflowState(drugId) });
+      } else {
+        await queryClient.invalidateQueries({ queryKey: apiQueryKeys.drug(drugId) });
+        await queryClient.invalidateQueries({ queryKey: apiQueryKeys.drugPackage(drugId) });
+        await queryClient.invalidateQueries({ queryKey: apiQueryKeys.drugWorkflowState(drugId) });
+      }
       readiness.refetch();
     },
-    [drugId, queryClient, readiness],
+    [drugId, entityType, queryClient, readiness],
   );
 
   const workflowMutation = useMutation({
     mutationFn: async (action: PublishWizardAction) => {
       let id = workflowId;
       if (!id) {
-        id = await ensureDraftWorkflow(client, drugId);
-        setWorkflowId(id);
-        const workflowEnvelope = await client.getWorkflow(id);
-        setWorkflowState(workflowEnvelope.data.state);
-        onWorkflowUpdated(workflowEnvelope.data);
+        id = await ensureEntityWorkflow();
       }
 
       if (hasUnsavedChanges) {
@@ -170,7 +186,7 @@ export function usePublishWizard({
     setEnsureError(null);
 
     try {
-      const id = await ensureDraftWorkflow(client, drugId);
+      const id = await ensureEntityWorkflow();
       const workflowEnvelope = await client.getWorkflow(id);
       setWorkflowId(id);
       setWorkflowState(workflowEnvelope.data.state);
@@ -183,7 +199,7 @@ export function usePublishWizard({
     } finally {
       setEnsuringWorkflow(false);
     }
-  }, [client, drugId, ensuringWorkflow, onWorkflowUpdated, workflowId]);
+  }, [client, ensureEntityWorkflow, ensuringWorkflow, onWorkflowUpdated, workflowId]);
 
   const reset = useCallback(() => {
     setPhase("overview");

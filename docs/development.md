@@ -151,7 +151,7 @@ curl -s -X POST http://127.0.0.1:8000/api/v1/auth/token \
 
 **Autosave:** Field edits debounce (800ms) to `PUT /api/v1/curator/workflows/{id}/package`. Validation debounces separately (600ms) to `POST /api/v1/curator/validate`. Implementation: `apps/studio/src/components/drug-editor/`.
 
-**Publish transitions** (`submit` → `approve` → `publish`) are available via the curator API but not yet in Studio UI (Studio 4.4).
+**Publish transitions** (`submit` → `approve` → `publish`) are live in the Drug Editor Publish wizard and call the curator API transition endpoints.
 
 ### Deprecated: manual JSON workflow
 

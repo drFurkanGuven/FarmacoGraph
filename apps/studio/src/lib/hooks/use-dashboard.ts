@@ -1,9 +1,11 @@
 export {
   useAuditLogs,
   useCuratorDrugs,
+  useCuratorDiseases,
   useCuratorQueue,
   useCurriculum,
   useDashboard,
+  useDiseaseWorkflowState,
   useDrug,
   useDrugPackage,
   useExplain,

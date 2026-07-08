@@ -4,7 +4,8 @@ import { cn } from "@/lib/utils";
 import { PropertyEditor, type PropertyEditorField } from "@/components/ui";
 import type { ValidationResult } from "@/lib/api";
 import { DrugEvidenceSection } from "./drug-evidence-section";
-import { sectionFieldValues } from "./package";
+import { DiseasePicker } from "./disease-picker";
+import { getValueAtPath, sectionFieldValues } from "./package";
 import type { DrugEditorSection, DrugPublishPackage } from "./types";
 
 export interface DrugSectionEditorProps {
@@ -41,6 +42,25 @@ export function DrugSectionEditor({
         disabled={disabled}
         className={className}
       />
+    );
+  }
+
+  if (section.id === "indications") {
+    const treats = getValueAtPath(pkg, "entity_payload.relationships.TREATS");
+    const selectedIds = Array.isArray(treats) ? treats.map((entry) => String(entry)) : [];
+
+    return (
+      <div className={cn("space-y-4", className)}>
+        <div>
+          <h2 className="text-lg font-semibold tracking-tight">{section.title}</h2>
+          {section.description && <p className="mt-1 text-sm text-muted-foreground">{section.description}</p>}
+        </div>
+        <DiseasePicker
+          selectedIds={selectedIds}
+          disabled={disabled}
+          onChange={(nextIds) => onFieldChange("treats", nextIds.join("\n"))}
+        />
+      </div>
     );
   }
 

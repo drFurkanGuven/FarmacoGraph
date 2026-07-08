@@ -1,6 +1,6 @@
 # Studio authentication
 
-Client-side auth layer for FarmacoGraph Curation Studio. Connects to public backend auth endpoints when available (Phase API 5.2); falls back to manual JWT/API key entry until then.
+Client-side auth layer for FarmacoGraph Curation Studio. Connects to the public backend auth endpoints and keeps a manual JWT/API key fallback for older local API builds.
 
 ## Flow
 
@@ -30,10 +30,11 @@ createApiClient({
 
 `applyAuthHeaders` in `lib/api/auth.ts` sets `Authorization: Bearer …` from `accessToken` or `apiKey`.
 
-## Backend blockers
+## Backend status
 
-- `POST /auth/token` — not deployed (roadmap 5.2.2)
-- `POST /auth/refresh` — not deployed
-- API key via Bearer works once `deps.py` validates keys against PostgreSQL (5.2.1)
+- `POST /auth/token` — live for password and API key grants.
+- `POST /auth/refresh` — live and used automatically after a 401.
+- `POST /auth/introspect` — live for token/session inspection.
+- Direct API key auth works via Bearer token or `X-API-Key` header when PostgreSQL auth is configured.
 
-Until then, store API keys locally via Settings or Login (client-only session).
+If a local API build does not expose auth endpoints, API key login stores a client-only curator session and Settings can still hold manual credentials.

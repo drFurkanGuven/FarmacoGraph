@@ -109,6 +109,17 @@ Checks:
 
 Exit code **0** = pass, **1** = fail. This is an HTTP gate only — it does not replace the browser checklist below (login, editor, publish).
 
+### Staging authenticated smoke (optional)
+
+Requires explicit credentials — **do not** point at production unless intended:
+
+```bash
+FG_SMOKE_EMAIL=curator@farmacograph.local FG_SMOKE_PASSWORD='…' \
+  ./scripts/smoke-studio-staging.sh https://staging.example.com
+```
+
+Checks: `POST /auth/token` → `GET /dashboard` 200 → `GET /curator/diseases` 200.
+
 ## Browser smoke test
 
 1. Open `/studio/` — anonymous users must be redirected to login (no dashboard panel). **Empty 200 HTML = white screen** (fix with `smoke-studio.sh`).

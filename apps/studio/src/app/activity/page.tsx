@@ -1,11 +1,5 @@
-import { PlaceholderPage } from "@/components/layout/placeholder-page";
+import { ActivityPageView } from "@/components/activity/activity-page";
 
 export default function ActivityPage() {
-  return (
-    <PlaceholderPage
-      title="Activity"
-      phase="Soon"
-      description="Curator audit timeline — drug created, evidence updated, snapshot published."
-    />
-  );
+  return <ActivityPageView />;
 }

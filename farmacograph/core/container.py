@@ -24,6 +24,7 @@ from farmacograph.services.compare import CompareService
 from farmacograph.services.curator import CuratorService
 from farmacograph.services.curriculum import CurriculumService
 from farmacograph.services.dashboard import DashboardService
+from farmacograph.services.diseases import DiseaseService
 from farmacograph.services.drugs import DrugService
 from farmacograph.services.evidence import EvidenceService
 from farmacograph.services.explain import ExplainService
@@ -62,6 +63,7 @@ class Container:
     health_service: HealthService = field(init=False)
     info_service: InfoService = field(init=False)
     drug_service: DrugService = field(init=False)
+    disease_service: DiseaseService = field(init=False)
     evidence_service: EvidenceService = field(init=False)
     explain_service: ExplainService = field(init=False)
     compare_service: CompareService = field(init=False)
@@ -98,6 +100,7 @@ class Container:
         )
         self.info_service = InfoService(self.settings, self.snapshot_repo, self.graph_repo)
         self.drug_service = DrugService(graph_repo=self.graph_repo, settings=self.settings)
+        self.disease_service = DiseaseService(settings=self.settings)
         self.evidence_service = EvidenceService(
             evidence_repo=self.evidence_repo,
             audit_repo=self.audit_repo,

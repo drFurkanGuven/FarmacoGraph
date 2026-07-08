@@ -4,7 +4,7 @@ import { Loader2, Workflow } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ValidationBadge } from "@/components/ui/validation-badge";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { useDrugWorkflowState } from "@/lib/api/react-query/hooks";
+import { useDiseaseWorkflowState, useDrugWorkflowState } from "@/lib/api/react-query/hooks";
 import { formatRelativeTime } from "@/lib/utils";
 import type { DrugEditorSnapshot } from "@/components/drug-editor/types";
 import { isDrugSlug } from "@/components/drug-editor/api";
@@ -26,13 +26,17 @@ function workflowBadgeStatus(state: string | null | undefined) {
 
 export interface WorkflowStatePanelProps {
   snapshot: DrugEditorSnapshot;
+  compact?: boolean;
+  entityType?: "Drug" | "Disease";
 }
 
-export function WorkflowStatePanel({ snapshot }: WorkflowStatePanelProps) {
+export function WorkflowStatePanel({ snapshot, compact = false, entityType = "Drug" }: WorkflowStatePanelProps) {
   const slug = isDrugSlug(snapshot.drugId)
     ? snapshot.drugId
     : String(snapshot.package.entity_payload.slug ?? "");
-  const stateQuery = useDrugWorkflowState(slug);
+  const drugStateQuery = useDrugWorkflowState(entityType === "Drug" ? slug : "");
+  const diseaseStateQuery = useDiseaseWorkflowState(entityType === "Disease" ? slug : "");
+  const stateQuery = entityType === "Disease" ? diseaseStateQuery : drugStateQuery;
   const remote = stateQuery.data?.data;
 
   const workflowState = snapshot.workflow?.state ?? remote?.status ?? null;
@@ -47,15 +51,15 @@ export function WorkflowStatePanel({ snapshot }: WorkflowStatePanelProps) {
         : "pending";
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
+    <Card className={compact ? "rounded-md" : undefined}>
+      <CardHeader className={compact ? "p-3 pb-2" : "pb-3"}>
         <CardTitle className="flex items-center gap-2 text-sm">
           <Workflow className="h-4 w-4" />
           Workflow state
         </CardTitle>
-        <CardDescription>Draft → review → approved → published</CardDescription>
+        {!compact && <CardDescription>Draft → review → approved → published</CardDescription>}
       </CardHeader>
-      <CardContent className="space-y-2 text-sm">
+      <CardContent className={compact ? "space-y-1.5 p-3 pt-0 text-sm" : "space-y-2 text-sm"}>
         {stateQuery.isLoading && !snapshot.workflow ? (
           <p className="flex items-center gap-2 text-muted-foreground">
             <Loader2 className="h-3.5 w-3.5 animate-spin" />

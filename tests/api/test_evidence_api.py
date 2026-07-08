@@ -76,6 +76,90 @@ async def test_list_evidence_envelope(api_client: AsyncClient) -> None:
 
 
 @pytest.mark.asyncio
+async def test_drug_evidence_uuid_route_envelope(curator_client: AsyncClient, monkeypatch) -> None:
+    from farmacograph.api.schemas.evidence import CreateEvidenceRequest
+    from farmacograph.core.container import get_container
+    from farmacograph.models.enums import EvidenceType
+
+    container = get_container()
+    fake_repo = FakeEvidenceRepo()
+    monkeypatch.setattr(container.evidence_service, "_repo", fake_repo)
+    created, _ = await container.evidence_service.create_evidence(
+        CreateEvidenceRequest(
+            title="Drug Evidence Stub",
+            evidence_type=EvidenceType.REVIEW_ARTICLE,
+        )
+    )
+
+    response = await curator_client.get(f"/api/v1/drugs/{DRUG_ID}/evidence")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data"][0]["evidence_id"] == created["id"]
+    assert body["meta"]["count"] == 1
+    assert body["meta"]["drug_id"] == DRUG_ID
+
+
+@pytest.mark.asyncio
+async def test_drug_evidence_slug_on_uuid_route_returns_422(api_client: AsyncClient) -> None:
+    response = await api_client.get("/api/v1/drugs/not-a-uuid/evidence")
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_curator_drug_evidence_slug_route_envelope(
+    curator_client: AsyncClient, monkeypatch
+) -> None:
+    from farmacograph.api.schemas.evidence import CreateEvidenceRequest
+    from farmacograph.core.container import get_container
+    from farmacograph.models.enums import EvidenceType
+
+    container = get_container()
+    fake_repo = FakeEvidenceRepo()
+    monkeypatch.setattr(container.evidence_service, "_repo", fake_repo)
+    created, _ = await container.evidence_service.create_evidence(
+        CreateEvidenceRequest(
+            title="Curator Drug Evidence Stub",
+            evidence_type=EvidenceType.REVIEW_ARTICLE,
+        )
+    )
+
+    response = await curator_client.get("/api/v1/curator/drugs/ramipril/evidence")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data"][0]["evidence_id"] == created["id"]
+    assert body["meta"]["count"] == 1
+    assert body["meta"]["slug"] == "ramipril"
+
+
+@pytest.mark.asyncio
+async def test_evidence_list_drug_id_query_is_not_scoped(
+    api_client: AsyncClient, monkeypatch
+) -> None:
+    from farmacograph.api.schemas.evidence import CreateEvidenceRequest
+    from farmacograph.core.container import get_container
+    from farmacograph.models.enums import EvidenceType
+
+    container = get_container()
+    fake_repo = FakeEvidenceRepo()
+    monkeypatch.setattr(container.evidence_service, "_repo", fake_repo)
+    await container.evidence_service.create_evidence(
+        CreateEvidenceRequest(title="Evidence A", evidence_type=EvidenceType.REVIEW_ARTICLE)
+    )
+    await container.evidence_service.create_evidence(
+        CreateEvidenceRequest(title="Evidence B", evidence_type=EvidenceType.FDA_LABEL)
+    )
+
+    response = await api_client.get("/api/v1/evidence", params={"drug_id": DRUG_ID})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["meta"]["count"] == 2
+    assert "drug_id" not in body["meta"]
+
+
+@pytest.mark.asyncio
 async def test_get_evidence_not_found(api_client: AsyncClient) -> None:
     response = await api_client.get(f"/api/v1/evidence/{EVIDENCE_ID}")
     assert response.status_code == 404

@@ -117,6 +117,18 @@ export interface DrugBrowseItem {
   confidence_score: number | null;
 }
 
+export interface DiseaseBrowseItem {
+  slug: string;
+  label: string;
+  entity_id: string;
+  module?: string;
+  publication_status?: string;
+  workflow_id?: string | null;
+  workflow_state?: string | null;
+  validation_valid?: boolean;
+  validation_errors?: number;
+}
+
 export interface DrugPackage {
   entity_payload: Record<string, unknown>;
   related_entities?: Record<string, unknown>[];

@@ -1,11 +1,5 @@
-import { PlaceholderPage } from "@/components/layout/placeholder-page";
+import { SnapshotsPageView } from "@/components/snapshots/snapshots-page";
 
 export default function SnapshotsPage() {
-  return (
-    <PlaceholderPage
-      title="Snapshots"
-      phase="Studio 4.4"
-      description="Release preview, diff summary, and automated release notes before publish."
-    />
-  );
+  return <SnapshotsPageView />;
 }

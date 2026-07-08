@@ -3,10 +3,12 @@ import { authenticateStudio } from "./helpers/auth";
 import { mockEvidenceWorkflowApi } from "./helpers/evidence-api";
 
 test.describe("Evidence workflow", () => {
+  let evidenceApi: Awaited<ReturnType<typeof mockEvidenceWorkflowApi>>;
+
   test.beforeEach(async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 720 });
     await authenticateStudio(page);
-    await mockEvidenceWorkflowApi(page);
+    evidenceApi = await mockEvidenceWorkflowApi(page);
   });
 
   test("login → ramipril → evidence section → validate → publish wizard evidence state", async ({ page }) => {
@@ -17,6 +19,7 @@ test.describe("Evidence workflow", () => {
     await expect(page.getByRole("heading", { name: "Evidence", level: 2 })).toBeVisible();
     await expect(page.getByText("E2E catalog citation stub")).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText("Package status")).toBeVisible();
+    expect(evidenceApi.invalidDrugSlugEvidenceCalls).toEqual([]);
 
     await page.getByRole("navigation", { name: "Drug editor sections" }).getByRole("button", { name: "Provenance" }).click();
     await page.getByRole("textbox", { name: "Curator attestation" }).fill("true");

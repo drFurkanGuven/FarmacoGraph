@@ -19,7 +19,7 @@ export function PlaceholderPage({ title, description, phase }: PlaceholderPagePr
         <CardHeader>
           <CardTitle className="text-base">Module not implemented yet</CardTitle>
           <CardDescription>
-            Phase 4.1 delivers the application foundation only. Editors and explorers ship in later Studio milestones.
+            The secure drug curation path is live. Disease authoring is rolling out; other modules ship in later milestones.
           </CardDescription>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground">

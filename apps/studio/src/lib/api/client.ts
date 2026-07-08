@@ -8,6 +8,7 @@ import type {
   CreateWorkflowInput,
   CurriculumData,
   DrugBrowseItem,
+  DiseaseBrowseItem,
   DrugPackage,
   DrugSummary,
   DrugWorkflowState,
@@ -175,6 +176,47 @@ export class FarmacoGraphClient {
         ...buildPaginationParams(pagination),
       },
     });
+  }
+
+  diseases(options?: PaginationParams & { search?: string }) {
+    const { search, ...pagination } = options ?? {};
+    return this.request<Record<string, unknown>[]>("/diseases", {
+      params: { search, ...buildPaginationParams(pagination) },
+    });
+  }
+
+  curatorDiseases(options?: {
+    search?: string;
+    status?: string;
+    workflowState?: string;
+    sort?: string;
+  } & PaginationParams) {
+    const { search, status, workflowState, sort, ...pagination } = options ?? {};
+    return this.request<DiseaseBrowseItem[]>("/curator/diseases", {
+      params: {
+        search,
+        status,
+        workflow_state: workflowState,
+        sort,
+        ...buildPaginationParams(pagination),
+      },
+    });
+  }
+
+  openDiseaseWorkflow(slug: string) {
+    return this.request<{
+      workflow: WorkflowItem;
+      package: DrugPackage;
+      validation: PackageValidation;
+    }>(`/curator/diseases/${slug}/workflows`, { method: "POST" });
+  }
+
+  getDiseasePackage(slug: string) {
+    return this.request<DrugPackage>(`/curator/diseases/${slug}/package`);
+  }
+
+  getDiseaseWorkflowState(slug: string) {
+    return this.request<DrugWorkflowState>(`/curator/diseases/${slug}/workflow-state`);
   }
 
   openDrugWorkflow(slug: string) {

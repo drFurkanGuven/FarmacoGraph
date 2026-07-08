@@ -98,14 +98,18 @@ function attachmentPayload(record: MockEvidenceRecord) {
 
 /**
  * Playwright mocks for Drug Editor evidence workflow on ramipril.
- * Implements Studio client paths: `/drugs/{slug}/evidence`, `/evidence`, `/search?types=evidence`.
+ * Implements Studio client paths: `/curator/drugs/{slug}/evidence`,
+ * `/drugs/{uuid}/evidence`, `/evidence`, `/search?types=evidence`.
  */
-export async function mockEvidenceWorkflowApi(page: Page): Promise<void> {
+export async function mockEvidenceWorkflowApi(page: Page): Promise<{
+  invalidDrugSlugEvidenceCalls: string[];
+}> {
   let curatorAttestation = false;
   let currentPackage = createRamiprilPackage(false);
   const attachments: MockEvidenceRecord[] = [CATALOG_EVIDENCE];
   const catalog = new Map<string, MockEvidenceRecord>([[CATALOG_EVIDENCE.id, CATALOG_EVIDENCE]]);
   let nextEvidenceId = 2;
+  const invalidDrugSlugEvidenceCalls: string[] = [];
 
   await page.route("**/api/v1/**", async (route) => {
     const url = new URL(route.request().url());
@@ -257,14 +261,24 @@ export async function mockEvidenceWorkflowApi(page: Page): Promise<void> {
       });
     }
 
-    if ((path === "drugs/ramipril/evidence" || path === `drugs/${RAMIPRIL_ENTITY_ID}/evidence`) && method === "GET") {
+    if (path === "drugs/ramipril/evidence" && method === "GET") {
+      invalidDrugSlugEvidenceCalls.push(path);
+      return json(route, { detail: "Invalid UUID" }, 422);
+    }
+
+    if (path === `drugs/${RAMIPRIL_ENTITY_ID}/evidence` && method === "GET") {
       return json(route, {
         data: attachments.map((record) => attachmentPayload(record)),
         meta: { count: attachments.length, total: attachments.length },
       });
     }
 
-    if ((path === "drugs/ramipril/evidence" || path === `drugs/${RAMIPRIL_ENTITY_ID}/evidence`) && method === "POST") {
+    if (path === "drugs/ramipril/evidence" && method === "POST") {
+      invalidDrugSlugEvidenceCalls.push(path);
+      return json(route, { detail: "Invalid UUID" }, 422);
+    }
+
+    if (path === `drugs/${RAMIPRIL_ENTITY_ID}/evidence` && method === "POST") {
       const body = readJsonBody();
       const evidenceId = typeof body.evidence_id === "string" ? body.evidence_id : null;
       const record = evidenceId ? catalog.get(evidenceId) : undefined;
@@ -278,6 +292,11 @@ export async function mockEvidenceWorkflowApi(page: Page): Promise<void> {
     }
 
     if (path.startsWith("drugs/ramipril/evidence/") && method === "DELETE") {
+      invalidDrugSlugEvidenceCalls.push(path);
+      return json(route, { detail: "Invalid UUID" }, 422);
+    }
+
+    if (path.startsWith(`drugs/${RAMIPRIL_ENTITY_ID}/evidence/`) && method === "DELETE") {
       const evidenceId = path.split("/").pop()!;
       const index = attachments.findIndex((entry) => entry.id === evidenceId);
       if (index >= 0) {
@@ -287,18 +306,8 @@ export async function mockEvidenceWorkflowApi(page: Page): Promise<void> {
     }
 
     if (path.startsWith("evidence/") && method === "POST" && path.includes("/drugs/ramipril")) {
-      const evidenceId = path.split("/")[1]!;
-      const record = catalog.get(evidenceId);
-      if (!record) {
-        return json(route, { error: { code: "not_found", message: "Evidence not found." } }, 404);
-      }
-      if (!attachments.some((entry) => entry.id === record.id)) {
-        attachments.push(record);
-      }
-      return json(route, {
-        data: { ...attachmentPayload(record), attached_at: "2026-07-08T10:00:00+00:00" },
-        meta: {},
-      }, 201);
+      invalidDrugSlugEvidenceCalls.push(path);
+      return json(route, { detail: "Invalid UUID" }, 422);
     }
 
     if (path.startsWith("evidence/") && method === "GET" && !path.includes("/drugs/")) {
@@ -342,11 +351,8 @@ export async function mockEvidenceWorkflowApi(page: Page): Promise<void> {
     if (path === "evidence" || path.startsWith("evidence/")) {
       if (method === "GET" && (path === "evidence" || path === "evidence/")) {
         const query = url.searchParams.get("q") ?? url.searchParams.get("search") ?? "";
-        const drugId = url.searchParams.get("drug_id");
         let results = [...catalog.values()];
-        if (drugId === "ramipril") {
-          results = attachments;
-        } else if (query) {
+        if (query) {
           results = results.filter((entry) => entry.title.toLowerCase().includes(query.toLowerCase()));
         }
         return json(route, {
@@ -374,4 +380,6 @@ export async function mockEvidenceWorkflowApi(page: Page): Promise<void> {
 
     return json(route, { data: null, meta: {} });
   });
+
+  return { invalidDrugSlugEvidenceCalls };
 }

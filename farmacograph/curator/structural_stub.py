@@ -5,10 +5,12 @@ from __future__ import annotations
 from datetime import UTC, date, datetime
 from typing import Any
 
+from farmacograph.curator.disease_package import disease_entity_id
+
 # Fixed UUIDs for reproducible structural stubs (not real drug IDs)
 CV_STUB_DRUG_ID = "00000000-0000-4000-8000-000000000001"
 CV_STUB_CLASS_ID = "00000000-0000-4000-8000-000000000002"
-CV_STUB_DISEASE_ID = "00000000-0000-4000-8000-000000000003"
+CV_STUB_DISEASE_ID = disease_entity_id("hypertension")
 CV_STUB_MECHANISM_ID = "00000000-0000-4000-8000-000000000004"
 
 _NOW = datetime(2026, 1, 1, tzinfo=UTC)
@@ -79,8 +81,8 @@ def build_cardiovascular_publish_package(
         _base_entity(
             CV_STUB_DISEASE_ID,
             "Disease",
-            "cv-stub-indication",
-            "Structural Indication Stub",
+            "hypertension",
+            "Hypertension",
             dataset_version=dataset_version,
         ),
         _base_entity(

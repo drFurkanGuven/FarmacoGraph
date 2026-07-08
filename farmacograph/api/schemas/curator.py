@@ -58,7 +58,7 @@ class WorkflowSnapshotRef(BaseModel):
     relationship_count: int | None = None
 
 
-class DrugWorkflowStateResponse(BaseModel):
+class EntityWorkflowStateResponse(BaseModel):
     slug: str
     entity_id: str
     workflow_id: UUID | None = None
@@ -72,6 +72,9 @@ class DrugWorkflowStateResponse(BaseModel):
     allowed_transitions: list[str] = Field(default_factory=list)
     snapshot: WorkflowSnapshotRef | None = None
     package: dict | None = None
+
+
+DrugWorkflowStateResponse = EntityWorkflowStateResponse
 
 
 class GraphWriteResult(BaseModel):

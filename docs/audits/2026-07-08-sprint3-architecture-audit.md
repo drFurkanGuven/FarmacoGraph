@@ -65,7 +65,7 @@ Sprint 3 **achieved its primary goal**: curators can authenticate, browse drugs,
 | 5 | OpenAPI updated with curator, dashboard, auth introspect schemas | **Done** | `openapi/openapi.yaml` paths: `/auth/introspect`, `/dashboard`, `/audit-logs`, `/jobs`, full `/curator/*` tree (lines 106–529); component schemas `DashboardResponse`, `CuratorDrugListResponse`, `DrugWorkflowOpenResponse`, etc. (lines 1205+) |
 | 6 | Drug browser rows navigate to `/knowledge/drugs/{slug}` | **Done** | `apps/studio/src/components/drugs/drug-table.tsx:72–74`; `apps/studio/src/components/drugs/utils.ts:14`; E2E `apps/studio/e2e/drug-navigation.spec.ts:22–34` |
 | 7 | Security regression tests — anonymous curator mutations denied | **Done** | `tests/api/test_security_regression.py` (parametrized 401 on 10 write endpoints + publish + workflow mutations); `tests/curator/test_security_regression.py` (create workflow + submit/approve/publish) |
-| 8 | Documentation updated | **Mostly done** | `README.md:18–19`, `docs/api.md`, `docs/auth.md`, `docs/studio-roadmap.md`, `docs/curation-studio.md`, `docs/deploy-studio.md`, `docs/api-first.md:49`. **Stale:** `docs/platform-architecture.md:202` still lists introspect as "Planned"; `docs/architecture-diagrams.md:267` same; `docs/studio-roadmap.md:231` says drug list/editor "not yet wired" (contradicts lines 19–21) |
+| 8 | Documentation updated | **Mostly done** | `README.md:18–19`, `docs/api.md`, `docs/auth.md`, `docs/studio-roadmap.md`, `docs/curation-studio.md`, `docs/deploy-studio.md`, `docs/api-first.md:49`. Historical stale notes from this audit were reconciled in later sprints. |
 | 9 | Backend tests: 124 passed, 5 skipped | **Reported done** (not re-verified locally) | CI runs `pytest -m "not integration"` on Python 3.12 (`.github/workflows/ci.yml:80–87`). Local audit environment had Python 3.9 and could not execute pytest |
 | 10 | Studio tests: 109 passed; build passes | **Verified** | `npm test -- --run` → 21 files, 109 passed; CI runs lint, typecheck, `test:coverage`, `test:e2e`, Docker build |
 
@@ -115,7 +115,7 @@ Sprint 3 **achieved its primary goal**: curators can authenticate, browse drugs,
 
 | Document | Issue |
 |----------|-------|
-| `docs/platform-architecture.md` | Introspect marked "Planned" |
+| `docs/platform-architecture.md` | Historical: introspect was marked future-work before API 5.2 doc reconciliation |
 | `docs/architecture-diagrams.md` | Introspect listed under "Not yet implemented" |
 | `docs/studio-roadmap.md:231` | "Not yet wired" contradicts completed drug browser/editor section |
 | `docs/curation-studio.md:37` | Says "4.2.1 — Functional dashboard" under status header that claims 4.2 complete |

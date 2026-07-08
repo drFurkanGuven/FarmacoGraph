@@ -19,6 +19,7 @@ export interface PublishWizardProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   drugId: string;
+  entityType?: "Drug" | "Disease";
   workflow: WorkflowItem | null;
   package: PublishPackageInput;
   saveStatus: SaveStatus;

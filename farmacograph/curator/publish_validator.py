@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from farmacograph.core.exceptions import ValidationError
+from farmacograph.models.clinical import Disease
 from farmacograph.models.pharmacologic import Drug
 from farmacograph.validators.base import ValidationLevel, ValidationResult
 from farmacograph.validators.evidence_validator import EvidenceValidator
@@ -13,9 +14,10 @@ from farmacograph.validators.registry import ValidatorRegistry, get_default_regi
 from farmacograph.validators.schema_validator import SchemaValidator
 
 
-def _registry_with_drug_schema() -> ValidatorRegistry:
+def _registry_with_entity_schemas() -> ValidatorRegistry:
     registry = get_default_registry()
     registry.register_schema_validator(SchemaValidator(Drug))
+    registry.register_schema_validator(SchemaValidator(Disease))
     return registry
 
 
@@ -26,24 +28,26 @@ def validate_publish_package(
     relationships: list[dict[str, Any]] | None = None,
 ) -> ValidationResult:
     """Run schema, biomedical, and per-edge ontology validation."""
-    registry = _registry_with_drug_schema()
+    registry = _registry_with_entity_schemas()
     ontology = OntologyValidator()
     evidence = EvidenceValidator()
     result = ValidationResult(valid=True, issues=[])
 
-    if entity_payload.get("entity_type") == "Drug":
+    entity_type = entity_payload.get("entity_type")
+    if entity_type in ("Drug", "Disease"):
         result = result.merge(
             registry.validate_all(
                 entity_payload,
                 levels=[ValidationLevel.SCHEMA, ValidationLevel.BIOMEDICAL],
             )
         )
-        result = result.merge(
-            evidence.validate_package(
-                entity_payload,
-                relationships=relationships,
+        if entity_type == "Drug":
+            result = result.merge(
+                evidence.validate_package(
+                    entity_payload,
+                    relationships=relationships,
+                )
             )
-        )
 
     for rel in relationships or []:
         result = result.merge(ontology.validate(rel))

@@ -383,6 +383,124 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /curator/diseases:
+    get:
+      tags: [Curator]
+      summary: Browse diseases for curation
+      operationId: listCuratorDiseases
+      security:
+        - BearerAuth: [curator:write]
+      parameters:
+        - name: search
+          in: query
+          schema: { type: string, default: "" }
+        - name: status
+          in: query
+          schema: { type: string }
+        - name: workflow_state
+          in: query
+          schema: { type: string }
+        - name: sort
+          in: query
+          schema: { type: string, default: slug }
+        - $ref: "#/components/parameters/PageLimit"
+        - $ref: "#/components/parameters/PageOffset"
+      responses:
+        "200":
+          description: Curator disease browser rows
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CuratorDiseaseListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /curator/diseases/{slug}/workflows:
+    post:
+      tags: [Curator]
+      summary: Open or create workflow for a disease slug
+      operationId: openDiseaseWorkflow
+      security:
+        - BearerAuth: [curator:write]
+      parameters:
+        - $ref: "#/components/parameters/DiseaseSlug"
+      responses:
+        "201":
+          description: Workflow opened
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiseaseWorkflowOpenResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /curator/diseases/{slug}/package:
+    get:
+      tags: [Curator]
+      summary: Get draft package for a disease slug
+      operationId: getDiseasePackage
+      security:
+        - BearerAuth: [curator:write]
+      parameters:
+        - $ref: "#/components/parameters/DiseaseSlug"
+      responses:
+        "200":
+          description: Draft package
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiseasePackageResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /curator/diseases/{slug}/workflow-state:
+    get:
+      tags: [Curator]
+      summary: Aggregate workflow, autosave, and validation for a disease slug
+      operationId: getDiseaseWorkflowState
+      security:
+        - BearerAuth: [curator:write]
+      parameters:
+        - $ref: "#/components/parameters/DiseaseSlug"
+      responses:
+        "200":
+          description: Disease workflow state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EntityWorkflowStateResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /curator/drugs/{slug}/workflow-state:
+    get:
+      tags: [Curator]
+      summary: Aggregate workflow, autosave, and validation for a drug slug
+      operationId: getDrugWorkflowState
+      security:
+        - BearerAuth: [curator:write]
+      parameters:
+        - $ref: "#/components/parameters/DrugSlug"
+      responses:
+        "200":
+          description: Drug workflow state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EntityWorkflowStateResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
   /curator/workflows:
     post:
       tags: [Curator]
@@ -863,6 +981,10 @@ paths:
     get:
       tags: [Entities]
       summary: List diseases
+      description: >
+        Bootstrap catalog from `staging/cardiovascular/shared/nodes.index.json`.
+        Published graph-backed disease nodes appear after curator publish; this list
+        is the canonical authoring catalog until Neo4j list queries ship.
       operationId: listDiseases
       parameters:
         - $ref: "#/components/parameters/PageLimit"
@@ -874,6 +996,26 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/EntityListResponse"
+
+  /diseases/{disease_id}:
+    get:
+      tags: [Entities]
+      summary: Get disease by canonical entity ID
+      operationId: getDisease
+      parameters:
+        - name: disease_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Disease detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EntityDetailResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /pathways/{id}:
     get:
@@ -1446,6 +1588,11 @@ components:
       in: path
       required: true
       schema: { type: string }
+    DiseaseSlug:
+      name: slug
+      in: path
+      required: true
+      schema: { type: string, description: "Disease curriculum slug, e.g. hypertension" }
     WorkflowId:
       name: workflow_id
       in: path
@@ -1644,6 +1791,12 @@ components:
         data: { type: array, items: { type: object } }
         meta: { $ref: "#/components/schemas/ResponseMeta" }
 
+    CuratorDiseaseListResponse:
+      type: object
+      properties:
+        data: { type: array, items: { type: object } }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
     DrugWorkflowOpenResponse:
       type: object
       properties:
@@ -1659,6 +1812,39 @@ components:
       type: object
       properties:
         data: { type: object }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    DiseaseWorkflowOpenResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            workflow: { type: object }
+            package: { type: object }
+            validation: { type: object }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    DiseasePackageResponse:
+      type: object
+      properties:
+        data: { type: object }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    EntityWorkflowStateResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            slug: { type: string }
+            entity_id: { type: string, format: uuid }
+            workflow_id: { type: string, format: uuid, nullable: true }
+            status: { type: string, nullable: true }
+            last_validation: { type: object }
+            publish_ready: { type: boolean }
+            allowed_transitions: { type: array, items: { type: string } }
+            package: { type: object, nullable: true }
         meta: { $ref: "#/components/schemas/ResponseMeta" }
 
     CreateWorkflowRequest:

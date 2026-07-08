@@ -85,6 +85,10 @@ vi.mock("@/lib/api/react-query/hooks", () => ({
     },
     isLoading: false,
   }),
+  useDiseaseWorkflowState: () => ({
+    data: undefined,
+    isLoading: false,
+  }),
 }));
 
 const baseProps = {

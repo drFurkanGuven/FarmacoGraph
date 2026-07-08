@@ -61,3 +61,18 @@ async def test_validate_package_openapi_schema(
         response.json(),
         method="post",
     )
+
+
+@pytest.mark.asyncio
+async def test_openapi_defines_curator_disease_paths(openapi_spec: dict) -> None:
+    expected_paths = [
+        "/curator/diseases",
+        "/curator/diseases/{slug}/workflows",
+        "/curator/diseases/{slug}/package",
+        "/curator/diseases/{slug}/workflow-state",
+        "/curator/drugs/{slug}/workflow-state",
+        "/diseases",
+        "/diseases/{disease_id}",
+    ]
+    for path in expected_paths:
+        assert path in openapi_spec["paths"]

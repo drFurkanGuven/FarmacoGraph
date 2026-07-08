@@ -7,12 +7,45 @@ import {
 } from "./evidence-helpers";
 import type { CreateEvidenceInput, DrugEvidenceAttachment, EvidenceItem } from "./evidence-types";
 
-function normalizeDrugId(drugKey: string): string {
-  return drugKey.includes(":") ? drugKey.split(":").pop()! : drugKey;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export interface DrugEvidenceRouteContext {
+  drugId?: string | null;
+  entityId?: string | null;
+  slug?: string | null;
 }
 
 function normalizeEvidenceId(evidenceId: string): string {
   return evidenceId.includes(":") ? evidenceId.split(":").pop()! : evidenceId;
+}
+
+function normalizeOptionalId(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const normalized = value.includes(":") ? value.split(":").pop()! : value;
+  return normalized.trim() || null;
+}
+
+function isUuid(value: string | null | undefined): value is string {
+  return Boolean(value && UUID_RE.test(value));
+}
+
+function resolveDrugEvidenceRoute(context: DrugEvidenceRouteContext): string {
+  const slug = context.slug?.trim();
+  if (slug) {
+    return `/curator/drugs/${encodeURIComponent(slug)}/evidence`;
+  }
+
+  const entityId = normalizeOptionalId(context.entityId);
+  if (isUuid(entityId)) {
+    return `/drugs/${entityId}/evidence`;
+  }
+
+  const drugId = normalizeOptionalId(context.drugId);
+  if (isUuid(drugId)) {
+    return `/drugs/${drugId}/evidence`;
+  }
+
+  throw new Error("Cannot resolve drug identity for evidence. Missing slug or UUID.");
 }
 
 function searchHitToEvidenceItem(hit: {
@@ -38,25 +71,11 @@ function searchHitToEvidenceItem(hit: {
 
 export async function fetchDrugEvidence(
   client: FarmacoGraphClient,
-  drugKey: string,
+  context: DrugEvidenceRouteContext,
 ): Promise<DrugEvidenceAttachment[]> {
-  const drugId = normalizeDrugId(drugKey);
-
-  try {
-    const envelope = await client.request<unknown[]>(`/drugs/${drugId}/evidence`);
-    return parseDrugEvidenceAttachments(envelope.data);
-  } catch {
-    // OpenAPI list route may not be implemented yet — fall back to evidence filter.
-  }
-
-  try {
-    const envelope = await client.request<unknown[]>("/evidence", {
-      params: { drug_id: drugId, limit: 200 },
-    });
-    return parseDrugEvidenceAttachments(envelope.data);
-  } catch {
-    return [];
-  }
+  const route = resolveDrugEvidenceRoute(context);
+  const envelope = await client.request<unknown[]>(route);
+  return parseDrugEvidenceAttachments(envelope.data);
 }
 
 export async function searchEvidence(
@@ -111,27 +130,17 @@ export async function createEvidenceRecord(
 
 export async function attachEvidenceToDrug(
   client: FarmacoGraphClient,
-  drugKey: string,
+  context: DrugEvidenceRouteContext,
   evidenceId: string,
 ): Promise<DrugEvidenceAttachment> {
-  const drugId = normalizeDrugId(drugKey);
+  const route = resolveDrugEvidenceRoute(context);
   const normalizedEvidenceId = normalizeEvidenceId(evidenceId);
-
-  try {
-    const envelope = await client.request<Record<string, unknown>>(`/drugs/${drugId}/evidence`, {
-      method: "POST",
-      body: { evidence_id: normalizedEvidenceId },
-    });
-    const parsed = parseDrugEvidenceAttachments([envelope.data])[0];
-    if (parsed) return parsed;
-  } catch {
-    // Fall back to implemented evidence router path.
-  }
-
-  const envelope = await client.request<Record<string, unknown>>(
-    `/evidence/${normalizedEvidenceId}/drugs/${drugId}`,
-    { method: "POST" },
-  );
+  const envelope = await client.request<Record<string, unknown>>(route, {
+    method: "POST",
+    body: { evidence_id: normalizedEvidenceId },
+  });
+  const parsed = parseDrugEvidenceAttachments([envelope.data])[0];
+  if (parsed) return parsed;
 
   const detail = await client.request<Record<string, unknown>>(`/evidence/${normalizedEvidenceId}`);
   const evidence = parseEvidenceItem(detail.data);
@@ -148,22 +157,13 @@ export async function attachEvidenceToDrug(
 
 export async function detachEvidenceFromDrug(
   client: FarmacoGraphClient,
-  drugKey: string,
+  context: DrugEvidenceRouteContext,
   evidenceId: string,
 ): Promise<void> {
-  const drugId = normalizeDrugId(drugKey);
+  const route = resolveDrugEvidenceRoute(context);
   const normalizedEvidenceId = normalizeEvidenceId(evidenceId);
 
-  try {
-    await client.request(`/drugs/${drugId}/evidence/${normalizedEvidenceId}`, {
-      method: "DELETE",
-    });
-    return;
-  } catch {
-    // Fall back to implemented evidence router path.
-  }
-
-  await client.request(`/evidence/${normalizedEvidenceId}/drugs/${drugId}`, {
+  await client.request(`${route}/${normalizedEvidenceId}`, {
     method: "DELETE",
   });
 }

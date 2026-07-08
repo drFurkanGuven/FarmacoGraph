@@ -15,6 +15,7 @@ from farmacograph.api.routers import (
     auth,
     curator,
     dashboard,
+    diseases,
     drugs,
     evidence,
     explain,
@@ -106,6 +107,7 @@ def create_app() -> FastAPI:
     api_v1.include_router(dashboard.router)
     api_v1.include_router(curator.router)
     api_v1.include_router(drugs.router)
+    api_v1.include_router(diseases.router)
     api_v1.include_router(evidence.router)
     api_v1.include_router(explain.explain_router)
     api_v1.include_router(explain.compare_router)

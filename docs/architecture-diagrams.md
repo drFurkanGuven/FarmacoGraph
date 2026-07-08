@@ -264,7 +264,9 @@ flowchart TD
 | Request middleware | `farmacograph/auth/middleware.py` |
 | Scope dependency | `farmacograph/api/deps.py` → `require_scope` |
 
-**Not yet implemented:** `POST /auth/introspect`, rate-limit middleware (Phase API 5.3), self-service API key CRUD.
+**Live:** `POST /auth/token`, `POST /auth/refresh`, and `POST /auth/introspect`.
+
+**Not yet implemented:** rate-limit middleware (Phase API 5.3), self-service API key CRUD.
 
 ---
 

@@ -61,9 +61,9 @@ Evidence curation spans the global **Evidence manager** (`/knowledge/evidence`),
 | Drug Editor **Provenance** section | ✅ Live | `curator_attestation` gate — autosave via `PUT .../package` |
 | Validation Center **Missing evidence** group | ✅ Live | FG-C018 / FG-C028 and provenance keywords from `POST /curator/validate` |
 | Publish wizard **Evidence readiness** | ✅ Live | Blockers, missing metadata, low-confidence buckets before submit/approve/publish |
-| Backend evidence API | ✅ Partial | `GET/POST /evidence`, attach via `POST /evidence/{id}/drugs/{drug_id}` — requires Neo4j |
+| Backend evidence API | ✅ Partial | `GET/POST /evidence`, UUID drug evidence routes, curator slug evidence routes — writes require Neo4j |
 | `/knowledge/evidence` Evidence Manager | ✅ Live | `EvidenceBrowser` — search, filter, create via public API |
-| Studio ↔ API path alignment | Gap | Client uses `/curator/drugs/{slug}/evidence`; backend exposes drug links under `/evidence/{id}/drugs/{drug_id}` |
+| Studio ↔ API path alignment | ✅ Live | Drug Editor uses `/curator/drugs/{slug}/evidence` in slug context and `/drugs/{uuid}/evidence` only when slug is absent |
 | Assertion-level `SUPPORTED_BY` UI | Planned | Mechanism/relationship editors (Studio 4.3+) |
 
 **Curator path today:** open drug → **Evidence** (attach/create) → **Provenance** (`curator_attestation: true`) → confirm validation in context panel → **Publish wizard** Evidence readiness.
@@ -125,7 +125,7 @@ See [api.md §1.3](api.md#13-curator-publish-workflow) and [studio-roadmap.md](s
 - AI Draft Assistant — drafts only, never auto-publish
 - Validation Center — grouped errors + fixes
 - Diff Viewer — draft vs published
-- Snapshot Manager — release preview
+- Snapshot surface — current release marker + recently published workflows; full release diff manager deferred until snapshot HTTP API lands
 - Publish Wizard — validation + approvals + snapshot
 - Search — global, synonym-ready
 - Activity Timeline — audit events
@@ -138,7 +138,7 @@ See [api.md §1.3](api.md#13-curator-publish-workflow) and [studio-roadmap.md](s
 - [x] Dashboard from public API
 - [x] Review queue visible
 - [x] Module progress visible
-- [x] Placeholder pages for future editors
+- [x] Connected surfaces for future editors — education/mechanism/graph routes link back into Drug Editor, Evidence, and Validation
 - [x] Polished shell (dark mode, ⌘K, responsive)
 
 ## Running locally

@@ -43,6 +43,7 @@ export interface WorkflowTimelineProps {
   workflowId: string;
   className?: string;
   limit?: number;
+  compact?: boolean;
 }
 
 function toTimelineItems(events: ReturnType<typeof sortTimelineEvents>): TimelineItem[] {
@@ -58,18 +59,18 @@ function toTimelineItems(events: ReturnType<typeof sortTimelineEvents>): Timelin
   });
 }
 
-export function WorkflowTimeline({ workflowId, className, limit = 50 }: WorkflowTimelineProps) {
+export function WorkflowTimeline({ workflowId, className, limit = 50, compact = false }: WorkflowTimelineProps) {
   const timelineQuery = useWorkflowTimeline(workflowId, { limit });
   const events = sortTimelineEvents(timelineQuery.data?.data ?? []);
   const items = toTimelineItems(events);
 
   return (
     <Card className={className}>
-      <CardHeader>
-        <CardTitle className="text-base">Activity timeline</CardTitle>
-        <CardDescription>Workflow audit events from draft through publish.</CardDescription>
+      <CardHeader className={compact ? "p-3 pb-2" : undefined}>
+        <CardTitle className={compact ? "text-sm" : "text-base"}>Activity timeline</CardTitle>
+        {!compact && <CardDescription>Workflow audit events from draft through publish.</CardDescription>}
       </CardHeader>
-      <CardContent>
+      <CardContent className={compact ? "p-3 pt-0" : undefined}>
         {timelineQuery.isLoading ? (
           <ListSkeleton rows={4} />
         ) : timelineQuery.isError ? (

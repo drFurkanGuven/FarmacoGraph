@@ -10,6 +10,7 @@ import { useDrugEvidence } from "./use-drug-evidence";
 
 export interface DrugEvidencePanelProps extends DrugEvidenceContext {
   onOpenSection?: () => void;
+  compact?: boolean;
   className?: string;
 }
 
@@ -19,20 +20,21 @@ export function DrugEvidencePanel({
   slug,
   validation,
   onOpenSection,
+  compact = false,
   className,
 }: DrugEvidencePanelProps) {
   const evidence = useDrugEvidence({ drugId, entityId, slug, validation });
 
   return (
     <Card className={className}>
-      <CardHeader className="pb-3">
+      <CardHeader className={compact ? "p-3 pb-2" : "pb-3"}>
         <CardTitle className="flex items-center gap-2 text-sm">
           <FileText className="h-4 w-4" />
           Evidence
         </CardTitle>
-        <CardDescription>Attached citations and validation gaps for this drug.</CardDescription>
+        {!compact && <CardDescription>Attached citations and validation gaps for this drug.</CardDescription>}
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className={compact ? "space-y-2 p-3 pt-0" : "space-y-3"}>
         {evidence.loading ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -69,12 +71,14 @@ export function DrugEvidencePanel({
               )}
             </div>
 
-            <p className="text-xs text-muted-foreground">
-              Average score: {formatQualityScore(evidence.summary.averageQuality)}
-              {evidence.summary.lowQualityCount > 0
-                ? ` · ${evidence.summary.lowQualityCount} low-quality attachment${evidence.summary.lowQualityCount === 1 ? "" : "s"}`
-                : ""}
-            </p>
+            {!compact && (
+              <p className="text-xs text-muted-foreground">
+                Average score: {formatQualityScore(evidence.summary.averageQuality)}
+                {evidence.summary.lowQualityCount > 0
+                  ? ` · ${evidence.summary.lowQualityCount} low-quality attachment${evidence.summary.lowQualityCount === 1 ? "" : "s"}`
+                  : ""}
+              </p>
+            )}
 
             {evidence.summary.missingCount > 0 && (
               <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/5 px-2.5 py-2 text-xs text-amber-700 dark:text-amber-300">

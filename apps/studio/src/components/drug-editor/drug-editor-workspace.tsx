@@ -30,7 +30,7 @@ function EditorSkeleton() {
   return (
     <div className="flex h-full flex-col gap-4 p-4">
       <Skeleton className="h-8 w-64" />
-      <div className="grid flex-1 gap-4 lg:grid-cols-[220px_minmax(0,1fr)_320px]">
+      <div className="grid flex-1 gap-4 lg:grid-cols-[220px_minmax(0,1fr)_340px] xl:grid-cols-[220px_minmax(0,1fr)_360px]">
         <Skeleton className="hidden h-full lg:block" />
         <Skeleton className="h-full min-h-[320px]" />
         <Skeleton className="hidden h-full lg:block" />
@@ -132,8 +132,8 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
         />
       </div>
 
-      <div className="grid min-h-0 flex-1 lg:grid-cols-[220px_minmax(0,1fr)_320px]">
-        <div className="hidden border-r lg:block">
+      <div className="grid min-h-0 flex-1 lg:grid-cols-[220px_minmax(0,1fr)_340px] xl:grid-cols-[220px_minmax(0,1fr)_360px]">
+        <div className="hidden min-w-0 border-r lg:block">
           <DrugSectionNav
             activeSectionId={snapshot.activeSectionId}
             dirtySections={snapshot.dirtySections}
@@ -152,7 +152,7 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
           />
         </main>
 
-        <div className="hidden border-l lg:block">
+        <div className="hidden min-w-0 border-l lg:block">
           <DrugContextPanel
             snapshot={{ ...snapshot, workflow }}
             onOpenEvidenceSection={() => setActiveSection("evidence")}
