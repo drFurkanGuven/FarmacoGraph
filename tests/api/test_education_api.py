@@ -76,6 +76,13 @@ async def test_drug_education_uuid_route_returns_education_envelope(
     assert flashcards.json()["data"] == []
     assert flashcards.json()["meta"]["content_layers"] == ["education"]
 
+    study = await api_client.get(f"/api/v1/drugs/{RAMIPRIL_ID}/study")
+    assert study.status_code == 200
+    study_body = study.json()
+    assert study_body["data"]["drug"]["id"] == RAMIPRIL_ID
+    assert "study_plan" in study_body["data"]
+    assert study_body["meta"]["content_layers"] == ["biomedical", "education", "learning"]
+
 
 @pytest.mark.asyncio
 async def test_curator_drug_education_returns_draft_items(

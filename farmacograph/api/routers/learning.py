@@ -21,3 +21,13 @@ async def get_prerequisites(
 ) -> dict:
     data, meta = await service.get_prerequisites(drug_slug)
     return {"data": data, "meta": meta.model_dump()}
+
+
+@router.get("/{drug_ref}/study")
+async def get_study_view(
+    drug_ref: str,
+    service: Annotated[LearningService, Depends(get_learning_service)],
+    _auth: Annotated[AuthContext, Depends(require_scope("education:read"))],
+) -> dict:
+    data, meta = await service.get_study_view(drug_ref)
+    return {"data": data, "meta": meta.model_dump()}

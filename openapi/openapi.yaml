@@ -1024,6 +1024,24 @@ paths:
               schema:
                 $ref: "#/components/schemas/LearningGraphResponse"
 
+  /drugs/{drug_ref}/study:
+    get:
+      tags: [Learning, Drugs, Education]
+      summary: Student study payload
+      operationId: getDrugStudyView
+      parameters:
+        - name: drug_ref
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Student study payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudyViewResponse"
+
   /drug-classes:
     get:
       tags: [Entities]
@@ -2182,6 +2200,32 @@ components:
             entity_id: { type: string, format: uuid }
             prerequisites: { type: array, items: { type: object } }
             missing_topics: { type: array, items: { type: string, format: uuid } }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    StudyViewResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            drug: { type: object }
+            education:
+              type: array
+              items: { type: object }
+            flashcards:
+              type: array
+              items: { type: object }
+            prerequisites:
+              type: array
+              items: { type: object }
+            study_plan:
+              type: array
+              items: { type: object }
+            content_layers:
+              type: array
+              items:
+                type: string
+                enum: [biomedical, education, learning]
         meta: { $ref: "#/components/schemas/ResponseMeta" }
 
     ExplainResponse:

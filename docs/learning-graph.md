@@ -70,6 +70,7 @@ sequenceDiagram
 | Endpoint | Description |
 |----------|-------------|
 | `GET /drugs/{id}/prerequisites` | Full prerequisite tree |
+| `GET /drugs/{drug_ref}/study` | Student payload: drug identity, education layer, flashcards, prerequisites, study plan |
 | `GET /learning/topics` | List knowledge topics |
 | `GET /learning/topics/{id}` | Topic detail with dependents |
 | `GET /explain?question_type=prerequisite` | Missing knowledge for student |

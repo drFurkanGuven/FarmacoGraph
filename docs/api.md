@@ -484,6 +484,18 @@ Published education flashcards for a drug.
 
 Draft education flashcards from the curator package. Requires `curator:write`.
 
+### `GET /drugs/{drug_ref}/study`
+
+Student-app payload for one drug. `drug_ref` may be a published UUID or slug.
+
+**Response includes:**
+
+- `drug` — identity and published metadata
+- `education` — summaries, pearls, mnemonics, common mistakes, and other education nodes
+- `flashcards` — card-ready subset of education nodes
+- `prerequisites` — learning graph prerequisite topics
+- `study_plan` — lightweight ordered steps for review
+
 ---
 
 ## 4. Entity Endpoints
