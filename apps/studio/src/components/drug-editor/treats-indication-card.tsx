@@ -3,37 +3,78 @@
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import {
   TREATS_EVIDENCE_LEVELS,
   type TreatsIndicationProperties,
 } from "./treats-relationships";
+import { TreatsIndicationEvidence } from "./treats-indication-evidence";
+import type { DrugEvidenceAttachment } from "./evidence-types";
+import {
+  evaluateTreatsIndicationReadiness,
+  treatsReadinessLabel,
+} from "./treats-indication-status";
 
 export interface TreatsIndicationCardProps {
   label: string;
   slug?: string;
   properties: TreatsIndicationProperties;
+  curatorAttestation: boolean;
+  attachments: DrugEvidenceAttachment[];
+  evidenceLoading?: boolean;
   disabled?: boolean;
   onChange: (patch: Partial<TreatsIndicationProperties>) => void;
+}
+
+function readinessBadgeVariant(
+  status: ReturnType<typeof evaluateTreatsIndicationReadiness>["status"],
+): "success" | "warning" | "danger" {
+  switch (status) {
+    case "ready":
+      return "success";
+    case "partial":
+      return "warning";
+    case "missing":
+      return "danger";
+  }
 }
 
 export function TreatsIndicationCard({
   label,
   slug,
   properties,
+  curatorAttestation,
+  attachments,
+  evidenceLoading = false,
   disabled = false,
   onChange,
 }: TreatsIndicationCardProps) {
+  const readiness = evaluateTreatsIndicationReadiness(properties, curatorAttestation);
+  const needsAttestation =
+    properties.evidence_level === "expert_consensus" &&
+    readiness.missing.includes("curator_attestation");
+
   return (
     <div className="space-y-4 rounded-lg border bg-card/40 p-4">
-      <div>
-        <p className="text-sm font-medium">{label}</p>
-        {slug ? <p className="text-xs text-muted-foreground">{slug}</p> : null}
-        <p className="mt-1 text-xs text-muted-foreground">
-          Publish requires a clinical rationale, confidence metadata, and evidence level on each TREATS
-          edge. Use expert consensus when you attest the link in Provenance without a separate citation.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <p className="text-sm font-medium">{label}</p>
+          {slug ? <p className="text-xs text-muted-foreground">{slug}</p> : null}
+          <p className="mt-1 text-xs text-muted-foreground">
+            Publish requires a clinical rationale, confidence metadata, and evidence level on each TREATS
+            edge. Use expert consensus when you attest the link in Provenance without a separate citation.
+          </p>
+        </div>
+        <Badge variant={readinessBadgeVariant(readiness.status)}>{treatsReadinessLabel(readiness.status)}</Badge>
       </div>
+
+      {needsAttestation ? (
+        <p className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-900 dark:text-amber-100">
+          Expert consensus requires curator attestation in the Provenance section, or attach supporting
+          evidence below.
+        </p>
+      ) : null}
 
       <div className="space-y-2">
         <Label htmlFor={`treats-explanation-${slug ?? label}`}>Clinical explanation</Label>
@@ -88,6 +129,14 @@ export function TreatsIndicationCard({
           </select>
         </div>
       </div>
+
+      <TreatsIndicationEvidence
+        selectedIds={properties.evidence_ids ?? []}
+        attachments={attachments}
+        loading={evidenceLoading}
+        disabled={disabled}
+        onChange={(evidenceIds) => onChange({ evidence_ids: evidenceIds })}
+      />
     </div>
   );
 }

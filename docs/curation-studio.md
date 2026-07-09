@@ -64,9 +64,25 @@ Evidence curation spans the global **Evidence manager** (`/knowledge/evidence`),
 | Backend evidence API | ✅ Partial | `GET/POST /evidence`, UUID drug evidence routes, curator slug evidence routes — writes require Neo4j |
 | `/knowledge/evidence` Evidence Manager | ✅ Live | `EvidenceBrowser` — search, filter, create via public API |
 | Studio ↔ API path alignment | ✅ Live | Drug Editor uses `/curator/drugs/{slug}/evidence` in slug context and `/drugs/{uuid}/evidence` only when slug is absent |
-| Assertion-level `SUPPORTED_BY` UI | Planned | Mechanism/relationship editors (Studio 4.3+) |
+| Assertion-level `SUPPORTED_BY` UI | Partial | TREATS indication cards link attached evidence (`evidence_ids` + package `SUPPORTED_BY` rows); mechanism editors still planned |
 
 **Curator path today:** open drug → **Evidence** (attach/create) → **Provenance** (`curator_attestation: true`) → confirm validation in context panel → **Publish wizard** Evidence readiness.
+
+### TREATS indications (Drug Editor)
+
+The **Indications** section links diseases via `entity_payload.relationships.TREATS` and writes publish metadata on matching rows in `package.relationships`.
+
+| Step | UI | Package effect |
+|------|-----|----------------|
+| Select diseases | Disease picker (curator catalog) | `TREATS` UUID list + `TREATS` edge rows |
+| Per-indication form | Explanation, confidence, evidence level | `properties` on each `TREATS` edge |
+| Expert consensus | Evidence level = expert consensus + Provenance attestation | Satisfies FG-C012 without citation |
+| Citation path | Pick attached evidence on the card | `properties.evidence_ids` + mirrored `SUPPORTED_BY` rows |
+| Readiness badge | Publish ready / Incomplete / Needs metadata | Client mirror of FG-C012 / FG-C019 / FG-C020 |
+
+**Typical publish path:** Indications → fill metadata → Provenance (`curator_attestation: true`) → Publish wizard → Refresh validation → Submit.
+
+See E2E: `apps/studio/e2e/treats-workflow.spec.ts`.
 
 See [studio-roadmap.md § Evidence workflow](studio-roadmap.md#evidence-workflow-partial) and [api.md §1.4](api.md#14-evidence-workflow-status).
 

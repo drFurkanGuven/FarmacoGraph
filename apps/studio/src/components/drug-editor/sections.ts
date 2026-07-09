@@ -69,6 +69,13 @@ export const DRUG_EDITOR_SECTIONS: DrugEditorSection[] = [
         path: "entity_payload.relationships.TREATS",
         description: "Select Disease nodes from the curator catalog.",
       },
+      {
+        key: "treats_metadata",
+        label: "TREATS metadata",
+        type: "readonly",
+        path: "relationships.TREATS",
+        description: "Per-edge explanation, confidence, and evidence for publish validation.",
+      },
     ],
   },
   {

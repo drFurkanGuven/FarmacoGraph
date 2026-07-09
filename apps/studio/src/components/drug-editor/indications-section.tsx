@@ -10,11 +10,16 @@ import {
   syncTreatsSelection,
   updateTreatsIndication,
 } from "./treats-relationships";
+import { readCuratorAttestationFromPackage } from "./treats-indication-status";
+import { useDrugEvidence } from "./use-drug-evidence";
 import type { DrugPublishPackage } from "./types";
+import type { ValidationResult } from "@/lib/api";
 
 export interface IndicationsSectionProps {
   pkg: DrugPublishPackage;
   drugId: string;
+  slug: string | null;
+  validation: ValidationResult | null;
   disabled?: boolean;
   onPackageChange: (next: DrugPublishPackage) => void;
 }
@@ -22,12 +27,24 @@ export interface IndicationsSectionProps {
 export function IndicationsSection({
   pkg,
   drugId,
+  slug,
+  validation,
   disabled = false,
   onPackageChange,
 }: IndicationsSectionProps) {
   const drugEntityId = String(pkg.entity_payload.id ?? drugId);
   const selectedIds = listTreatsDiseaseIds(pkg);
   const catalogQuery = useCuratorDiseases({ limit: 200 });
+  const curatorAttestation = readCuratorAttestationFromPackage(
+    pkg.entity_payload.provenance as Record<string, unknown> | undefined,
+  );
+
+  const evidence = useDrugEvidence({
+    drugId,
+    entityId: drugEntityId,
+    slug,
+    validation,
+  });
 
   const labelById = useMemo(() => {
     const map = new Map<string, { label: string; slug: string }>();
@@ -58,7 +75,7 @@ export function IndicationsSection({
             <h3 className="text-sm font-semibold">Indication metadata</h3>
             <p className="text-xs text-muted-foreground">
               Required for publish validation (FG-C012 / FG-C019 / FG-C020). Set Provenance attestation to
-              true when using expert consensus.
+              true when using expert consensus, or link attached evidence per indication.
             </p>
           </div>
           {selectedIds.map((diseaseId) => {
@@ -69,6 +86,9 @@ export function IndicationsSection({
                 label={meta?.label ?? diseaseId}
                 slug={meta?.slug}
                 properties={readTreatsIndication(pkg, drugEntityId, diseaseId)}
+                curatorAttestation={curatorAttestation}
+                attachments={evidence.attachments}
+                evidenceLoading={evidence.loading}
                 disabled={disabled}
                 onChange={(patch) => handleIndicationChange(diseaseId, patch)}
               />

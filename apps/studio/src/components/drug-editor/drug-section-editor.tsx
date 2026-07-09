@@ -48,6 +48,10 @@ export function DrugSectionEditor({
   }
 
   if (section.id === "indications") {
+    const slug = typeof pkg.entity_payload.slug === "string" && pkg.entity_payload.slug
+      ? pkg.entity_payload.slug
+      : null;
+
     return (
       <div className={cn("space-y-4", className)}>
         <div>
@@ -57,6 +61,8 @@ export function DrugSectionEditor({
         <IndicationsSection
           pkg={pkg}
           drugId={drugId}
+          slug={slug}
+          validation={validation}
           disabled={disabled}
           onPackageChange={(next) => onPackageChange?.(next)}
         />

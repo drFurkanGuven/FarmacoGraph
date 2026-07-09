@@ -12,6 +12,7 @@ export interface TreatsIndicationProperties {
   explanation: string;
   confidence_score: number;
   evidence_level: string;
+  evidence_ids?: string[];
 }
 
 export interface PackageRelationshipRow {
@@ -32,7 +33,13 @@ export function defaultTreatsIndicationProperties(): TreatsIndicationProperties 
     explanation: "",
     confidence_score: 0.85,
     evidence_level: "expert_consensus",
+    evidence_ids: [],
   };
+}
+
+function normalizeEvidenceIds(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return [...new Set(value.map((entry) => String(entry).trim()).filter(Boolean))];
 }
 
 function normalizeProperties(value: unknown): TreatsIndicationProperties {
@@ -46,7 +53,42 @@ function normalizeProperties(value: unknown): TreatsIndicationProperties {
       typeof value.evidence_level === "string" && value.evidence_level
         ? value.evidence_level
         : "expert_consensus",
+    evidence_ids: normalizeEvidenceIds(value.evidence_ids),
   };
+}
+
+function isTreatsSupportedByRow(row: PackageRelationshipRow, drugEntityId: string): boolean {
+  if (row.relationship_type !== "SUPPORTED_BY" || String(row.source_id) !== drugEntityId) {
+    return false;
+  }
+  const props = row.properties;
+  return isRecord(props) && props.assertion_relationship === "TREATS";
+}
+
+function rebuildTreatsSupportedByEdges(pkg: DrugPublishPackage, drugEntityId: string): void {
+  const rows = relationshipRows(pkg);
+  const preserved = rows.filter((row) => !isTreatsSupportedByRow(row, drugEntityId));
+  const supportedBy: PackageRelationshipRow[] = [];
+
+  for (const diseaseId of listTreatsDiseaseIds(pkg)) {
+    const props = readTreatsIndication(pkg, drugEntityId, diseaseId);
+    for (const evidenceId of props.evidence_ids ?? []) {
+      supportedBy.push({
+        relationship_type: "SUPPORTED_BY",
+        source_type: "Drug",
+        target_type: "Evidence",
+        source_id: drugEntityId,
+        target_id: evidenceId,
+        properties: {
+          assertion_relationship: "TREATS",
+          assertion_target_id: diseaseId,
+          assertion_target_type: "Disease",
+        },
+      });
+    }
+  }
+
+  pkg.relationships = [...preserved, ...supportedBy] as unknown as Record<string, unknown>[];
 }
 
 function drugRelationshipMap(pkg: DrugPublishPackage): Record<string, string[]> {
@@ -151,6 +193,7 @@ export function syncTreatsSelection(
   }
 
   next.relationships = preserved as unknown as Record<string, unknown>[];
+  rebuildTreatsSupportedByEdges(next, drugEntityId);
   touchProvenance(next);
   return next;
 }
@@ -203,8 +246,20 @@ export function updateTreatsIndication(
   if (!relationships.TREATS.includes(diseaseId)) {
     relationships.TREATS = [...listTreatsDiseaseIds(next), diseaseId];
   }
+  rebuildTreatsSupportedByEdges(next, drugEntityId);
   touchProvenance(next);
   return next;
+}
+
+export function setTreatsEvidenceIds(
+  pkg: DrugPublishPackage,
+  drugEntityId: string,
+  diseaseId: string,
+  evidenceIds: string[],
+): DrugPublishPackage {
+  return updateTreatsIndication(pkg, drugEntityId, diseaseId, {
+    evidence_ids: normalizeEvidenceIds(evidenceIds),
+  });
 }
 
 /** Ensure package.relationships has TREATS edge rows for every selected disease ID. */

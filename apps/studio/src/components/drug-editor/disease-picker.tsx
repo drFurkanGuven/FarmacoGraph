@@ -37,7 +37,7 @@ export function DiseasePicker({ selectedIds, disabled = false, onChange }: Disea
   }
 
   return (
-    <div className="max-w-2xl space-y-4">
+    <div className="space-y-4">
       <div className="space-y-1.5">
         <label className="text-sm font-medium text-muted-foreground" htmlFor="disease-picker-search">
           Treats

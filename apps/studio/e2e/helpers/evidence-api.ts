@@ -3,6 +3,42 @@ import { json } from "./drugs-api";
 
 const RAMIPRIL_ENTITY_ID = "2c31ee65-5805-5693-bdeb-01bb4829b1b9";
 const RAMIPRIL_WORKFLOW_ID = "wf-ramipril";
+const HYPERTENSION_ID = "d1000001-0000-4000-8010-000000000001";
+
+interface PackageRelationshipRow {
+  relationship_type: string;
+  source_id: string;
+  target_id: string;
+  source_type: string;
+  target_type: string;
+  properties?: Record<string, unknown> | null;
+}
+
+interface MockPackage {
+  entity_payload: Record<string, unknown>;
+  related_entities: unknown[];
+  relationships: PackageRelationshipRow[];
+  dataset_version: string;
+  module: string;
+  create_snapshot: boolean;
+}
+
+const CATALOG_DISEASES = [
+  {
+    entity_id: HYPERTENSION_ID,
+    slug: "hypertension",
+    label: "Hypertension",
+    module: "cardiovascular",
+    workflow_state: null,
+  },
+  {
+    entity_id: "d1000001-0000-4000-8010-000000000002",
+    slug: "heart-failure",
+    label: "Heart failure",
+    module: "cardiovascular",
+    workflow_state: null,
+  },
+];
 
 interface MockEvidenceRecord {
   id: string;
@@ -14,7 +50,7 @@ interface MockEvidenceRecord {
   extract: string | null;
 }
 
-function createRamiprilPackage(curatorAttestation: boolean) {
+function createRamiprilPackage(curatorAttestation: boolean): MockPackage {
   return {
     entity_payload: {
       id: RAMIPRIL_ENTITY_ID,
@@ -71,6 +107,104 @@ const CATALOG_EVIDENCE: MockEvidenceRecord = {
   status: "draft",
   extract: null,
 };
+
+function mergePackage(body: unknown, fallback: MockPackage): MockPackage {
+  if (!body || typeof body !== "object" || Array.isArray(body)) return fallback;
+  const input = body as Partial<MockPackage>;
+  return {
+    ...fallback,
+    ...input,
+    entity_payload: {
+      ...(fallback.entity_payload ?? {}),
+      ...(input.entity_payload ?? {}),
+      provenance: {
+        ...((fallback.entity_payload?.provenance as Record<string, unknown>) ?? {}),
+        ...(((input.entity_payload as Record<string, unknown> | undefined)?.provenance as Record<
+          string,
+          unknown
+        >) ?? {}),
+      },
+      relationships: {
+        ...((fallback.entity_payload?.relationships as Record<string, unknown>) ?? {}),
+        ...(((input.entity_payload as Record<string, unknown> | undefined)?.relationships as Record<
+          string,
+          unknown
+        >) ?? {}),
+      },
+    },
+    relationships: Array.isArray(input.relationships) ? input.relationships : fallback.relationships,
+  };
+}
+
+function indexSupportedBy(rels: PackageRelationshipRow[]): Set<string> {
+  const covered = new Set<string>();
+  for (const rel of rels) {
+    if (rel.relationship_type !== "SUPPORTED_BY") continue;
+    const props = rel.properties ?? {};
+    const assertionRel = props.assertion_relationship;
+    const assertionTarget = props.assertion_target_id;
+    if (assertionRel && assertionTarget) {
+      covered.add(`${rel.source_id}::${assertionRel}::${assertionTarget}`);
+    }
+  }
+  return covered;
+}
+
+function validateTreatsPackage(pkg: MockPackage): { valid: boolean; issues: Record<string, unknown>[] } {
+  const issues: Record<string, unknown>[] = [];
+  const entity = pkg.entity_payload;
+  const treatsIds = (entity.relationships as { TREATS?: string[] } | undefined)?.TREATS ?? [];
+  const supported = indexSupportedBy(pkg.relationships ?? []);
+
+  for (const diseaseId of treatsIds) {
+    const edge = (pkg.relationships ?? []).find(
+      (row) =>
+        row.relationship_type === "TREATS" &&
+        String(row.target_id) === diseaseId &&
+        String(row.source_id) === RAMIPRIL_ENTITY_ID,
+    );
+    const props = (edge?.properties ?? {}) as Record<string, unknown>;
+    const edgeKey = `${RAMIPRIL_ENTITY_ID}::TREATS::${diseaseId}`;
+
+    if (!String(props.explanation ?? "").trim()) {
+      issues.push({
+        constraint_id: "FG-C020",
+        severity: "error",
+        message: "Published edge TREATS requires an explanation.",
+        field: "relationships.TREATS.explanation",
+        relationship_type: "TREATS",
+      });
+    }
+
+    const evidenceIds = props.evidence_ids;
+    const hasEvidenceIds = Array.isArray(evidenceIds) && evidenceIds.length > 0;
+    const expertEscape =
+      props.evidence_level === "expert_consensus" &&
+      (entity.provenance as { curator_attestation?: boolean } | undefined)?.curator_attestation === true;
+    const hasSupportedBy = supported.has(edgeKey);
+
+    if (!hasEvidenceIds && !hasSupportedBy && !expertEscape) {
+      issues.push({
+        constraint_id: "FG-C012",
+        severity: "error",
+        message: "Clinical assertion TREATS requires supporting evidence (SUPPORTED_BY link or evidence_ids).",
+        field: "relationships.TREATS",
+        relationship_type: "TREATS",
+      });
+    }
+  }
+
+  return { valid: issues.length === 0, issues };
+}
+
+function packageValidation(pkg: MockPackage, curatorAttestation: boolean) {
+  const treatsValidation = validateTreatsPackage(pkg);
+  return {
+    valid: treatsValidation.valid,
+    issues: treatsValidation.issues,
+    publish_ready: treatsValidation.valid && curatorAttestation,
+  };
+}
 
 function readAttestation(body: unknown): boolean | null {
   if (!body || typeof body !== "object" || Array.isArray(body)) return null;
@@ -159,12 +293,24 @@ export async function mockEvidenceWorkflowApi(page: Page): Promise<{
       return json(route, { data: [], meta: { count: 0 } });
     }
 
+    if (path === "curator/diseases" || path.startsWith("curator/diseases")) {
+      const search = (url.searchParams.get("search") ?? "").toLowerCase();
+      const data = CATALOG_DISEASES.filter(
+        (row) =>
+          !search ||
+          row.label.toLowerCase().includes(search) ||
+          row.slug.toLowerCase().includes(search),
+      );
+      return json(route, { data, meta: { count: data.length, total: data.length } });
+    }
+
     if (path === "curator/drugs/ramipril/workflows" && method === "POST") {
+      const validation = packageValidation(currentPackage, curatorAttestation);
       return json(route, {
         data: {
           workflow: RAMIPRIL_WORKFLOW,
           package: currentPackage,
-          validation: { valid: true, issues: [] },
+          validation,
         },
         meta: {},
       });
@@ -172,16 +318,17 @@ export async function mockEvidenceWorkflowApi(page: Page): Promise<{
 
     if (path === `curator/workflows/${RAMIPRIL_WORKFLOW_ID}/package` && method === "PUT") {
       const body = route.request().postDataJSON();
+      currentPackage = mergePackage(body, currentPackage);
       const attested = readAttestation(body);
       if (attested !== null) {
         curatorAttestation = attested;
-        currentPackage = createRamiprilPackage(curatorAttestation);
       }
+      const validation = packageValidation(currentPackage, curatorAttestation);
 
       return json(route, {
         data: {
           workflow: RAMIPRIL_WORKFLOW,
-          validation: { valid: true, issues: [] },
+          validation,
         },
         meta: {},
       });
@@ -189,33 +336,35 @@ export async function mockEvidenceWorkflowApi(page: Page): Promise<{
 
     if (path === "curator/validate" && method === "POST") {
       const body = route.request().postDataJSON();
+      currentPackage = mergePackage(body, currentPackage);
       const attested = readAttestation(body);
       if (attested !== null) {
         curatorAttestation = attested;
-        currentPackage = createRamiprilPackage(curatorAttestation);
       }
+      const validation = packageValidation(currentPackage, curatorAttestation);
 
       return json(route, {
-        data: { valid: true, issues: [] },
+        data: validation,
         meta: {},
       });
     }
 
     if (path === "curator/drugs/ramipril/workflow-state") {
+      const validation = packageValidation(currentPackage, curatorAttestation);
       return json(route, {
         data: {
           slug: "ramipril",
           entity_id: RAMIPRIL_ENTITY_ID,
           workflow_id: RAMIPRIL_WORKFLOW_ID,
           status: "draft",
-          publish_ready: curatorAttestation,
+          publish_ready: validation.publish_ready,
           allowed_transitions: ["review"],
           last_validation: {
-            valid: true,
-            error_count: 0,
+            valid: validation.valid,
+            error_count: validation.issues.length,
             warning_count: 0,
-            publish_ready: curatorAttestation,
-            issues: [],
+            publish_ready: validation.publish_ready,
+            issues: validation.issues,
           },
           package: currentPackage,
         },
