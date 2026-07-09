@@ -43,8 +43,17 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
   const [contextOpen, setContextOpen] = useState(false);
   const [publishOpen, setPublishOpen] = useState(false);
   const [workflowOverride, setWorkflowOverride] = useState<WorkflowItem | null>(null);
-  const { loading, loadError, snapshot, activeSection, setActiveSection, updateField, updatePackage, retrySave, retryLoad } =
-    useDrugEditor({ drugId });
+  const {
+    loading,
+    loadError,
+    snapshot,
+    activeSection,
+    setActiveSection,
+    updateField,
+    updatePackage,
+    retrySave,
+    retryLoad,
+  } = useDrugEditor({ drugId });
 
   const workflow = workflowOverride ?? snapshot.workflow;
 
@@ -79,11 +88,11 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
     snapshot.package.entity_payload.label ||
       snapshot.package.entity_payload.generic_name ||
       snapshot.package.entity_payload.slug ||
-      "Untitled drug",
+      "Untitled drug"
   );
 
   return (
-    <div className="-m-4 flex h-[calc(100dvh-4rem)] flex-col overflow-hidden md:-m-6">
+    <div className="-m-4 flex h-full min-h-0 flex-col overflow-hidden md:-m-6">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b bg-background/95 px-4 py-3 backdrop-blur">
         <div className="flex min-w-0 items-center gap-3">
           <Button variant="ghost" size="sm" asChild>
@@ -148,7 +157,9 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
             drugId={drugId}
             validation={snapshot.validation}
             disabled={snapshot.saveStatus === "saving"}
-            onFieldChange={(fieldKey, value) => updateField(snapshot.activeSectionId, fieldKey, value)}
+            onFieldChange={(fieldKey, value) =>
+              updateField(snapshot.activeSectionId, fieldKey, value)
+            }
             onPackageChange={(next) => updatePackage(snapshot.activeSectionId, next)}
           />
         </main>
@@ -166,7 +177,9 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
         <DrawerContent side="right" className="w-full max-w-md">
           <DrawerHeader>
             <DrawerTitle>Live context</DrawerTitle>
-            <DrawerDescription>Workflow, validation, and graph context for this drug.</DrawerDescription>
+            <DrawerDescription>
+              Workflow, validation, and graph context for this drug.
+            </DrawerDescription>
           </DrawerHeader>
           <DrugContextPanel
             snapshot={{ ...snapshot, workflow }}
