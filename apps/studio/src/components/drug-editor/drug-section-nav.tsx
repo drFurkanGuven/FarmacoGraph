@@ -23,7 +23,7 @@ export function DrugSectionNav({
   const isHorizontal = orientation === "horizontal";
 
   return (
-    <ScrollArea className={cn(isHorizontal ? "w-full" : "h-full", className)}>
+    <ScrollArea className={cn("minimal-scrollbar", isHorizontal ? "w-full" : "h-full", className)}>
       <nav
         className={cn(
           "gap-1",

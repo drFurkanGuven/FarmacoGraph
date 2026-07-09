@@ -83,7 +83,7 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
   );
 
   return (
-    <div className="-m-4 flex h-[calc(100vh-4rem)] flex-col overflow-hidden md:-m-6">
+    <div className="-m-4 flex h-[calc(100dvh-4rem)] flex-col overflow-hidden md:-m-6">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b bg-background/95 px-4 py-3 backdrop-blur">
         <div className="flex min-w-0 items-center gap-3">
           <Button variant="ghost" size="sm" asChild>
@@ -141,7 +141,7 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
           />
         </div>
 
-        <main className="min-h-0 overflow-auto p-4 md:p-6">
+        <main className="minimal-scrollbar min-h-0 overflow-auto p-4 md:p-6">
           <DrugSectionEditor
             section={activeSection}
             pkg={snapshot.package}
@@ -174,7 +174,7 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
               setActiveSection("evidence");
               setContextOpen(false);
             }}
-            className="h-[calc(100vh-8rem)]"
+            className="h-[calc(100dvh-8rem)]"
           />
         </DrawerContent>
       </Drawer>

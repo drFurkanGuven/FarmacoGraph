@@ -76,8 +76,8 @@ export function DrugContextPanel({ snapshot, onOpenEvidenceSection, className }:
 
   return (
     <aside className={className}>
-      <ScrollArea className="h-full">
-        <div className="min-w-0 space-y-3 p-3">
+      <ScrollArea className="h-full minimal-scrollbar">
+        <div className="min-w-0 space-y-3 p-3 pb-6">
           <div className="min-w-0">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Live context</p>
             <h3 className="truncate text-sm font-semibold">

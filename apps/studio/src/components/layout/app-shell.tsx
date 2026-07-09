@@ -19,11 +19,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex h-dvh overflow-hidden bg-background">
       <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((v) => !v)} />
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <TopNav onOpenCommand={() => setCommandOpen(true)} />
-        <main className="flex-1 overflow-auto p-4 md:p-6">
+        <main className="minimal-scrollbar min-h-0 flex-1 overflow-auto p-4 md:p-6">
           <AuthGate>{children}</AuthGate>
         </main>
       </div>
