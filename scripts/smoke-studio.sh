@@ -4,12 +4,39 @@
 # Usage:
 #   ./scripts/smoke-studio.sh
 #   ./scripts/smoke-studio.sh https://farmacograph.furkanguven.space
-#   FG_PUBLIC_URL=https://example.com ./scripts/smoke-studio.sh
+#   ./scripts/smoke-studio.sh --wait https://farmacograph.furkanguven.space
+#   FG_PUBLIC_URL=https://example.com ./scripts/smoke-studio.sh --wait
+#
+# --wait polls /studio/login/ for up to SMOKE_WAIT_SECS (default 120) after deploy.
 #
 # Exit 0 = all checks passed. Exit 1 = one or more failures.
 # Does not log in, does not print secrets, does not hit localhost by default.
 
 set -euo pipefail
+
+WAIT_STUDIO=false
+SMOKE_WAIT_SECS="${SMOKE_WAIT_SECS:-120}"
+SMOKE_WAIT_INTERVAL="${SMOKE_WAIT_INTERVAL:-10}"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --wait)
+      WAIT_STUDIO=true
+      shift
+      ;;
+    -h|--help)
+      sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'
+      exit 0
+      ;;
+    -*)
+      echo "Unknown option: $1 (try --wait)" >&2
+      exit 1
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
 
 BASE_URL="${1:-${FG_PUBLIC_URL:-https://farmacograph.furkanguven.space}}"
 BASE_URL="${BASE_URL%/}"
@@ -47,6 +74,33 @@ curl_headers_nofollow() {
 echo "=== FarmacoGraph Studio smoke ==="
 echo "Base: ${BASE_URL}"
 echo ""
+
+if [[ "${WAIT_STUDIO}" == "true" ]]; then
+  echo "--- waiting for Studio (up to ${SMOKE_WAIT_SECS}s) ---"
+  waited=0
+  while [[ "${waited}" -lt "${SMOKE_WAIT_SECS}" ]]; do
+    probe=$(curl_headers_nofollow "${BASE_URL}/studio/login/")
+    probe_code=$(echo "${probe}" | awk 'toupper($0) ~ /^HTTP\// {print $2; exit}')
+    if [[ "${probe_code}" == "200" ]]; then
+      green "Studio login ready after ${waited}s"
+      echo ""
+      break
+    fi
+    if [[ "${probe_code}" == "502" || "${probe_code}" == "503" || "${probe_code}" == "000" ]]; then
+      yellow "Studio not ready yet (HTTP ${probe_code}); sleeping ${SMOKE_WAIT_INTERVAL}s..."
+      sleep "${SMOKE_WAIT_INTERVAL}"
+      waited=$((waited + SMOKE_WAIT_INTERVAL))
+      continue
+    fi
+    yellow "Studio returned HTTP ${probe_code}; continuing smoke..."
+    break
+  done
+  if [[ "${waited}" -ge "${SMOKE_WAIT_SECS}" ]]; then
+    red "Timed out waiting for Studio after ${SMOKE_WAIT_SECS}s"
+    echo "  docker compose ps studio && docker compose logs studio --tail 80"
+    exit 1
+  fi
+fi
 
 # --- 1. API health ---
 echo "--- /api/v1/health ---"
@@ -91,7 +145,11 @@ elif [[ "${STUDIO_NOFOLLOW_CODE}" == "200" ]]; then
     pass "/studio/ HTTP 200, HTML ${STUDIO_SIZE} bytes"
   fi
 else
-  fail "/studio/ unexpected HTTP ${STUDIO_NOFOLLOW_CODE}"
+  if [[ "${STUDIO_NOFOLLOW_CODE}" == "502" || "${STUDIO_NOFOLLOW_CODE}" == "503" ]]; then
+    fail "/studio/ HTTP ${STUDIO_NOFOLLOW_CODE} — Studio still starting or down (retry: ./scripts/smoke-studio.sh --wait)"
+  else
+    fail "/studio/ unexpected HTTP ${STUDIO_NOFOLLOW_CODE}"
+  fi
 fi
 STUDIO_BODY=""
 
