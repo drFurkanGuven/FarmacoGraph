@@ -92,7 +92,7 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
   );
 
   return (
-    <div className="-m-4 flex h-full min-h-0 flex-col overflow-hidden md:-m-6">
+    <div className="-m-4 flex h-[calc(100dvh-3.5rem)] min-h-0 flex-col overflow-hidden md:-m-6">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b bg-background/95 px-4 py-3 backdrop-blur">
         <div className="flex min-w-0 items-center gap-3">
           <Button variant="ghost" size="sm" asChild>
@@ -141,8 +141,8 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
         />
       </div>
 
-      <div className="grid min-h-0 flex-1 lg:grid-cols-[220px_minmax(0,1fr)_340px] xl:grid-cols-[220px_minmax(0,1fr)_360px]">
-        <div className="hidden min-w-0 border-r lg:block">
+      <div className="grid min-h-0 flex-1 overflow-hidden lg:grid-cols-[220px_minmax(0,1fr)_340px] xl:grid-cols-[220px_minmax(0,1fr)_360px]">
+        <div className="hidden min-h-0 min-w-0 overflow-hidden border-r lg:block">
           <DrugSectionNav
             activeSectionId={snapshot.activeSectionId}
             dirtySections={snapshot.dirtySections}
@@ -164,7 +164,7 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
           />
         </main>
 
-        <div className="hidden min-w-0 border-l lg:block">
+        <div className="hidden min-h-0 min-w-0 overflow-hidden border-l lg:block">
           <DrugContextPanel
             snapshot={{ ...snapshot, workflow }}
             onOpenEvidenceSection={() => setActiveSection("evidence")}
