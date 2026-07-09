@@ -142,4 +142,29 @@ describe("education package helpers", () => {
       source_id: "drug-1",
     }));
   });
+
+  it("stores flashcards and common mistakes as education resources", () => {
+    const pkg = createEmptyDrugPackage("drug-1");
+    const withFlashcard = updateEducationItem(pkg, "drug-1", "Flashcard", {
+      front: "Which suffix suggests an ACE inhibitor?",
+      back: "-pril",
+      hint: "Ramipril",
+    });
+    const withMistake = updateEducationItem(withFlashcard, "drug-1", "CommonMistake", {
+      mistake: "Treating education mnemonics as clinical evidence.",
+      correction: "Use them only as learning aids.",
+    });
+
+    expect(withMistake.education).toHaveLength(2);
+    expect(withMistake.education).toContainEqual(expect.objectContaining({
+      kind: "Flashcard",
+      front: "Which suffix suggests an ACE inhibitor?",
+      back: "-pril",
+    }));
+    expect(withMistake.education).toContainEqual(expect.objectContaining({
+      kind: "CommonMistake",
+      mistake: "Treating education mnemonics as clinical evidence.",
+    }));
+    expect(withMistake.relationships?.filter((row) => row.relationship_type === "HAS_EDUCATION")).toHaveLength(2);
+  });
 });

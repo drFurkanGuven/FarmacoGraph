@@ -275,6 +275,25 @@ async def list_curator_drug_education(
     }
 
 
+@router.get("/drugs/{slug}/education/flashcards")
+async def list_curator_drug_flashcards(
+    slug: str,
+    service=Depends(get_curator_service),
+    _auth: Annotated[AuthContext, Depends(require_scope("curator:write"))] = None,
+) -> dict:
+    data, workflow = await service.get_drug_flashcards(slug)
+    return {
+        "data": data,
+        "meta": {
+            "api_version": "v1",
+            "count": len(data),
+            "slug": slug,
+            "workflow_id": str(workflow.id) if workflow else None,
+            "content_layers": ["education"],
+        },
+    }
+
+
 @router.put("/workflows/{workflow_id}/package")
 async def save_workflow_package(
     workflow_id: UUID,

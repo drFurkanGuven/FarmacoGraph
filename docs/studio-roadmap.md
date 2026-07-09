@@ -20,7 +20,7 @@ The Curation Studio is the official interface for authoring, reviewing, validati
 | `/knowledge/drugs/[id]` | **Complete** | Drug Editor — sectioned fields, debounced autosave (`PUT .../package`), live validation |
 | `/validation` | **Complete** | Validation Center — `GET /curator/validation-summary`, queue dry-runs via `POST /curator/validate` |
 | `/knowledge/diseases` | **Connected** | Disease browser for shared disease nodes and curator workflows |
-| `/knowledge/education` | **MVP live** | Drug Editor education section for `FiveSecondSummary` and `BoardExamPearl`; `GET /drugs/{id}/education` read contract |
+| `/knowledge/education` | **MVP live** | Drug Editor education section for summaries, pearls, mnemonics, common mistakes, and flashcards; `GET /drugs/{id}/education` + flashcard read contracts |
 | `/knowledge/mechanisms` | **Connected surface** | Read-only navigation surface; mechanism editor/API contracts deferred |
 | `/knowledge/evidence` | **Complete** | Evidence manager — browse/search/create via `GET/POST /evidence` |
 | `/graph` | **Connected surface** | Preview/navigation surface; graph query explorer deferred |

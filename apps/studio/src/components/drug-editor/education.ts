@@ -1,6 +1,11 @@
 import type { DrugPublishPackage } from "./types";
 
-export type EducationKind = "FiveSecondSummary" | "BoardExamPearl";
+export type EducationKind =
+  | "FiveSecondSummary"
+  | "BoardExamPearl"
+  | "Mnemonic"
+  | "CommonMistake"
+  | "Flashcard";
 
 export interface EducationItem {
   id: string;
@@ -8,7 +13,15 @@ export interface EducationItem {
   kind: EducationKind;
   slug: string;
   label: string;
-  text: string;
+  text?: string;
+  mnemonic?: string;
+  expansion?: string;
+  mistake?: string;
+  correction?: string;
+  why_wrong?: string;
+  front?: string;
+  back?: string;
+  hint?: string;
   content_layer: "education";
   audience: string[];
   difficulty_level: string;
@@ -41,6 +54,10 @@ function educationSlug(pkg: DrugPublishPackage, drugEntityId: string, kind: Educ
   return `${slugBase(pkg, drugEntityId)}-${kind.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase()}`;
 }
 
+function kindLabel(kind: EducationKind): string {
+  return kind.replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase();
+}
+
 function defaultEducationItem(
   pkg: DrugPublishPackage,
   drugEntityId: string,
@@ -54,8 +71,7 @@ function defaultEducationItem(
     entity_type: "EducationResource",
     kind,
     slug: educationSlug(pkg, drugEntityId, kind),
-    label: `${drugLabel} ${kind === "FiveSecondSummary" ? "five second summary" : "board exam pearl"}`,
-    text: "",
+    label: `${drugLabel} ${kindLabel(kind)}`,
     content_layer: "education",
     audience: ["medical_student"],
     difficulty_level: "core",
@@ -64,6 +80,22 @@ function defaultEducationItem(
     exam_tags: kind === "BoardExamPearl" ? ["TUS"] : [],
     linked_entity_ids: [drugEntityId],
   };
+}
+
+function hasEducationContent(item: EducationItem | Record<string, unknown>): boolean {
+  const record = item as Record<string, unknown>;
+  const fields = [
+    "text",
+    "mnemonic",
+    "expansion",
+    "mistake",
+    "correction",
+    "why_wrong",
+    "front",
+    "back",
+    "hint",
+  ];
+  return fields.some((field) => typeof record[field] === "string" && String(record[field]).trim());
 }
 
 export function readEducationItem(
@@ -84,6 +116,14 @@ export function readEducationItem(
     slug: typeof found.slug === "string" && found.slug ? found.slug : fallback.slug,
     label: typeof found.label === "string" && found.label ? found.label : fallback.label,
     text: typeof found.text === "string" ? found.text : "",
+    mnemonic: typeof found.mnemonic === "string" ? found.mnemonic : "",
+    expansion: typeof found.expansion === "string" ? found.expansion : "",
+    mistake: typeof found.mistake === "string" ? found.mistake : "",
+    correction: typeof found.correction === "string" ? found.correction : "",
+    why_wrong: typeof found.why_wrong === "string" ? found.why_wrong : "",
+    front: typeof found.front === "string" ? found.front : "",
+    back: typeof found.back === "string" ? found.back : "",
+    hint: typeof found.hint === "string" ? found.hint : "",
     content_layer: "education",
     audience: normalizeList(found.audience).length ? normalizeList(found.audience) : fallback.audience,
     difficulty_level:
@@ -117,7 +157,7 @@ export function updateEducationItem(
   };
   const existing = Array.isArray(next.education) ? next.education : [];
   const preserved = existing.filter((item) => !(isRecord(item) && item.kind === kind));
-  const education = updated.text.trim()
+  const education = hasEducationContent(updated)
     ? [...preserved, updated as unknown as Record<string, unknown>]
     : preserved;
 
@@ -135,7 +175,7 @@ export function syncEducationGraphRows(
   drugEntityId: string,
 ): DrugPublishPackage {
   const education = Array.isArray(pkg.education)
-    ? pkg.education.filter((item) => isRecord(item) && String(item.text ?? "").trim())
+    ? pkg.education.filter((item) => isRecord(item) && hasEducationContent(item))
     : [];
 
   const related = Array.isArray(pkg.related_entities) ? pkg.related_entities : [];

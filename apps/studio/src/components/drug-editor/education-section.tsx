@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, GraduationCap } from "lucide-react";
+import { BookOpen, GraduationCap, HelpCircle, Layers3, Lightbulb } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input, Textarea } from "@/components/ui";
 import type { DrugPublishPackage } from "./types";
@@ -37,6 +37,9 @@ export function EducationSection({
   const drugEntityId = String(pkg.entity_payload.id ?? drugId);
   const summary = readEducationItem(pkg, drugEntityId, "FiveSecondSummary");
   const pearl = readEducationItem(pkg, drugEntityId, "BoardExamPearl");
+  const mnemonic = readEducationItem(pkg, drugEntityId, "Mnemonic");
+  const commonMistake = readEducationItem(pkg, drugEntityId, "CommonMistake");
+  const flashcard = readEducationItem(pkg, drugEntityId, "Flashcard");
 
   function patch(kind: EducationKind, patchValue: Parameters<typeof updateEducationItem>[3]) {
     onPackageChange(updateEducationItem(pkg, drugEntityId, kind, patchValue));
@@ -69,7 +72,7 @@ export function EducationSection({
           />
           <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
             <span>Stored as content_layer=education.</span>
-            <span>{summary.text.length}/280</span>
+            <span>{(summary.text ?? "").length}/280</span>
           </div>
         </CardContent>
       </Card>
@@ -124,6 +127,117 @@ export function EducationSection({
               />
             </label>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-md">
+        <CardHeader className="p-4 pb-2">
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <Lightbulb className="h-4 w-4" />
+            Mnemonic
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-3 p-4 pt-0 md:grid-cols-2">
+          <label className="space-y-1.5">
+            <span className="text-xs font-medium text-muted-foreground">Mnemonic</span>
+            <Input
+              value={mnemonic.mnemonic ?? ""}
+              disabled={disabled}
+              placeholder="PRIL"
+              onChange={(event) => patch("Mnemonic", { mnemonic: event.target.value })}
+            />
+          </label>
+          <label className="space-y-1.5">
+            <span className="text-xs font-medium text-muted-foreground">Expansion</span>
+            <Input
+              value={mnemonic.expansion ?? ""}
+              disabled={disabled}
+              placeholder="Pregnancy risk, renin-angiotensin inhibitor, ..."
+              onChange={(event) => patch("Mnemonic", { expansion: event.target.value })}
+            />
+          </label>
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-md">
+        <CardHeader className="p-4 pb-2">
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <HelpCircle className="h-4 w-4" />
+            Common mistake
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 p-4 pt-0">
+          <div className="grid gap-3 md:grid-cols-2">
+            <label className="space-y-1.5">
+              <span className="text-xs font-medium text-muted-foreground">Mistake</span>
+              <Textarea
+                value={commonMistake.mistake ?? ""}
+                disabled={disabled}
+                rows={3}
+                placeholder="What students often confuse."
+                onChange={(event) => patch("CommonMistake", { mistake: event.target.value })}
+              />
+            </label>
+            <label className="space-y-1.5">
+              <span className="text-xs font-medium text-muted-foreground">Correction</span>
+              <Textarea
+                value={commonMistake.correction ?? ""}
+                disabled={disabled}
+                rows={3}
+                placeholder="The corrected teaching point."
+                onChange={(event) => patch("CommonMistake", { correction: event.target.value })}
+              />
+            </label>
+          </div>
+          <label className="space-y-1.5">
+            <span className="text-xs font-medium text-muted-foreground">Why wrong</span>
+            <Textarea
+              value={commonMistake.why_wrong ?? ""}
+              disabled={disabled}
+              rows={2}
+              placeholder="Short explanation of the misconception."
+              onChange={(event) => patch("CommonMistake", { why_wrong: event.target.value })}
+            />
+          </label>
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-md">
+        <CardHeader className="p-4 pb-2">
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <Layers3 className="h-4 w-4" />
+            Flashcard
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 p-4 pt-0">
+          <div className="grid gap-3 md:grid-cols-2">
+            <label className="space-y-1.5">
+              <span className="text-xs font-medium text-muted-foreground">Front</span>
+              <Textarea
+                value={flashcard.front ?? ""}
+                disabled={disabled}
+                rows={3}
+                placeholder="Question or prompt."
+                onChange={(event) => patch("Flashcard", { front: event.target.value })}
+              />
+            </label>
+            <label className="space-y-1.5">
+              <span className="text-xs font-medium text-muted-foreground">Back</span>
+              <Textarea
+                value={flashcard.back ?? ""}
+                disabled={disabled}
+                rows={3}
+                placeholder="Answer."
+                onChange={(event) => patch("Flashcard", { back: event.target.value })}
+              />
+            </label>
+          </div>
+          <Input
+            value={flashcard.hint ?? ""}
+            disabled={disabled}
+            placeholder="Optional hint"
+            onChange={(event) => patch("Flashcard", { hint: event.target.value })}
+          />
         </CardContent>
       </Card>
     </div>

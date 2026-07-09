@@ -24,3 +24,14 @@ def education_items_for_entity(
         for item in items
         if entity_id in [str(value) for value in item.get("linked_entity_ids", [])]
     ]
+
+
+def flashcards_for_entity(
+    package: dict[str, Any] | None,
+    entity_id: str,
+) -> list[dict[str, Any]]:
+    return [
+        item
+        for item in education_items_for_entity(package, entity_id)
+        if item.get("kind") == "Flashcard"
+    ]

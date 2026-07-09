@@ -80,6 +80,17 @@ async def list_drug_education(
     return {"data": data, "meta": meta.model_dump() | {"count": len(data)}}
 
 
+@router.get("/{drug_id}/education/flashcards")
+async def list_drug_flashcards(
+    drug_id: UUID,
+    service: Annotated[DrugService, Depends(get_drug_service)],
+    _auth: Annotated[AuthContext, Depends(require_scope("education:read"))],
+    dataset_version: str | None = None,
+) -> dict:
+    data, meta = await service.get_drug_flashcards(drug_id, dataset_version)
+    return {"data": data, "meta": meta.model_dump() | {"count": len(data)}}
+
+
 @router.post("/{drug_id}/evidence", status_code=201)
 async def attach_evidence_to_drug(
     drug_id: UUID,

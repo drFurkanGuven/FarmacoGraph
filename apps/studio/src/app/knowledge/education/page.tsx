@@ -11,7 +11,7 @@ export default function EducationPage() {
         eyebrow="Education layer"
         title="Education"
         status="MVP live"
-        description="Education content is a separate layer from biomedical facts. Drug Editor now supports student-facing summaries and board-exam pearls, with education validation in the publish path."
+        description="Education content is a separate layer from biomedical facts. Drug Editor now supports summaries, pearls, mnemonics, common mistakes, and flashcards, with education validation in the publish path."
         primary={{
           label: "Open validation",
           href: "/validation",
@@ -26,7 +26,7 @@ export default function EducationPage() {
         links={commonKnowledgeLinks}
         deferred={[
           "Dedicated global education manager",
-          "Flashcard and case export endpoints",
+          "Case-based teaching endpoints",
           "Mechanism-linked teaching diagrams",
         ]}
       />

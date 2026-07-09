@@ -71,6 +71,11 @@ async def test_drug_education_uuid_route_returns_education_envelope(
     assert body["meta"]["count"] == 0
     assert body["meta"]["content_layers"] == ["education"]
 
+    flashcards = await api_client.get(f"/api/v1/drugs/{RAMIPRIL_ID}/education/flashcards")
+    assert flashcards.status_code == 200
+    assert flashcards.json()["data"] == []
+    assert flashcards.json()["meta"]["content_layers"] == ["education"]
+
 
 @pytest.mark.asyncio
 async def test_curator_drug_education_returns_draft_items(
@@ -93,7 +98,22 @@ async def test_curator_drug_education_returns_draft_items(
             "difficulty_level": "core",
             "language": "en",
             "linked_entity_ids": [RAMIPRIL_ID],
-        }
+        },
+        {
+            "id": f"{RAMIPRIL_ID}:education:Flashcard",
+            "entity_type": "EducationResource",
+            "kind": "Flashcard",
+            "slug": "ramipril-flashcard",
+            "label": "Ramipril flashcard",
+            "front": "Which suffix suggests an ACE inhibitor?",
+            "back": "-pril",
+            "hint": "Ramipril",
+            "content_layer": "education",
+            "audience": ["medical_student"],
+            "difficulty_level": "core",
+            "language": "en",
+            "linked_entity_ids": [RAMIPRIL_ID],
+        },
     ]
 
     saved = await curator_client.put(
@@ -106,6 +126,13 @@ async def test_curator_drug_education_returns_draft_items(
     assert response.status_code == 200
     body = response.json()
     assert body["meta"]["slug"] == "ramipril"
-    assert body["meta"]["count"] == 1
+    assert body["meta"]["count"] == 2
     assert body["data"][0]["kind"] == "FiveSecondSummary"
     assert body["data"][0]["content_layer"] == "education"
+
+    flashcards = await curator_client.get("/api/v1/curator/drugs/ramipril/education/flashcards")
+    assert flashcards.status_code == 200
+    flashcards_body = flashcards.json()
+    assert flashcards_body["meta"]["count"] == 1
+    assert flashcards_body["data"][0]["kind"] == "Flashcard"
+    assert flashcards_body["data"][0]["front"] == "Which suffix suggests an ACE inhibitor?"

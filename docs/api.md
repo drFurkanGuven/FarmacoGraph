@@ -476,6 +476,14 @@ All published education layer content for a drug.
 
 Draft education layer content from the curator package. Requires `curator:write`.
 
+### `GET /drugs/{id}/education/flashcards`
+
+Published education flashcards for a drug.
+
+### `GET /curator/drugs/{slug}/education/flashcards`
+
+Draft education flashcards from the curator package. Requires `curator:write`.
+
 ---
 
 ## 4. Entity Endpoints

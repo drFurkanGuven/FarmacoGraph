@@ -95,3 +95,11 @@ class DrugService:
         elapsed = int((time.perf_counter() - start) * 1000)
         education = [row.get("education", row) for row in rows]
         return education, self._education_meta(dataset_version, elapsed)
+
+    async def get_drug_flashcards(
+        self,
+        drug_id: UUID,
+        dataset_version: str | None = None,
+    ) -> tuple[list[dict[str, Any]], ResponseMeta]:
+        education, meta = await self.get_drug_education(drug_id, dataset_version)
+        return [item for item in education if item.get("kind") == "Flashcard"], meta

@@ -327,6 +327,27 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
+  /curator/drugs/{slug}/education/flashcards:
+    get:
+      tags: [Curator, Education]
+      summary: List draft flashcards for a drug by curriculum slug
+      operationId: listCuratorDrugFlashcards
+      security:
+        - BearerAuth: [curator:write]
+      parameters:
+        - $ref: "#/components/parameters/DrugSlug"
+      responses:
+        "200":
+          description: Draft drug flashcards
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EducationListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
   /curator/drugs/{slug}/evidence:
     get:
       tags: [Curator, Evidence]
@@ -964,6 +985,25 @@ paths:
       responses:
         "200":
           description: Education content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EducationListResponse"
+
+  /drugs/{drug_id}/education/flashcards:
+    get:
+      tags: [Education, Drugs]
+      summary: Drug flashcards
+      operationId: getDrugFlashcards
+      parameters:
+        - $ref: "#/components/parameters/DrugId"
+        - name: dataset_version
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Drug flashcards
           content:
             application/json:
               schema:

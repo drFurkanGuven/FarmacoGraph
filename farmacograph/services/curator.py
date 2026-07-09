@@ -20,7 +20,7 @@ from farmacograph.curator.drug_package import (
     load_curriculum,
     load_package,
 )
-from farmacograph.curator.education_package import education_items_for_entity
+from farmacograph.curator.education_package import education_items_for_entity, flashcards_for_entity
 from farmacograph.curator.publish_validator import (
     require_valid_publish_package,
     validate_publish_package,
@@ -488,6 +488,14 @@ class CuratorService:
         workflow = await self._curator.get_by_entity(entity_id)
         package = await self.resolve_package(slug, workflow)
         return education_items_for_entity(package, entity_id), workflow
+
+    async def get_drug_flashcards(
+        self, slug: str
+    ) -> tuple[list[dict[str, Any]], CuratorWorkflow | None]:
+        entity_id = drug_entity_id(slug)
+        workflow = await self._curator.get_by_entity(entity_id)
+        package = await self.resolve_package(slug, workflow)
+        return flashcards_for_entity(package, entity_id), workflow
 
     async def get_drug_workflow_state(self, slug: str) -> dict[str, Any]:
         """Aggregate workflow, validation, actors, and snapshot for a curriculum drug slug."""
