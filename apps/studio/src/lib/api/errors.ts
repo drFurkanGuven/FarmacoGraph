@@ -1,7 +1,7 @@
 /** Normalized API error types and parsing helpers. */
 
 export interface ApiErrorBody {
-  detail?: string | { msg: string; loc?: string[]; type?: string }[];
+  detail?: string | { msg: string; loc?: string[]; type?: string }[] | { code?: string; message?: string };
   message?: string;
   error?: {
     code: string;
@@ -26,7 +26,11 @@ export class ApiError extends Error {
     this.status = status;
     this.body = body;
     this.traceId = traceId;
-    this.code = body?.error?.code ?? null;
+    this.code =
+      body?.error?.code ??
+      (body?.detail && !Array.isArray(body.detail) && typeof body.detail === "object"
+        ? (body.detail.code ?? null)
+        : null);
   }
 }
 
@@ -44,6 +48,9 @@ export function normalizeErrorMessage(body: ApiErrorBody | null, status: number)
   if (body.error?.message) return body.error.message;
   if (typeof body.detail === "string") return body.detail;
   if (Array.isArray(body.detail)) return body.detail.map((d) => d.msg).join("; ");
+  if (body.detail && typeof body.detail === "object" && body.detail.message) {
+    return body.detail.message;
+  }
   if (body.message) return body.message;
   return `Request failed (${status})`;
 }

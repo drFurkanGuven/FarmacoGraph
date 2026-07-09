@@ -74,7 +74,15 @@ export function useDrugEvidence(context: DrugEvidenceContext) {
     const error =
       attachMutation.error ?? detachMutation.error ?? createMutation.error ?? searchMutation.error;
     if (!error) return null;
-    if (error instanceof ApiError) return error.message;
+    if (error instanceof ApiError) {
+      if (error.status === 503) {
+        return "Evidence writes require a healthy Neo4j graph connection. Check FG_NEO4J_ENABLED and graph availability.";
+      }
+      if (error.status === 404 && /drug not found/i.test(error.message)) {
+        return "Drug graph node was not found. Publish the drug to the graph before attaching graph-backed evidence.";
+      }
+      return error.message;
+    }
     if (error instanceof Error) return error.message;
     return "Evidence action failed.";
   }, [attachMutation.error, createMutation.error, detachMutation.error, searchMutation.error]);

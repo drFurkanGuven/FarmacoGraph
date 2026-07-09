@@ -194,6 +194,35 @@ async def test_create_evidence_unavailable_without_neo4j(curator_client: AsyncCl
 
 
 @pytest.mark.asyncio
+async def test_create_evidence_graph_write_failure_returns_503(
+    curator_client: AsyncClient, monkeypatch
+) -> None:
+    from farmacograph.core.container import get_container
+
+    container = get_container()
+    fake_repo = FakeEvidenceRepo()
+
+    async def fail_merge(_properties):
+        raise RuntimeError("Neo4j rejected nested property")
+
+    monkeypatch.setattr(fake_repo, "merge_evidence", fail_merge)
+    monkeypatch.setattr(container.evidence_service, "_repo", fake_repo)
+
+    response = await curator_client.post(
+        "/api/v1/evidence",
+        json={
+            "title": "Structural Evidence Stub",
+            "evidence_type": "fda_label",
+        },
+    )
+
+    assert response.status_code == 503
+    body = response.json()
+    assert body["detail"]["code"] == "SERVICE_UNAVAILABLE"
+    assert "Evidence graph write failed" in body["detail"]["message"]
+
+
+@pytest.mark.asyncio
 async def test_evidence_crud_with_mocked_graph(curator_client: AsyncClient, monkeypatch) -> None:
     from farmacograph.core.container import get_container
 

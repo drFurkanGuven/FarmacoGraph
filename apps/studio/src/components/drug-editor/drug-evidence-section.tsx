@@ -91,40 +91,56 @@ export function DrugEvidenceSection({
 
   const handleSearch = useCallback(async () => {
     if (!searchQuery.trim()) return;
-    await evidence.searchEvidence(searchQuery.trim());
+    try {
+      await evidence.searchEvidence(searchQuery.trim());
+    } catch {
+      // useDrugEvidence exposes the mutation error through actionError.
+    }
   }, [evidence, searchQuery]);
 
   const handleAttach = useCallback(
     async (evidenceId: string) => {
-      await evidence.attachEvidence(evidenceId);
-      setAttachOpen(false);
-      setSearchQuery("");
+      try {
+        await evidence.attachEvidence(evidenceId);
+        setAttachOpen(false);
+        setSearchQuery("");
+      } catch {
+        // useDrugEvidence exposes the mutation error through actionError.
+      }
     },
     [evidence],
   );
 
   const handleDetach = useCallback(
     async (evidenceId: string) => {
-      await evidence.detachEvidence(evidenceId);
+      try {
+        await evidence.detachEvidence(evidenceId);
+      } catch {
+        // useDrugEvidence exposes the mutation error through actionError.
+      }
     },
     [evidence],
   );
 
   const handleCreate = useCallback(async () => {
     if (!createForm.title.trim()) return;
-    await evidence.createAndAttachEvidence({
-      ...createForm,
-      title: createForm.title.trim(),
-      extract: createForm.extract?.trim() || null,
-    });
-    setCreateOpen(false);
-    setCreateForm({
-      title: "",
-      evidence_type: "pubmed_article",
-      quality_score: 0.5,
-      year: null,
-      extract: "",
-    });
+    try {
+      await evidence.createAndAttachEvidence({
+        ...createForm,
+        title: createForm.title.trim(),
+        extract: createForm.extract?.trim() || null,
+      });
+      setCreateOpen(false);
+      setCreateForm({
+        title: "",
+        evidence_type: "pubmed_article",
+        quality_score: 0.5,
+        year: null,
+        extract: "",
+      });
+    } catch {
+      // useDrugEvidence exposes the mutation error through actionError.
+    }
   }, [createForm, evidence]);
 
   if (evidence.loading) {

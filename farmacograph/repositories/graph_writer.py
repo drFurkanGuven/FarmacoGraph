@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
 from farmacograph.db.neo4j.driver import Neo4jDriver
@@ -31,7 +32,7 @@ class GraphWriter:
         SET n:BiomedicalEntity
         RETURN n {{.*}} AS node
         """
-        props = {k: v for k, v in properties.items() if v is not None}
+        props = {k: _to_neo4j_property(v) for k, v in properties.items() if v is not None}
         results = await self._driver.run_query(query, {"id": str(entity_id), "props": props})
         return results[0]["node"] if results else {}
 
@@ -90,7 +91,11 @@ class GraphWriter:
             {
                 "source_id": source_id,
                 "target_id": target_id,
-                "props": properties or {},
+                "props": {
+                    key: _to_neo4j_property(value)
+                    for key, value in (properties or {}).items()
+                    if value is not None
+                },
             },
         )
         return bool(results[0]["created"]) if results else False
@@ -127,3 +132,18 @@ class GraphWriter:
         }
         results = await self._driver.run_query(query, params)
         return bool(results[0]["deleted"]) if results else False
+
+
+def _to_neo4j_property(value: Any) -> Any:
+    """Neo4j properties cannot be maps or nested lists; preserve them as JSON strings."""
+    if isinstance(value, dict):
+        return json.dumps(value, sort_keys=True, separators=(",", ":"), default=str)
+    if isinstance(value, list):
+        if all(_is_neo4j_scalar(item) for item in value):
+            return value
+        return json.dumps(value, sort_keys=True, separators=(",", ":"), default=str)
+    return value
+
+
+def _is_neo4j_scalar(value: Any) -> bool:
+    return value is None or isinstance(value, (str, int, float, bool))

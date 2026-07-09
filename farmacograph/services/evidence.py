@@ -132,7 +132,10 @@ class EvidenceService:
                 "status": "draft",
             },
         }
-        node = await self._repo.merge_evidence(properties)
+        try:
+            node = await self._repo.merge_evidence(properties)
+        except Exception as exc:
+            raise ServiceUnavailableError(f"Evidence graph write failed: {exc}") from exc
         await self._audit.log(
             "evidence.created",
             EVIDENCE_RESOURCE_TYPE,
@@ -170,7 +173,10 @@ class EvidenceService:
         merged["provenance"] = provenance
         merged.pop("attachments", None)
 
-        node = await self._repo.merge_evidence(merged)
+        try:
+            node = await self._repo.merge_evidence(merged)
+        except Exception as exc:
+            raise ServiceUnavailableError(f"Evidence graph write failed: {exc}") from exc
         await self._audit.log(
             "evidence.updated",
             EVIDENCE_RESOURCE_TYPE,
@@ -214,11 +220,14 @@ class EvidenceService:
         if not self._ontology.is_allowed("SUPPORTED_BY", "Drug", "Evidence"):
             raise ValidationError("SUPPORTED_BY from Drug to Evidence is not allowed by ontology")
 
-        attached = await self._repo.attach_to_entity(
-            source_id=str(drug_id),
-            source_type="Drug",
-            evidence_id=str(evidence_id),
-        )
+        try:
+            attached = await self._repo.attach_to_entity(
+                source_id=str(drug_id),
+                source_type="Drug",
+                evidence_id=str(evidence_id),
+            )
+        except Exception as exc:
+            raise ServiceUnavailableError(f"Evidence attach failed: {exc}") from exc
         await self._audit.log(
             "evidence.attached_drug",
             EVIDENCE_RESOURCE_TYPE,
@@ -237,12 +246,15 @@ class EvidenceService:
     ) -> dict[str, Any]:
         self._require_graph()
         await self._ensure_evidence(evidence_id)
-        detached = await self._repo.detach_from_entity(
-            source_id=str(drug_id),
-            source_type="Drug",
-            evidence_id=str(evidence_id),
-            assertion=None,
-        )
+        try:
+            detached = await self._repo.detach_from_entity(
+                source_id=str(drug_id),
+                source_type="Drug",
+                evidence_id=str(evidence_id),
+                assertion=None,
+            )
+        except Exception as exc:
+            raise ServiceUnavailableError(f"Evidence detach failed: {exc}") from exc
         await self._audit.log(
             "evidence.detached_drug",
             EVIDENCE_RESOURCE_TYPE,
@@ -290,12 +302,15 @@ class EvidenceService:
             "assertion_target_id": str(body.target_id),
             "assertion_target_type": target_type,
         }
-        attached = await self._repo.attach_to_entity(
-            source_id=str(body.source_id),
-            source_type=source_type,
-            evidence_id=str(evidence_id),
-            assertion=assertion,
-        )
+        try:
+            attached = await self._repo.attach_to_entity(
+                source_id=str(body.source_id),
+                source_type=source_type,
+                evidence_id=str(evidence_id),
+                assertion=assertion,
+            )
+        except Exception as exc:
+            raise ServiceUnavailableError(f"Evidence assertion attach failed: {exc}") from exc
         await self._audit.log(
             "evidence.attached_assertion",
             EVIDENCE_RESOURCE_TYPE,
@@ -330,12 +345,15 @@ class EvidenceService:
             "assertion_target_id": str(body.target_id),
             "assertion_target_type": body.target_type,
         }
-        detached = await self._repo.detach_from_entity(
-            source_id=str(body.source_id),
-            source_type=body.source_type,
-            evidence_id=str(evidence_id),
-            assertion=assertion,
-        )
+        try:
+            detached = await self._repo.detach_from_entity(
+                source_id=str(body.source_id),
+                source_type=body.source_type,
+                evidence_id=str(evidence_id),
+                assertion=assertion,
+            )
+        except Exception as exc:
+            raise ServiceUnavailableError(f"Evidence assertion detach failed: {exc}") from exc
         await self._audit.log(
             "evidence.detached_assertion",
             EVIDENCE_RESOURCE_TYPE,
