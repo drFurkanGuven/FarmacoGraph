@@ -59,6 +59,21 @@ class GraphRepository:
         )
         return results[0] if results else None
 
+    async def get_drug_education(
+        self, drug_id: UUID, dataset_version: str | None = None
+    ) -> list[dict[str, Any]]:
+        if not self.is_available:
+            return []
+        return await self._driver.run_query(
+            """
+            MATCH (d:Drug {id: $id})-[:HAS_EDUCATION]->(e:EducationResource)
+            WHERE ($dv IS NULL OR d.dataset_version = $dv)
+            RETURN e {.*} AS education
+            ORDER BY coalesce(e.kind, e.entity_type), coalesce(e.label, e.id)
+            """,
+            {"id": str(drug_id), "dv": dataset_version},
+        )
+
     async def get_drug_by_slug(
         self, slug: str, dataset_version: str | None = None
     ) -> dict[str, Any] | None:

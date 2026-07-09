@@ -8,6 +8,7 @@ from farmacograph.core.exceptions import ValidationError
 from farmacograph.models.clinical import Disease
 from farmacograph.models.pharmacologic import Drug
 from farmacograph.validators.base import ValidationLevel, ValidationResult
+from farmacograph.validators.education_validator import EducationValidator
 from farmacograph.validators.evidence_validator import EvidenceValidator
 from farmacograph.validators.ontology_validator import OntologyValidator
 from farmacograph.validators.registry import ValidatorRegistry, get_default_registry
@@ -26,10 +27,12 @@ def validate_publish_package(
     *,
     related_entities: list[dict[str, Any]] | None = None,
     relationships: list[dict[str, Any]] | None = None,
+    education: list[dict[str, Any]] | None = None,
 ) -> ValidationResult:
-    """Run schema, biomedical, and per-edge ontology validation."""
+    """Run schema, biomedical, education, evidence, and per-edge ontology validation."""
     registry = _registry_with_entity_schemas()
     ontology = OntologyValidator()
+    education_validator = EducationValidator()
     evidence = EvidenceValidator()
     result = ValidationResult(valid=True, issues=[])
 
@@ -49,6 +52,9 @@ def validate_publish_package(
                 )
             )
 
+    for item in education or []:
+        result = result.merge(education_validator.validate(item))
+
     for rel in relationships or []:
         result = result.merge(ontology.validate(rel))
 
@@ -60,11 +66,13 @@ def require_valid_publish_package(
     *,
     related_entities: list[dict[str, Any]] | None = None,
     relationships: list[dict[str, Any]] | None = None,
+    education: list[dict[str, Any]] | None = None,
 ) -> None:
     result = validate_publish_package(
         entity_payload,
         related_entities=related_entities,
         relationships=relationships,
+        education=education,
     )
     if not result.valid:
         messages = "; ".join(

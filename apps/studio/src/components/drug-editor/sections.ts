@@ -93,6 +93,13 @@ export const DRUG_EDITOR_SECTIONS: DrugEditorSection[] = [
     ],
   },
   {
+    id: "education",
+    title: "Education",
+    kind: "education",
+    description: "Student-facing summaries and board-exam pearls kept outside biomedical facts.",
+    fields: [],
+  },
+  {
     id: "evidence",
     title: "Evidence",
     kind: "evidence",

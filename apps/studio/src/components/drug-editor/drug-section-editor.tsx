@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { PropertyEditor, type PropertyEditorField } from "@/components/ui";
 import type { ValidationResult } from "@/lib/api";
 import { DrugEvidenceSection } from "./drug-evidence-section";
+import { EducationSection } from "./education-section";
 import { IndicationsSection } from "./indications-section";
 import { sectionFieldValues } from "./package";
 import type { DrugEditorSection, DrugPublishPackage } from "./types";
@@ -67,6 +68,17 @@ export function DrugSectionEditor({
           onPackageChange={(next) => onPackageChange?.(next)}
         />
       </div>
+    );
+  }
+
+  if (section.kind === "education" || section.id === "education") {
+    return (
+      <EducationSection
+        pkg={pkg}
+        drugId={drugId}
+        disabled={disabled}
+        onPackageChange={(next) => onPackageChange?.(next)}
+      />
     );
   }
 

@@ -41,3 +41,23 @@ def test_minimal_drug_fails_biomedical_validation():
 def test_require_valid_raises():
     with pytest.raises(ValidationError, match="Publish validation failed"):
         require_valid_publish_package({"entity_type": "Drug", "status": "published"})
+
+
+def test_education_items_are_validated_in_publish_gate():
+    package = build_cardiovascular_publish_package()
+    result = validate_publish_package(
+        package["entity_payload"],
+        related_entities=package["related_entities"],
+        relationships=package["relationships"],
+        education=[
+            {
+                "id": "education-1",
+                "entity_type": "EducationResource",
+                "content_layer": "biomedical",
+                "outgoing_relationships": [],
+            }
+        ],
+    )
+
+    assert result.valid is False
+    assert any(i.constraint_id == "FG-C029" for i in result.errors)

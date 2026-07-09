@@ -12,8 +12,15 @@ from farmacograph.validators.base import (
 )
 
 CLINICAL_RELATIONSHIP_TYPES = {
-    "TREATS", "CAUSES", "INHIBITS", "TARGETS", "INTERACTS_WITH",
-    "CONTRAINDICATED_IN", "METABOLIZED_BY", "COVERS", "FIRST_LINE_FOR",
+    "TREATS",
+    "CAUSES",
+    "INHIBITS",
+    "TARGETS",
+    "INTERACTS_WITH",
+    "CONTRAINDICATED_IN",
+    "METABOLIZED_BY",
+    "COVERS",
+    "FIRST_LINE_FOR",
 }
 
 
@@ -65,6 +72,10 @@ class EducationValidator(BaseValidator):
         return ValidationResult(valid=len(issues) == 0, issues=issues)
 
     def validate(self, data: object) -> ValidationResult:
-        if isinstance(data, dict) and data.get("content_layer") == ContentLayer.EDUCATION:
+        if isinstance(data, dict) and (
+            data.get("content_layer") == ContentLayer.EDUCATION
+            or data.get("entity_type") == "EducationResource"
+            or data.get("kind")
+        ):
             return self.validate_education_entity(data)
         return ValidationResult(valid=True, issues=[])

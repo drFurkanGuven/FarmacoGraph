@@ -175,10 +175,11 @@ mindmap
 
 | Endpoint | Returns |
 |----------|---------|
-| `GET /drugs/{id}/education` | All education nodes for drug |
-| `GET /drugs/{id}/education/summaries` | Tiered summaries only |
-| `GET /drugs/{id}/education/flashcards` | Flashcards for export |
-| `GET /education/{id}` | Single education entity |
+| `GET /drugs/{id}/education` | All published education nodes for drug — MVP live |
+| `GET /curator/drugs/{slug}/education` | Draft education nodes from the curator package — MVP live |
+| `GET /drugs/{id}/education/summaries` | Tiered summaries only — planned |
+| `GET /drugs/{id}/education/flashcards` | Flashcards for export — planned |
+| `GET /education/{id}` | Single education entity — planned |
 | `POST /compare` | Includes optional `include_education: true` |
 
 Response always includes `"content_layer": "education"`.

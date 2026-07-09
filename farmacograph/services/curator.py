@@ -20,6 +20,7 @@ from farmacograph.curator.drug_package import (
     load_curriculum,
     load_package,
 )
+from farmacograph.curator.education_package import education_items_for_entity
 from farmacograph.curator.publish_validator import (
     require_valid_publish_package,
     validate_publish_package,
@@ -118,6 +119,7 @@ class CuratorService:
         dataset_version: str = "2026.1.0",
         related_entities: list[dict[str, Any]] | None = None,
         relationships: list[dict[str, Any]] | None = None,
+        education: list[dict[str, Any]] | None = None,
         module: str | None = None,
         create_snapshot: bool = False,
     ) -> CuratorWorkflow:
@@ -138,6 +140,7 @@ class CuratorService:
             entity_payload,
             related_entities=related_entities,
             relationships=relationships,
+            education=education,
         )
 
         if self._writer.is_available:
@@ -478,6 +481,14 @@ class CuratorService:
         package = await self.resolve_package(slug, workflow)
         return package, workflow
 
+    async def get_drug_education(
+        self, slug: str
+    ) -> tuple[list[dict[str, Any]], CuratorWorkflow | None]:
+        entity_id = drug_entity_id(slug)
+        workflow = await self._curator.get_by_entity(entity_id)
+        package = await self.resolve_package(slug, workflow)
+        return education_items_for_entity(package, entity_id), workflow
+
     async def get_drug_workflow_state(self, slug: str) -> dict[str, Any]:
         """Aggregate workflow, validation, actors, and snapshot for a curriculum drug slug."""
         entity_id = drug_entity_id(slug)
@@ -673,6 +684,7 @@ class CuratorService:
             entity,
             related_entities=package.get("related_entities"),
             relationships=package.get("relationships"),
+            education=package.get("education"),
         )
         errors = [i for i in result.issues if i.severity == ValidationSeverity.ERROR]
         warnings = [i for i in result.issues if i.severity == ValidationSeverity.WARNING]

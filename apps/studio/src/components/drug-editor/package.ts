@@ -60,6 +60,7 @@ export function createEmptyDrugPackage(drugId: string, module = "cardiovascular"
     },
     related_entities: [],
     relationships: [],
+    education: [],
     dataset_version: "2026.1.0",
     module,
     create_snapshot: false,

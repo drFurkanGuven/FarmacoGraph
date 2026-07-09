@@ -17,12 +17,28 @@ class DrugService:
         self._graph = graph_repo
         self._settings = settings
 
-    def _meta(self, dataset_version: str | None = None, query_time_ms: int | None = None) -> ResponseMeta:
+    def _meta(
+        self, dataset_version: str | None = None, query_time_ms: int | None = None
+    ) -> ResponseMeta:
         return ResponseMeta(
-            dataset_version=dataset_version or self._settings.current_dataset_version or "unpublished",
+            dataset_version=dataset_version
+            or self._settings.current_dataset_version
+            or "unpublished",
             ontology_version=self._settings.ontology_version,
             query_time_ms=query_time_ms,
             content_layers=[ContentLayer.BIOMEDICAL],
+        )
+
+    def _education_meta(
+        self, dataset_version: str | None = None, query_time_ms: int | None = None
+    ) -> ResponseMeta:
+        return ResponseMeta(
+            dataset_version=dataset_version
+            or self._settings.current_dataset_version
+            or "unpublished",
+            ontology_version=self._settings.ontology_version,
+            query_time_ms=query_time_ms,
+            content_layers=[ContentLayer.EDUCATION],
         )
 
     async def list_drugs(
@@ -66,3 +82,16 @@ class DrugService:
             raise NotFoundError(f"Drug not found: {drug_id}")
         elapsed = int((time.perf_counter() - start) * 1000)
         return drug, self._meta(dataset_version, elapsed)
+
+    async def get_drug_education(
+        self,
+        drug_id: UUID,
+        dataset_version: str | None = None,
+    ) -> tuple[list[dict[str, Any]], ResponseMeta]:
+        import time
+
+        start = time.perf_counter()
+        rows = await self._graph.get_drug_education(drug_id, dataset_version)
+        elapsed = int((time.perf_counter() - start) * 1000)
+        education = [row.get("education", row) for row in rows]
+        return education, self._education_meta(dataset_version, elapsed)

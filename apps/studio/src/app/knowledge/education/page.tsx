@@ -1,7 +1,5 @@
 "use client";
 
-"use client";
-
 import { Suspense } from "react";
 import { BookOpen } from "lucide-react";
 import { KnowledgeSurface, commonKnowledgeLinks } from "@/components/knowledge/knowledge-surface";
@@ -12,8 +10,8 @@ export default function EducationPage() {
       <KnowledgeSurface
         eyebrow="Education layer"
         title="Education"
-        status="Read-only surface"
-        description="Education content is a separate layer from biomedical facts. This page links the live Drug Editor, evidence checks, and validation while the education CRUD API is still planned."
+        status="MVP live"
+        description="Education content is a separate layer from biomedical facts. Drug Editor now supports student-facing summaries and board-exam pearls, with education validation in the publish path."
         primary={{
           label: "Open validation",
           href: "/validation",
@@ -22,14 +20,14 @@ export default function EducationPage() {
         }}
         signals={[
           { label: "Layer separation", value: "documented", tone: "success" },
-          { label: "Drug education API", value: "planned", tone: "warning" },
-          { label: "Editor mode", value: "deferred", tone: "muted" },
+          { label: "Drug education API", value: "MVP live", tone: "success" },
+          { label: "Editor mode", value: "Drug Editor", tone: "success" },
         ]}
         links={commonKnowledgeLinks}
         deferred={[
-          "GET /drugs/{id}/education read contract",
-          "Education draft editing for FiveSecondSummary and BoardExamPearl",
-          "Publish package coverage and education validation gates",
+          "Dedicated global education manager",
+          "Flashcard and case export endpoints",
+          "Mechanism-linked teaching diagrams",
         ]}
       />
     </Suspense>

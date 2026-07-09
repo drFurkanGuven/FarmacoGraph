@@ -133,6 +133,7 @@ export interface DrugPackage {
   entity_payload: Record<string, unknown>;
   related_entities?: Record<string, unknown>[];
   relationships?: Record<string, unknown>[];
+  education?: Record<string, unknown>[];
   dataset_version?: string;
   module?: string | null;
   create_snapshot?: boolean;
@@ -255,6 +256,7 @@ export interface PublishPackageInput {
   entity_payload: Record<string, unknown>;
   related_entities?: Record<string, unknown>[];
   relationships?: Record<string, unknown>[];
+  education?: Record<string, unknown>[];
   dataset_version?: string;
   module?: string | null;
   create_snapshot?: boolean;

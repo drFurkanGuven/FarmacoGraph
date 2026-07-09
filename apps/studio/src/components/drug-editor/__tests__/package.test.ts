@@ -9,6 +9,7 @@ import {
   sectionFieldValues,
 } from "../package";
 import { DRUG_EDITOR_SECTIONS } from "../sections";
+import { updateEducationItem } from "../education";
 
 describe("drugRecordToPackage", () => {
   it("maps published drug records into an editor package", () => {
@@ -111,5 +112,34 @@ describe("relationshipCounts", () => {
       indications: 2,
       mechanisms: 0,
     });
+  });
+});
+
+describe("education package helpers", () => {
+  it("stores education nodes and HAS_EDUCATION edges outside biomedical fields", () => {
+    const pkg = createEmptyDrugPackage("drug-1");
+
+    const next = updateEducationItem(pkg, "drug-1", "FiveSecondSummary", {
+      text: "Rapid recall summary.",
+    });
+
+    expect(next.education).toHaveLength(1);
+    expect(next.education?.[0]).toMatchObject({
+      entity_type: "EducationResource",
+      kind: "FiveSecondSummary",
+      content_layer: "education",
+      text: "Rapid recall summary.",
+      linked_entity_ids: ["drug-1"],
+    });
+    expect(next.related_entities).toContainEqual(expect.objectContaining({
+      entity_type: "EducationResource",
+      content_layer: "education",
+    }));
+    expect(next.relationships).toContainEqual(expect.objectContaining({
+      relationship_type: "HAS_EDUCATION",
+      source_type: "Drug",
+      target_type: "EducationResource",
+      source_id: "drug-1",
+    }));
   });
 });

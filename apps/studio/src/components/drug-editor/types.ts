@@ -13,7 +13,7 @@ export interface DrugFieldDef {
   placeholder?: string;
 }
 
-export type DrugEditorSectionKind = "fields" | "evidence";
+export type DrugEditorSectionKind = "fields" | "evidence" | "education";
 
 export interface DrugEditorSection {
   id: string;

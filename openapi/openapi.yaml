@@ -306,6 +306,27 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
+  /curator/drugs/{slug}/education:
+    get:
+      tags: [Curator, Education]
+      summary: List draft education content for a drug by curriculum slug
+      operationId: listCuratorDrugEducation
+      security:
+        - BearerAuth: [curator:write]
+      parameters:
+        - $ref: "#/components/parameters/DrugSlug"
+      responses:
+        "200":
+          description: Draft drug education content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EducationListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
   /curator/drugs/{slug}/evidence:
     get:
       tags: [Curator, Evidence]
@@ -929,18 +950,17 @@ paths:
               schema:
                 $ref: "#/components/schemas/MechanismDAGResponse"
 
-  /drugs/{id}/education:
+  /drugs/{drug_id}/education:
     get:
       tags: [Education, Drugs]
       summary: Education layer content
       operationId: getDrugEducation
       parameters:
-        - $ref: "#/components/parameters/EntityId"
-        - name: types
+        - $ref: "#/components/parameters/DrugId"
+        - name: dataset_version
           in: query
           schema:
-            type: array
-            items: { type: string }
+            type: string
       responses:
         "200":
           description: Education content

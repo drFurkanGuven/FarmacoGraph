@@ -254,7 +254,7 @@ The primary curator interface is `apps/studio` — a Next.js App Router client t
 | Drug browser | `/knowledge/drugs` | Live — list, filter, sort, workflow status overlay |
 | Drug editor | `/knowledge/drugs/[id]` | Live — sectioned editing, curator draft autosave, live validation |
 | Validation Center | `/validation` | Live — grouped issues, publish readiness, queue dry-runs |
-| Other knowledge surfaces | `/knowledge/diseases`, `/knowledge/evidence`, `/knowledge/education`, `/knowledge/mechanisms` | Disease + evidence live; education/mechanism connected surfaces until editor APIs land |
+| Other knowledge surfaces | `/knowledge/diseases`, `/knowledge/evidence`, `/knowledge/education`, `/knowledge/mechanisms` | Disease + evidence live; education MVP live in Drug Editor; mechanism connected surface until editor APIs land |
 | Graph Explorer | `/graph` | Connected surface; interactive graph query/canvas deferred |
 | Publish / snapshots | `/snapshots` | Connected snapshot marker; full release diff manager deferred |
 

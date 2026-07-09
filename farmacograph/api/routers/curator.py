@@ -256,6 +256,25 @@ def _curator_evidence_error(exc: FarmacoGraphError) -> HTTPException:
     return HTTPException(status_code=status, detail={"code": exc.code, "message": exc.message})
 
 
+@router.get("/drugs/{slug}/education")
+async def list_curator_drug_education(
+    slug: str,
+    service=Depends(get_curator_service),
+    _auth: Annotated[AuthContext, Depends(require_scope("curator:write"))] = None,
+) -> dict:
+    data, workflow = await service.get_drug_education(slug)
+    return {
+        "data": data,
+        "meta": {
+            "api_version": "v1",
+            "count": len(data),
+            "slug": slug,
+            "workflow_id": str(workflow.id) if workflow else None,
+            "content_layers": ["education"],
+        },
+    }
+
+
 @router.put("/workflows/{workflow_id}/package")
 async def save_workflow_package(
     workflow_id: UUID,
@@ -267,6 +286,7 @@ async def save_workflow_package(
         "entity_payload": body.entity_payload,
         "related_entities": body.related_entities,
         "relationships": body.relationships,
+        "education": body.education,
         "dataset_version": body.dataset_version,
         "module": body.module,
         "create_snapshot": body.create_snapshot,
@@ -297,6 +317,7 @@ async def validate_package(
         body.entity_payload,
         related_entities=body.related_entities,
         relationships=body.relationships,
+        education=body.education,
     )
     validation = {
         "valid": result.valid,
@@ -461,6 +482,7 @@ async def publish_workflow(
         "entity_payload": body.entity_payload,
         "related_entities": body.related_entities,
         "relationships": body.relationships,
+        "education": body.education,
         "dataset_version": body.dataset_version,
         "module": body.module,
         "create_snapshot": body.create_snapshot,
@@ -473,6 +495,7 @@ async def publish_workflow(
             dataset_version=body.dataset_version,
             related_entities=body.related_entities,
             relationships=body.relationships,
+            education=body.education,
             module=body.module,
             create_snapshot=body.create_snapshot,
         )

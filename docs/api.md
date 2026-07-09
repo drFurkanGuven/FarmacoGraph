@@ -462,16 +462,19 @@ Mechanism DAG projection.
 
 ### `GET /drugs/{id}/education`
 
-All education layer content for a drug.
+All published education layer content for a drug.
 
 **Query parameters:**
 
 | Param | Type | Description |
 |-------|------|-------------|
-| `types` | string[] | Filter by education type |
-| `audience` | string | MBBS, USMLE, TUS |
+| `dataset_version` | string | Optional published dataset version |
 
 **Response:** All nodes include `"content_layer": "education"`.
+
+### `GET /curator/drugs/{slug}/education`
+
+Draft education layer content from the curator package. Requires `curator:write`.
 
 ---
 

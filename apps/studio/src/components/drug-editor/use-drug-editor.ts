@@ -15,6 +15,7 @@ import {
   mergeDirtySections,
   saveDrugPackage,
 } from "./autosave";
+import { syncEducationGraphRows } from "./education";
 import { applyFieldChange, createEmptyDrugPackage } from "./package";
 import { ensureTreatsRelationshipEdges } from "./treats-relationships";
 import { DEFAULT_SECTION_ID, getSectionById } from "./sections";
@@ -123,7 +124,11 @@ export function useDrugEditor({ drugId }: UseDrugEditorOptions) {
       try {
         const loaded = await loadCuratorDrugPackage(client, drugId);
         const workflow = loaded.workflow;
-        const pkg = ensureTreatsRelationshipEdges(loaded.package);
+        const pkgWithTreats = ensureTreatsRelationshipEdges(loaded.package);
+        const pkg = syncEducationGraphRows(
+          pkgWithTreats,
+          String(pkgWithTreats.entity_payload.id ?? drugId),
+        );
 
         if (cancelled) return;
 
