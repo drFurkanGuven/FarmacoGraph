@@ -10,6 +10,7 @@ import type {
   DrugBrowseItem,
   DiseaseBrowseItem,
   DrugPackage,
+  EducationResource,
   DrugSummary,
   DrugWorkflowState,
   HealthData,
@@ -103,6 +104,24 @@ export class FarmacoGraphClient {
     const params: Record<string, string | number | boolean | undefined> = {};
     if (datasetVersion) params.dataset_version = datasetVersion;
     return this.request<Record<string, unknown>>(`/drugs/${drugId}`, {
+      params,
+      datasetVersion,
+    });
+  }
+
+  getDrugEducation(drugId: string, datasetVersion?: string | null) {
+    const params: Record<string, string | number | boolean | undefined> = {};
+    if (datasetVersion) params.dataset_version = datasetVersion;
+    return this.request<EducationResource[]>(`/drugs/${drugId}/education`, {
+      params,
+      datasetVersion,
+    });
+  }
+
+  getDrugFlashcards(drugId: string, datasetVersion?: string | null) {
+    const params: Record<string, string | number | boolean | undefined> = {};
+    if (datasetVersion) params.dataset_version = datasetVersion;
+    return this.request<EducationResource[]>(`/drugs/${drugId}/education/flashcards`, {
       params,
       datasetVersion,
     });
@@ -233,6 +252,14 @@ export class FarmacoGraphClient {
 
   getDrugWorkflowState(slug: string) {
     return this.request<DrugWorkflowState>(`/curator/drugs/${slug}/workflow-state`);
+  }
+
+  getCuratorDrugEducation(slug: string) {
+    return this.request<EducationResource[]>(`/curator/drugs/${slug}/education`);
+  }
+
+  getCuratorDrugFlashcards(slug: string) {
+    return this.request<EducationResource[]>(`/curator/drugs/${slug}/education/flashcards`);
   }
 
   saveWorkflowPackage(workflowId: string, body: PublishPackageInput) {

@@ -34,6 +34,7 @@ interface KnowledgeSurfaceProps {
 
 function withDrugContext(href: string, drug: string | null) {
   if (!drug) return href;
+  if (href.includes(encodeURIComponent(drug))) return href;
   const separator = href.includes("?") ? "&" : "?";
   return `${href}${separator}drug=${encodeURIComponent(drug)}`;
 }

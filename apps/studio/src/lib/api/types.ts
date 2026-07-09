@@ -139,6 +139,30 @@ export interface DrugPackage {
   create_snapshot?: boolean;
 }
 
+export interface EducationResource {
+  id: string;
+  entity_type: "EducationResource";
+  kind?: string;
+  slug?: string;
+  label?: string;
+  text?: string;
+  mnemonic?: string;
+  expansion?: string;
+  mistake?: string;
+  correction?: string;
+  why_wrong?: string;
+  front?: string;
+  back?: string;
+  hint?: string;
+  content_layer: "education";
+  audience?: string[];
+  difficulty_level?: string;
+  language?: string;
+  module?: string | null;
+  exam_tags?: string[];
+  linked_entity_ids?: string[];
+}
+
 export interface PackageValidation {
   valid: boolean;
   error_count: number;

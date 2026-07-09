@@ -28,6 +28,8 @@ export const apiQueryKeys = {
     [...apiQueryKeys.all, "disease-workflow-state", slug] as const,
   drugPackage: (slug: string) => [...apiQueryKeys.all, "drug-package", slug] as const,
   drugWorkflowState: (slug: string) => [...apiQueryKeys.all, "drug-workflow-state", slug] as const,
+  drugEducation: (drug: string) => [...apiQueryKeys.all, "drug-education", drug] as const,
+  drugFlashcards: (drug: string) => [...apiQueryKeys.all, "drug-flashcards", drug] as const,
   workflow: (workflowId: string) => [...apiQueryKeys.all, "workflow", workflowId] as const,
   workflowTimeline: (workflowId: string, pagination?: { limit?: number; offset?: number }) =>
     [...apiQueryKeys.all, "workflow-timeline", workflowId, pagination ?? {}] as const,

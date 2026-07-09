@@ -8,6 +8,12 @@ import { defaultMutationOptions, defaultQueryOptions, DASHBOARD_REFRESH_MS } fro
 import { apiQueryKeys } from "./keys";
 import { useApiQuery } from "./optimistic";
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i;
+
+function isUuid(value: string): boolean {
+  return UUID_RE.test(value);
+}
+
 export function useHealth() {
   const client = useApiClient();
   return useApiQuery(apiQueryKeys.health(), () => client.health(), defaultQueryOptions);
@@ -121,6 +127,24 @@ export function useDrug(drugId: string) {
     apiQueryKeys.drug(drugId),
     () => client.getDrug(drugId),
     { ...defaultQueryOptions, enabled: Boolean(drugId) },
+  );
+}
+
+export function useDrugEducation(drug: string) {
+  const client = useApiClient();
+  return useApiQuery(
+    apiQueryKeys.drugEducation(drug),
+    () => (isUuid(drug) ? client.getDrugEducation(drug) : client.getCuratorDrugEducation(drug)),
+    { ...defaultQueryOptions, enabled: Boolean(drug) },
+  );
+}
+
+export function useDrugFlashcards(drug: string) {
+  const client = useApiClient();
+  return useApiQuery(
+    apiQueryKeys.drugFlashcards(drug),
+    () => (isUuid(drug) ? client.getDrugFlashcards(drug) : client.getCuratorDrugFlashcards(drug)),
+    { ...defaultQueryOptions, enabled: Boolean(drug) },
   );
 }
 
