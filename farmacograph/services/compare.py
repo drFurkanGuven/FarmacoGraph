@@ -40,6 +40,14 @@ class CompareService:
             "comparison": {dim: {"status": "no_data"} for dim in dimensions},
             "subgraph": {"nodes": [], "edges": []},
         }
+        if include_education:
+            result["education"] = {
+                str(drug_id): [
+                    row.get("education", row)
+                    for row in await self._graph.get_drug_education(drug_id)
+                ]
+                for drug_id in drug_ids
+            }
         meta = ResponseMeta(
             dataset_version="unpublished",
             ontology_version="1.0.0",

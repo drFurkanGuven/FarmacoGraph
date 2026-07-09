@@ -755,10 +755,17 @@ Compare multiple drugs side-by-side.
       "interactions": {},
       "dosing": {}
     },
-    "subgraph": {}
+    "subgraph": {},
+    "education": {
+      "00000000-0000-4000-8000-000000000001": [
+        {"kind": "Flashcard", "front": "Which suffix suggests an ACE inhibitor?", "back": "-pril"}
+      ]
+    }
   }
 }
 ```
+
+`education` is present only when `include_education=true`; items remain marked as education layer content, not biomedical assertions.
 
 ---
 

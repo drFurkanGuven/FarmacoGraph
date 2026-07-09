@@ -2217,7 +2217,22 @@ components:
     CompareResponse:
       type: object
       properties:
-        data: { type: object }
+        data:
+          type: object
+          properties:
+            drug_ids:
+              type: array
+              items: { type: string, format: uuid }
+            dimensions:
+              type: array
+              items: { type: string }
+            comparison: { type: object }
+            subgraph: { type: object }
+            education:
+              type: object
+              additionalProperties:
+                type: array
+                items: { type: object }
         meta: { $ref: "#/components/schemas/ResponseMeta" }
 
     GraphQueryRequest:
