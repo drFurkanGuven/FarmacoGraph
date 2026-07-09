@@ -22,6 +22,7 @@ import type {
   PublishPackageInput,
   PublishWorkflowResult,
   StatisticsData,
+  StudyViewData,
   ValidationResult,
   WorkflowItem,
   WorkflowTimelineEvent,
@@ -129,6 +130,10 @@ export class FarmacoGraphClient {
 
   getDrugPrerequisites(drugSlug: string) {
     return this.request<Record<string, unknown>>(`/drugs/${drugSlug}/prerequisites`);
+  }
+
+  getDrugStudyView(drugRef: string) {
+    return this.request<StudyViewData>(`/drugs/${drugRef}/study`);
   }
 
   dashboard(module = "cardiovascular") {

@@ -148,6 +148,15 @@ export function useDrugFlashcards(drug: string) {
   );
 }
 
+export function useDrugStudyView(drug: string) {
+  const client = useApiClient();
+  return useApiQuery(
+    apiQueryKeys.drugStudyView(drug),
+    () => client.getDrugStudyView(drug),
+    { ...defaultQueryOptions, enabled: Boolean(drug) },
+  );
+}
+
 export function useExplain(drug: string, effect?: string) {
   const client = useApiClient();
   return useApiQuery(

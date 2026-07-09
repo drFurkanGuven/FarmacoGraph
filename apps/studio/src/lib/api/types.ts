@@ -163,6 +163,21 @@ export interface EducationResource {
   linked_entity_ids?: string[];
 }
 
+export interface StudyPlanStep {
+  step: string;
+  title: string;
+  count?: number;
+}
+
+export interface StudyViewData {
+  drug: Record<string, unknown>;
+  education: EducationResource[];
+  flashcards: EducationResource[];
+  prerequisites: Record<string, unknown>[];
+  study_plan: StudyPlanStep[];
+  content_layers: string[];
+}
+
 export interface PackageValidation {
   valid: boolean;
   error_count: number;
