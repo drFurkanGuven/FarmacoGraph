@@ -32,7 +32,7 @@ function LoginForm() {
   // Never treat /login as a destination — that re-entered the redirect loop.
   const returnTo = safeReturnTo(searchParams.get("returnTo"));
   const { loginWithPassword, loginWithApiKey, isLoading, isAuthenticated } = useAuth();
-  const [mode, setMode] = useState<"password" | "apiKey">("apiKey");
+  const [mode, setMode] = useState<"password" | "apiKey">("password");
 
   const passwordForm = useForm<PasswordForm>({
     resolver: zodResolver(passwordSchema),

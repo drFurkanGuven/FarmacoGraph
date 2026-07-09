@@ -16,6 +16,7 @@ import {
   saveDrugPackage,
 } from "./autosave";
 import { applyFieldChange, createEmptyDrugPackage } from "./package";
+import { ensureTreatsRelationshipEdges } from "./treats-relationships";
 import { DEFAULT_SECTION_ID, getSectionById } from "./sections";
 import type { DrugEditorSnapshot, DrugPublishPackage, SaveStatus } from "./types";
 
@@ -122,7 +123,7 @@ export function useDrugEditor({ drugId }: UseDrugEditorOptions) {
       try {
         const loaded = await loadCuratorDrugPackage(client, drugId);
         const workflow = loaded.workflow;
-        const pkg = loaded.package;
+        const pkg = ensureTreatsRelationshipEdges(loaded.package);
 
         if (cancelled) return;
 
@@ -189,6 +190,21 @@ export function useDrugEditor({ drugId }: UseDrugEditorOptions) {
     [runSave, runValidation],
   );
 
+  const updatePackage = useCallback(
+    (sectionId: string, nextPackage: DrugPublishPackage) => {
+      packageRef.current = nextPackage;
+      setSnapshot((current) => ({
+        ...current,
+        package: nextPackage,
+        saveStatus: "pending" as SaveStatus,
+        dirtySections: mergeDirtySections(current.dirtySections, sectionId),
+      }));
+      runValidation(nextPackage);
+      runSave(sectionId, nextPackage);
+    },
+    [runSave, runValidation],
+  );
+
   const retrySave = useCallback(() => {
     const sectionId = snapshot.dirtySections[0] ?? snapshot.activeSectionId;
     runSave.flush();
@@ -225,6 +241,7 @@ export function useDrugEditor({ drugId }: UseDrugEditorOptions) {
     activeSection,
     setActiveSection,
     updateField,
+    updatePackage,
     retrySave,
     retryLoad,
   };

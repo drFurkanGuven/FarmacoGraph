@@ -60,7 +60,7 @@ export const DRUG_EDITOR_SECTIONS: DrugEditorSection[] = [
   {
     id: "indications",
     title: "Indications",
-    description: "Disease and condition links for this drug.",
+    description: "Link diseases this drug treats and add publish metadata for each TREATS edge.",
     fields: [
       {
         key: "treats",

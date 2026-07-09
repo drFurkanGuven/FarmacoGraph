@@ -4,8 +4,8 @@ import { cn } from "@/lib/utils";
 import { PropertyEditor, type PropertyEditorField } from "@/components/ui";
 import type { ValidationResult } from "@/lib/api";
 import { DrugEvidenceSection } from "./drug-evidence-section";
-import { DiseasePicker } from "./disease-picker";
-import { getValueAtPath, sectionFieldValues } from "./package";
+import { IndicationsSection } from "./indications-section";
+import { sectionFieldValues } from "./package";
 import type { DrugEditorSection, DrugPublishPackage } from "./types";
 
 export interface DrugSectionEditorProps {
@@ -15,6 +15,7 @@ export interface DrugSectionEditorProps {
   validation: ValidationResult | null;
   disabled?: boolean;
   onFieldChange: (fieldKey: string, value: string) => void;
+  onPackageChange?: (next: DrugPublishPackage) => void;
   className?: string;
 }
 
@@ -25,6 +26,7 @@ export function DrugSectionEditor({
   validation,
   disabled = false,
   onFieldChange,
+  onPackageChange,
   className,
 }: DrugSectionEditorProps) {
   if (section.kind === "evidence" || section.id === "evidence") {
@@ -46,19 +48,17 @@ export function DrugSectionEditor({
   }
 
   if (section.id === "indications") {
-    const treats = getValueAtPath(pkg, "entity_payload.relationships.TREATS");
-    const selectedIds = Array.isArray(treats) ? treats.map((entry) => String(entry)) : [];
-
     return (
       <div className={cn("space-y-4", className)}>
         <div>
           <h2 className="text-lg font-semibold tracking-tight">{section.title}</h2>
           {section.description && <p className="mt-1 text-sm text-muted-foreground">{section.description}</p>}
         </div>
-        <DiseasePicker
-          selectedIds={selectedIds}
+        <IndicationsSection
+          pkg={pkg}
+          drugId={drugId}
           disabled={disabled}
-          onChange={(nextIds) => onFieldChange("treats", nextIds.join("\n"))}
+          onPackageChange={(next) => onPackageChange?.(next)}
         />
       </div>
     );

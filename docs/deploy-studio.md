@@ -20,8 +20,9 @@ Then open **https://farmacograph.furkanguven.space/studio/login/** in a browser 
 
 | Symptom | Meaning | Fix |
 |---------|---------|-----|
+| `/studio/` or `/studio/login/` → **502** | Nginx cannot reach Studio (container starting, crashed, or not on `:3001`) | `docker compose ps studio` → **healthy**; if **starting** wait ~60s and re-run smoke. If **exited**: `docker compose logs studio --tail 80` then `./scripts/fix-studio-production.sh` |
 | `/studio/` loads, `/api/v1/dashboard` → **401** without login | **Expected** — Studio/API auth works | Sign in |
-| Login → “Invalid email or password” | Production has **no curator** (seeds are `development`/`test` only) | `./scripts/create-curator.sh --email …` |
+| Login → “Invalid email or password” | No curator, wrong password, or **API key tab** selected by mistake | Click **Email & password**; then `./scripts/create-curator.sh --email …` |
 | Login OK but `/dashboard` → **500** | Schema drift (`draft_package_json` missing) | `./scripts/migrate-schema.sh` then restart API |
 | Chunk 404 under `/studio/_next/static/...` | Studio image missing runtime `basePath=/studio` | `./scripts/deploy-production.sh` (no `--fast`) |
 

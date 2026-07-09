@@ -43,7 +43,7 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
   const [contextOpen, setContextOpen] = useState(false);
   const [publishOpen, setPublishOpen] = useState(false);
   const [workflowOverride, setWorkflowOverride] = useState<WorkflowItem | null>(null);
-  const { loading, loadError, snapshot, activeSection, setActiveSection, updateField, retrySave, retryLoad } =
+  const { loading, loadError, snapshot, activeSection, setActiveSection, updateField, updatePackage, retrySave, retryLoad } =
     useDrugEditor({ drugId });
 
   const workflow = workflowOverride ?? snapshot.workflow;
@@ -149,6 +149,7 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
             validation={snapshot.validation}
             disabled={snapshot.saveStatus === "saving"}
             onFieldChange={(fieldKey, value) => updateField(snapshot.activeSectionId, fieldKey, value)}
+            onPackageChange={(next) => updatePackage(snapshot.activeSectionId, next)}
           />
         </main>
 
