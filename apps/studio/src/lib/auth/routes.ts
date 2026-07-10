@@ -25,7 +25,7 @@ export const ROUTE_GUARDS: Record<string, RouteGuardConfig> = {
   "/knowledge/education": { requireAuth: true, scopes: ["curator:write"] },
   "/validation": { requireAuth: true, scopes: ["curator:write"] },
   "/snapshots": { requireAuth: true, scopes: ["curator:publish"] },
-  "/graph": { requireAuth: true, scopes: ["knowledge:read"] },
+  "/graph": { requireAuth: true, scopes: ["curator:write"] },
   "/search": { requireAuth: true, scopes: ["knowledge:search"] },
 };
 

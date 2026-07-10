@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { KnowledgeSurface, commonKnowledgeLinks } from "@/components/knowledge/knowledge-surface";
+import { DrugFocusPicker } from "@/components/knowledge/drug-focus-picker";
 import { InteractiveGraphCanvas, nodeLabel } from "@/components/graph";
 import {
   useDrugMechanism,
@@ -280,14 +281,14 @@ function MechanismsSurface() {
         eyebrow="Mechanism layer"
         title="Mechanisms"
         status="MVP live"
-        description="Select mechanism roots in the Drug Editor catalog picker, then inspect the published DAG and Explain API preview here."
+        description="Pick a drug to inspect its published mechanism DAG and Explain preview. Root selection still happens in the Drug Editor."
         primary={{
-          label: focusedDrug ? "Edit mechanism" : "Open graph context",
-          href: focusedDrug ? `/knowledge/drugs/${encodeURIComponent(focusedDrug)}` : "/graph",
+          label: focusedDrug ? "Edit mechanism" : "Open drug browser",
+          href: focusedDrug ? `/knowledge/drugs/${encodeURIComponent(focusedDrug)}` : "/knowledge/drugs",
           icon: focusedDrug ? Pencil : GitBranch,
           description: focusedDrug
             ? "Open the focused Drug Editor mechanism picker."
-            : "Inspect the graph surface before deeper pathway authoring.",
+            : "Choose a drug in the editor to attach HAS_MECHANISM_ROOT, then publish.",
         }}
         signals={[
           { label: "Mechanism picker", value: "live", tone: "success" },
@@ -301,7 +302,11 @@ function MechanismsSurface() {
           "Interactive pharmacology pathway diagrams beyond root selection",
         ]}
       />
-      {focusedDrug && <FocusedMechanismPanel drug={focusedDrug} />}
+      <DrugFocusPicker
+        title="Drug for mechanism preview"
+        description="Select a drug to load /drugs/{uuid}/mechanism. Attach roots in the Drug Editor, then publish before expecting a DAG."
+      />
+      {focusedDrug ? <FocusedMechanismPanel drug={focusedDrug} /> : null}
     </div>
   );
 }

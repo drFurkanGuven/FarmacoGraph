@@ -21,9 +21,9 @@ The Curation Studio is the official interface for authoring, reviewing, validati
 | `/validation` | **Complete** | Validation Center — `GET /curator/validation-summary`, queue dry-runs via `POST /curator/validate` |
 | `/knowledge/diseases` | **MVP live** | Disease browser (Add disease) + editor with provenance, autosave status, validation context, publish wizard; disease evidence attach deferred |
 | `/knowledge/education` | **MVP live** | Drug Editor education section for summaries, pearls, mnemonics, common mistakes, and flashcards; `GET /drugs/{id}/education` + flashcard read contracts |
-| `/knowledge/mechanisms` | **MVP live** | Mechanism fragment picker in Drug Editor; published DAG + Explain preview with interactive canvas; full pathway authoring deferred |
+| `/knowledge/mechanisms` | **MVP live** | Drug focus picker + published DAG / Explain preview; full pathway authoring deferred |
 | `/knowledge/evidence` | **Complete** | Evidence manager — browse/search/create via `GET/POST /evidence` |
-| `/graph` | **MVP live** | Interactive React Flow neighborhood (`GET /drugs/{uuid}/graph`); generic query explorer deferred |
+| `/graph` | **MVP live** | Drug focus picker + interactive neighborhood (`GET /drugs/{uuid}/graph`); generic query explorer deferred |
 | `/snapshots` | **MVP live** | `GET /snapshots`, `GET /snapshots/{version_tag}`; list + detail with manifest JSON; diff/release manager deferred |
 | `/activity` | **Connected** | Audit log + background jobs surface |
 | `/users` | **MVP live** | Admin user directory + create/edit + API key issue/revoke |

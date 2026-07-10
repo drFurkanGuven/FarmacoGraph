@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { KnowledgeSurface, commonKnowledgeLinks } from "@/components/knowledge/knowledge-surface";
+import { DrugFocusPicker } from "@/components/knowledge/drug-focus-picker";
 import { InteractiveGraphCanvas, relationshipLabel } from "@/components/graph";
 import { useDrugGraph, useDrugWorkflowState } from "@/lib/api/react-query/hooks";
 
@@ -68,6 +69,11 @@ function FocusedGraphPanel({ drug }: { drug: string }) {
               <p className="text-sm text-muted-foreground">Loading graph projection...</p>
             ) : graphQuery.error ? (
               <p className="text-sm text-destructive">Unable to load graph projection.</p>
+            ) : nodes.length === 0 ? (
+              <p className="rounded-md border bg-muted/30 p-3 text-sm text-muted-foreground">
+                Empty neighborhood. Publish this drug to Neo4j (with relationships) to see nodes here.
+                Draft-only packages do not appear in the live graph projection.
+              </p>
             ) : (
               <>
                 <InteractiveGraphCanvas
@@ -186,14 +192,14 @@ function GraphSurface() {
         eyebrow="Graph explorer"
         title="Graph Explorer"
         status="MVP live"
-        description="Interactive neighborhood projection with pan/zoom and node selection. Snapshot relationship diffs remain deferred."
+        description="Pick a drug below to load its published Neo4j neighborhood. Snapshot relationship diffs remain deferred."
         primary={{
-          label: focusedDrug ? "Open editor" : "Open evidence",
-          href: focusedDrug ? `/knowledge/drugs/${encodeURIComponent(focusedDrug)}` : "/knowledge/evidence",
+          label: focusedDrug ? "Open editor" : "Open drug browser",
+          href: focusedDrug ? `/knowledge/drugs/${encodeURIComponent(focusedDrug)}` : "/knowledge/drugs",
           icon: focusedDrug ? Pencil : GitBranch,
           description: focusedDrug
             ? "Return to the focused drug curation workspace."
-            : "Review the evidence layer that supports graph assertions.",
+            : "Browse curriculum drugs, then return here to inspect the graph.",
         }}
         signals={[
           { label: "Graph write", value: "publish path", tone: "success" },
@@ -207,7 +213,11 @@ function GraphSurface() {
           "Relationship diff views across snapshots",
         ]}
       />
-      {focusedDrug && <FocusedGraphPanel drug={focusedDrug} />}
+      <DrugFocusPicker
+        title="Drug for graph projection"
+        description="Select a published drug to render /drugs/{uuid}/graph. Empty canvas usually means the drug is not yet in Neo4j."
+      />
+      {focusedDrug ? <FocusedGraphPanel drug={focusedDrug} /> : null}
     </div>
   );
 }
