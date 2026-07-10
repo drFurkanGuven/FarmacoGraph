@@ -133,6 +133,7 @@ See [api.md §1.3](api.md#13-curator-publish-workflow) and [studio-roadmap.md](s
   - **Center:** structured field editor (autosave per section, inline validation)
   - **Right context panel (live):** related mechanisms, linked diseases, evidence count, recent changes, publish preview, validation summary, graph position
   - Curator sees the drug’s place in the knowledge graph while editing — critical at scale
+- Disease Editor — browser + sectioned editor with provenance, AutosaveStatus, validation context panel, and publish wizard (disease evidence attach deferred)
 - Relationship Editor — visual, ontology-constrained
 - Mechanism Editor — React Flow DAG
 - Graph Explorer — Cytoscape.js

@@ -1,15 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Rocket } from "lucide-react";
+import Link from "next/link";
+import { ArrowLeft, Rocket } from "lucide-react";
 import { PublishWizard } from "@/components/publish-wizard";
-import { WorkflowStatePanel } from "@/components/publish-wizard/workflow-state-panel";
+import { AutosaveStatus } from "@/components/drug-editor/autosave-status";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ErrorState } from "@/components/ui/error-state";
 import { TableSkeleton } from "@/components/ui/loading-skeleton";
-import { ValidationBadge } from "@/components/ui/validation-badge";
 import { EntityEditorShell } from "@/components/entity-editor";
+import { DiseaseContextPanel } from "./disease-context-panel";
 import { DiseaseSectionEditor } from "./disease-section-editor";
 import { useDiseaseEditor } from "./use-disease-editor";
 
@@ -22,7 +23,13 @@ export function DiseaseEditorWorkspace({ diseaseSlug }: { diseaseSlug: string })
   }
 
   if (editor.loadError) {
-    return <ErrorState title="Unable to open disease editor" message={editor.loadError} />;
+    return (
+      <ErrorState
+        title="Unable to open disease editor"
+        message={editor.loadError}
+        onRetry={editor.retryLoad}
+      />
+    );
   }
 
   const { snapshot } = editor;
@@ -34,15 +41,18 @@ export function DiseaseEditorWorkspace({ diseaseSlug }: { diseaseSlug: string })
         subtitle={`Disease editor · ${diseaseSlug}`}
         headerActions={
           <>
-            <span className="text-xs text-muted-foreground">
-              {snapshot.saveStatus === "saving"
-                ? "Saving…"
-                : snapshot.saveStatus === "saved"
-                  ? "Saved"
-                  : snapshot.saveStatus === "error"
-                    ? snapshot.saveError
-                    : "Idle"}
-            </span>
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/knowledge/diseases">
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </Link>
+            </Button>
+            <AutosaveStatus
+              status={snapshot.saveStatus}
+              error={snapshot.saveError}
+              lastSavedAt={snapshot.lastSavedAt}
+              onRetry={editor.retrySave}
+            />
             <Button size="sm" onClick={() => setPublishOpen(true)}>
               <Rocket className="h-4 w-4" />
               Publish
@@ -79,46 +89,7 @@ export function DiseaseEditorWorkspace({ diseaseSlug }: { diseaseSlug: string })
             </CardContent>
           </Card>
         }
-        contextPanel={
-          <div className="space-y-3">
-            <WorkflowStatePanel
-              snapshot={{
-                drugId: diseaseSlug,
-                workflow: snapshot.workflow,
-                package: snapshot.package,
-                activeSectionId: snapshot.activeSectionId,
-                saveStatus: snapshot.saveStatus,
-                saveError: snapshot.saveError,
-                lastSavedAt: snapshot.lastSavedAt,
-                lastSaveStrategy: null,
-                dirtySections: snapshot.dirtySections,
-                validation: snapshot.validation,
-                validationPending: snapshot.validationPending,
-              }}
-              entityType="Disease"
-              compact
-            />
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Validation</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm">
-                <ValidationBadge
-                  status={
-                    snapshot.validation?.valid
-                      ? "valid"
-                      : snapshot.validation
-                        ? "invalid"
-                        : "pending"
-                  }
-                />
-                {snapshot.workflow?.state ? (
-                  <p className="text-muted-foreground">Workflow: {snapshot.workflow.state}</p>
-                ) : null}
-              </CardContent>
-            </Card>
-          </div>
-        }
+        contextPanel={<DiseaseContextPanel snapshot={snapshot} diseaseSlug={diseaseSlug} />}
       />
       <PublishWizard
         open={publishOpen}

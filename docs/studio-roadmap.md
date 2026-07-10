@@ -19,7 +19,7 @@ The Curation Studio is the official interface for authoring, reviewing, validati
 | `/knowledge/drugs` | **Complete** | Drug Browser — merges `GET /drugs`, `GET /search`, `GET /modules`, `GET /curator/queue`; opens editor at `/knowledge/drugs/{slug\|id}` |
 | `/knowledge/drugs/[id]` | **Complete** | Drug Editor — sectioned fields, debounced autosave (`PUT .../package`), live validation |
 | `/validation` | **Complete** | Validation Center — `GET /curator/validation-summary`, queue dry-runs via `POST /curator/validate` |
-| `/knowledge/diseases` | **Connected** | Disease browser for shared disease nodes and curator workflows |
+| `/knowledge/diseases` | **MVP live** | Disease browser + editor with provenance, autosave status, validation context, publish wizard; disease evidence attach deferred |
 | `/knowledge/education` | **MVP live** | Drug Editor education section for summaries, pearls, mnemonics, common mistakes, and flashcards; `GET /drugs/{id}/education` + flashcard read contracts |
 | `/knowledge/mechanisms` | **MVP live** | Published mechanism DAG + Explain API preview; full DAG editor deferred |
 | `/knowledge/evidence` | **Complete** | Evidence manager — browse/search/create via `GET/POST /evidence` |
@@ -103,7 +103,7 @@ gantt
 |-------------|----------------|--------|
 | **4.2.2 Drug Browser** | `GET /drugs`, `GET /search`, `GET /modules`, `GET /curator/queue` | **Complete** |
 | **4.2.3 Drug Editor** (Obsidian-style) | `POST /curator/drugs/{slug}/workflows`, `PUT /curator/workflows/{id}/package`, `POST /curator/validate` | **Complete** |
-| Disease / indication browser | `GET /diseases`, `GET /curator/diseases` | **Connected** — browser surface; full authoring deferred |
+| Disease / indication browser | `GET /diseases`, `GET /curator/diseases` | **MVP live** — browser + editor with provenance, AutosaveStatus, context panel, publish wizard; evidence attach deferred |
 | Evidence Manager | `/evidence` + drug attach endpoints | **Live** — global browser + Drug Editor section; live-stack Neo4j coverage still needed |
 | Educational layer surface | Education endpoints | **MVP live** — Drug Editor authoring + published education/study API preview |
 | Relationship Editor | Graph write via curator publish | Planned |

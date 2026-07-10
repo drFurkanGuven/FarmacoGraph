@@ -33,7 +33,7 @@ export interface EntityEditorSnapshot {
   workflow: WorkflowItem | null;
   package: EntityPublishPackage;
   activeSectionId: string;
-  saveStatus: "idle" | "saving" | "saved" | "error";
+  saveStatus: "idle" | "pending" | "saving" | "saved" | "error";
   saveError: string | null;
   lastSavedAt: string | null;
   dirtySections: string[];

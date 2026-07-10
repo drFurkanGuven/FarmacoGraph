@@ -27,7 +27,11 @@ export function createEmptyDiseasePackage(slug: string): DiseasePublishPackage {
       description: "",
       prevalence_note: "",
       external_ids: { icd10: "", mesh: "" },
-      provenance: { curator_attestation: false },
+      provenance: {
+        source: "manual",
+        created_by: "",
+        curator_attestation: false,
+      },
       versioning: { status: "draft" },
     },
     related_entities: [],

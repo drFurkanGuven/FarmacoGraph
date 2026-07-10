@@ -29,6 +29,34 @@ export const DISEASE_EDITOR_SECTIONS: EntityEditorSection[] = [
       { key: "mesh", label: "MeSH", type: "text", path: "entity_payload.external_ids.mesh" },
     ],
   },
+  {
+    id: "provenance",
+    title: "Provenance",
+    description: "Attribution and curation metadata required by validators.",
+    fields: [
+      {
+        key: "source",
+        label: "Source",
+        type: "text",
+        path: "entity_payload.provenance.source",
+        placeholder: "manual",
+      },
+      {
+        key: "created_by",
+        label: "Created by",
+        type: "text",
+        path: "entity_payload.provenance.created_by",
+      },
+      {
+        key: "curator_attestation",
+        label: "Curator attestation",
+        type: "text",
+        path: "entity_payload.provenance.curator_attestation",
+        description: "Set to true when a human curator attests the content.",
+        placeholder: "true",
+      },
+    ],
+  },
 ];
 
 export function getSectionById(sectionId: string): EntityEditorSection {

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { ApiError } from "@/lib/api";
 import { apiQueryKeys } from "@/lib/api/react-query/keys";
 import { useApiClient } from "@/lib/hooks/use-api-client";
 import {
@@ -27,6 +28,7 @@ export function useDiseaseEditor({ diseaseSlug }: { diseaseSlug: string }) {
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
   const [snapshot, setSnapshot] = useState<EntityEditorSnapshot>(() => ({
     entityKey: diseaseSlug,
     entityType: "Disease",
@@ -77,11 +79,17 @@ export function useDiseaseEditor({ diseaseSlug }: { diseaseSlug: string }) {
             dirtySections: clearDirtySection(current.dirtySections, sectionId),
           }));
           await queryClient.invalidateQueries({ queryKey: apiQueryKeys.diseasePackage(diseaseSlug) });
+          await queryClient.invalidateQueries({ queryKey: apiQueryKeys.curatorQueue("draft") });
+          if (workflowRef.current?.id) {
+            await queryClient.invalidateQueries({
+              queryKey: apiQueryKeys.workflow(workflowRef.current.id),
+            });
+          }
         } catch (error) {
           setSnapshot((current) => ({
             ...current,
             saveStatus: "error",
-            saveError: error instanceof Error ? error.message : "Save failed.",
+            saveError: error instanceof ApiError ? error.message : error instanceof Error ? error.message : "Save failed.",
           }));
         }
       }, AUTOSAVE_DEBOUNCE_MS),
@@ -97,15 +105,20 @@ export function useDiseaseEditor({ diseaseSlug }: { diseaseSlug: string }) {
         const loaded = await loadCuratorDiseasePackage(client, diseaseSlug);
         if (cancelled) return;
         workflowRef.current = loaded.workflow;
+        const pkg = loaded.package as DiseasePublishPackage;
+        packageRef.current = pkg;
         setSnapshot((current) => ({
           ...current,
           entityKey: diseaseSlug,
           workflow: loaded.workflow,
-          package: loaded.package as DiseasePublishPackage,
+          package: pkg,
           validation: loaded.validation,
           saveStatus: "idle",
+          saveError: null,
           dirtySections: [],
+          validationPending: false,
         }));
+        runValidation(pkg);
       } catch (error) {
         if (!cancelled) setLoadError(formatDiseaseEditorLoadError(error, diseaseSlug));
       } finally {
@@ -116,7 +129,14 @@ export function useDiseaseEditor({ diseaseSlug }: { diseaseSlug: string }) {
     return () => {
       cancelled = true;
     };
-  }, [client, diseaseSlug]);
+  }, [client, diseaseSlug, reloadToken, runValidation]);
+
+  useEffect(() => {
+    return () => {
+      runSave.cancel();
+      runValidation.cancel();
+    };
+  }, [runSave, runValidation]);
 
   const setActiveSection = useCallback((sectionId: string) => {
     setSnapshot((current) => ({ ...current, activeSectionId: sectionId }));
@@ -126,6 +146,7 @@ export function useDiseaseEditor({ diseaseSlug }: { diseaseSlug: string }) {
     (fieldPath: string, value: string) => {
       setSnapshot((current) => {
         const nextPackage = applyFieldChange(current.package as DiseasePublishPackage, fieldPath, value);
+        packageRef.current = nextPackage;
         const section = getSectionById(current.activeSectionId);
         const dirtySections = mergeDirtySections(current.dirtySections, section.id);
         void runSave(section.id, nextPackage);
@@ -133,13 +154,53 @@ export function useDiseaseEditor({ diseaseSlug }: { diseaseSlug: string }) {
         return {
           ...current,
           package: nextPackage,
-          saveStatus: "saving",
+          saveStatus: "pending",
           dirtySections,
         };
       });
     },
     [runSave, runValidation],
   );
+
+  const retrySave = useCallback(() => {
+    const sectionId = snapshot.dirtySections[0] ?? snapshot.activeSectionId;
+    runSave.flush();
+    if (!runSave.pending()) {
+      const workflowId = workflowRef.current?.id;
+      if (!workflowId) {
+        setSnapshot((current) => ({
+          ...current,
+          saveStatus: "error",
+          saveError: "Workflow not initialized.",
+        }));
+        return;
+      }
+      void saveDiseasePackage(client, workflowId, packageRef.current as DiseasePublishPackage)
+        .then((result) => {
+          setSnapshot((current) => ({
+            ...current,
+            saveStatus: "saved",
+            saveError: null,
+            lastSavedAt: result.savedAt,
+            validation: result.validation ?? current.validation,
+            dirtySections: clearDirtySection(current.dirtySections, sectionId),
+          }));
+        })
+        .catch((error) => {
+          const message =
+            error instanceof ApiError
+              ? error.message
+              : error instanceof Error
+                ? error.message
+                : "Autosave failed";
+          setSnapshot((current) => ({ ...current, saveStatus: "error", saveError: message }));
+        });
+    }
+  }, [client, runSave, snapshot.activeSectionId, snapshot.dirtySections]);
+
+  const retryLoad = useCallback(() => {
+    setReloadToken((value) => value + 1);
+  }, []);
 
   const activeSection = getSectionById(snapshot.activeSectionId);
 
@@ -157,5 +218,7 @@ export function useDiseaseEditor({ diseaseSlug }: { diseaseSlug: string }) {
     setActiveSection,
     onFieldChange,
     onWorkflowUpdated,
+    retrySave,
+    retryLoad,
   };
 }
