@@ -145,7 +145,6 @@ export function usePublishWizard({
         return { workflow: envelope.data, publishOutcome: null };
       }
 
-      await client.saveWorkflowPackage(id, packageInput);
       const envelope = await client.publishWorkflow(id, packageInput);
       return { workflow: envelope.data.workflow, publishOutcome: envelope.data };
     },
