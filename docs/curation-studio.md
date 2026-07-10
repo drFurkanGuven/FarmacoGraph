@@ -135,8 +135,8 @@ See [api.md §1.3](api.md#13-curator-publish-workflow) and [studio-roadmap.md](s
   - Curator sees the drug’s place in the knowledge graph while editing — critical at scale
 - Disease Editor — browser + sectioned editor with provenance, AutosaveStatus, validation context panel, and publish wizard (disease evidence attach deferred)
 - Relationship Editor — visual, ontology-constrained
-- Mechanism Editor — React Flow DAG
-- Graph Explorer — Cytoscape.js
+- Mechanism Editor — Drug Editor catalog picker + interactive published DAG preview (full pathway authoring deferred)
+- Graph Explorer — interactive React Flow neighborhood on `/graph?drug=…`
 - Evidence Manager — citations, DOI, confidence — **live** at `/knowledge/evidence` (`EvidenceBrowser`) and per-drug in Drug Editor **Evidence** section
 - Educational Layer Editor — summaries, pearls, flashcards
 - AI Draft Assistant — drafts only, never auto-publish

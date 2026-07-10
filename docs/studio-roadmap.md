@@ -21,9 +21,9 @@ The Curation Studio is the official interface for authoring, reviewing, validati
 | `/validation` | **Complete** | Validation Center — `GET /curator/validation-summary`, queue dry-runs via `POST /curator/validate` |
 | `/knowledge/diseases` | **MVP live** | Disease browser + editor with provenance, autosave status, validation context, publish wizard; disease evidence attach deferred |
 | `/knowledge/education` | **MVP live** | Drug Editor education section for summaries, pearls, mnemonics, common mistakes, and flashcards; `GET /drugs/{id}/education` + flashcard read contracts |
-| `/knowledge/mechanisms` | **MVP live** | Published mechanism DAG + Explain API preview; full DAG editor deferred |
+| `/knowledge/mechanisms` | **MVP live** | Mechanism fragment picker in Drug Editor; published DAG + Explain preview with interactive canvas; full pathway authoring deferred |
 | `/knowledge/evidence` | **Complete** | Evidence manager — browse/search/create via `GET/POST /evidence` |
-| `/graph` | **Connected surface** | Drug graph projection API is routed; interactive graph query explorer deferred |
+| `/graph` | **MVP live** | Interactive React Flow neighborhood (`GET /drugs/{uuid}/graph`); generic query explorer deferred |
 | `/snapshots` | **MVP live** | `GET /snapshots`, `GET /snapshots/{version_tag}`; list + detail with manifest JSON; diff/release manager deferred |
 | `/activity` | **Connected** | Audit log + background jobs surface |
 | `/users` | **Placeholder** | Admin view deferred |
@@ -132,8 +132,8 @@ The right panel updates as the curator edits so they always see where the drug s
 | Deliverable | Technology | Status |
 |-------------|------------|--------|
 | **Validation Center** | Grouped errors from `/curator/validate`, `/curator/validation-summary` | **Complete** |
-| Mechanism surface | React Flow DAG later | **MVP live** — published DAG + Explain preview; editor deferred |
-| Graph Explorer | Cytoscape.js later | **Connected surface** — projection API routed; query/canvas deferred |
+| Mechanism surface | React Flow preview | **MVP live** — catalog picker + interactive published DAG; full pathway authoring deferred |
+| Graph Explorer | React Flow canvas | **MVP live** — pan/zoom/select on drug neighborhood; `POST /graph/query` deferred |
 
 The Validation Center (`/validation`) surfaces summary stats, publish readiness, grouped issue sections (errors, warnings, ontology violations, missing evidence), and client-side dry-runs for up to 15 queue items. Auto-refreshes every 30 seconds.
 
@@ -302,7 +302,7 @@ Curators must use Curation Studio or the curator REST API. See [scripts/dev-only
 | Styling | Tailwind CSS, shadcn/ui (Radix primitives) |
 | Data fetching | TanStack React Query |
 | Forms | React Hook Form + Zod |
-| Graphs (4.3+) | React Flow, Cytoscape.js |
+| Graphs (4.3+) | `@xyflow/react` interactive previews |
 | Auth | `POST /auth/token` + JWT refresh; Settings fallback |
 
 ---

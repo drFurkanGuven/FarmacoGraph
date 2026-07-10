@@ -219,6 +219,21 @@ export function useCuratorDiseases(options?: {
   );
 }
 
+export function useCuratorMechanismFragments(options?: {
+  search?: string;
+  sort?: string;
+  limit?: number;
+  offset?: number;
+}) {
+  const client = useApiClient();
+  const filters = options ?? {};
+  return useApiQuery(
+    apiQueryKeys.curatorMechanismFragments(filters),
+    () => client.curatorMechanismFragments(options),
+    defaultQueryOptions,
+  );
+}
+
 export function useDrugPackage(slug: string) {
   const client = useApiClient();
   return useApiQuery(

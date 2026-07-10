@@ -22,6 +22,7 @@ from farmacograph.curator.drug_package import (
 )
 from farmacograph.curator.education_graph import normalize_education_graph
 from farmacograph.curator.education_package import education_items_for_entity, flashcards_for_entity
+from farmacograph.curator.mechanism_catalog import list_mechanism_fragment_catalog
 from farmacograph.curator.publish_validator import (
     require_valid_publish_package,
     validate_publish_package,
@@ -400,6 +401,35 @@ class CuratorService:
         else:
             items.sort(key=lambda row: row["slug"], reverse=reverse)
 
+        total = len(items)
+        return items[offset : offset + limit], total
+
+    async def list_mechanism_fragments_browser(
+        self,
+        *,
+        search: str = "",
+        limit: int = 50,
+        offset: int = 0,
+        sort: str = "slug",
+    ) -> tuple[list[dict[str, Any]], int]:
+        catalog, _ = list_mechanism_fragment_catalog(search=search, limit=10_000, offset=0)
+        items = [
+            {
+                "slug": row["slug"],
+                "label": row["label"],
+                "entity_id": row["id"],
+                "module": "cardiovascular",
+                "publication_status": row.get("status", "published"),
+                "description": row.get("description"),
+            }
+            for row in catalog
+        ]
+        reverse = sort.startswith("-")
+        key_name = sort.lstrip("-")
+        if key_name == "label":
+            items.sort(key=lambda row: row["label"].lower(), reverse=reverse)
+        else:
+            items.sort(key=lambda row: row["slug"], reverse=reverse)
         total = len(items)
         return items[offset : offset + limit], total
 

@@ -506,6 +506,50 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
+  /curator/mechanism-fragments:
+    get:
+      tags: [Curator]
+      summary: Browse mechanism fragments for curation
+      operationId: listCuratorMechanismFragments
+      security:
+        - BearerAuth: [curator:write]
+      parameters:
+        - name: search
+          in: query
+          schema: { type: string, default: "" }
+        - name: sort
+          in: query
+          schema: { type: string, default: slug }
+        - $ref: "#/components/parameters/PageLimit"
+        - $ref: "#/components/parameters/PageOffset"
+      responses:
+        "200":
+          description: Curator mechanism fragment catalog rows
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      required: [slug, label, entity_id]
+                      properties:
+                        slug: { type: string }
+                        label: { type: string }
+                        entity_id: { type: string, format: uuid }
+                        module: { type: string }
+                        publication_status: { type: string }
+                        description: { type: string, nullable: true }
+                  meta:
+                    $ref: "#/components/schemas/PaginationMeta"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
   /curator/diseases/{slug}/workflows:
     post:
       tags: [Curator]

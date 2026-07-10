@@ -129,6 +129,15 @@ export interface DiseaseBrowseItem {
   validation_errors?: number;
 }
 
+export interface MechanismFragmentBrowseItem {
+  slug: string;
+  label: string;
+  entity_id: string;
+  module?: string;
+  publication_status?: string;
+  description?: string | null;
+}
+
 export interface DrugPackage {
   entity_payload: Record<string, unknown>;
   related_entities?: Record<string, unknown>[];

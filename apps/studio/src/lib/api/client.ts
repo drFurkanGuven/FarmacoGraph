@@ -9,6 +9,7 @@ import type {
   CurriculumData,
   DrugBrowseItem,
   DiseaseBrowseItem,
+  MechanismFragmentBrowseItem,
   DrugPackage,
   EducationResource,
   ExplainData,
@@ -252,6 +253,17 @@ export class FarmacoGraphClient {
         search,
         status,
         workflow_state: workflowState,
+        sort,
+        ...buildPaginationParams(pagination),
+      },
+    });
+  }
+
+  curatorMechanismFragments(options?: { search?: string; sort?: string } & PaginationParams) {
+    const { search, sort, ...pagination } = options ?? {};
+    return this.request<MechanismFragmentBrowseItem[]>("/curator/mechanism-fragments", {
+      params: {
+        search,
         sort,
         ...buildPaginationParams(pagination),
       },

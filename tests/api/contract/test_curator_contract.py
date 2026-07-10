@@ -70,6 +70,7 @@ async def test_openapi_defines_curator_disease_paths(openapi_spec: dict) -> None
         "/curator/diseases/{slug}/workflows",
         "/curator/diseases/{slug}/package",
         "/curator/diseases/{slug}/workflow-state",
+        "/curator/mechanism-fragments",
         "/curator/drugs/{slug}/workflow-state",
         "/diseases",
         "/diseases/{disease_id}",

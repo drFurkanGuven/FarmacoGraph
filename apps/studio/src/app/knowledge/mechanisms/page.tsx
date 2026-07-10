@@ -1,28 +1,25 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Braces, GitBranch, Network, Pencil, Route } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { KnowledgeSurface, commonKnowledgeLinks } from "@/components/knowledge/knowledge-surface";
+import { InteractiveGraphCanvas, nodeLabel } from "@/components/graph";
 import {
   useDrugMechanism,
   useDrugWorkflowState,
   useExplain,
 } from "@/lib/api/react-query/hooks";
-import type { DrugPackage, GraphEdgeData, GraphNodeData } from "@/lib/api";
+import type { DrugPackage, GraphEdgeData } from "@/lib/api";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i;
 
 function isUuid(value: string): boolean {
   return UUID_RE.test(value);
-}
-
-function nodeLabel(node: GraphNodeData): string {
-  return node.label || node.slug || node.id;
 }
 
 function edgeLabel(edge: GraphEdgeData): string {
@@ -39,14 +36,24 @@ function stringValue(value: unknown): string | null {
   return typeof value === "string" && value.trim().length > 0 ? value : null;
 }
 
-function draftMechanismRoots(pkg: DrugPackage | null | undefined): Array<Record<string, unknown>> {
+function draftMechanismRoots(pkg: DrugPackage | null | undefined): Array<{ id: string; label: string }> {
   if (!pkg) return [];
-  const directRelationships = Array.isArray(pkg.relationships) ? pkg.relationships : [];
   const payload = asRecord(pkg.entity_payload);
   const payloadRelationships = asRecord(payload.relationships);
   const groupedRoot = payloadRelationships.HAS_MECHANISM_ROOT;
-  const groupedRoots = Array.isArray(groupedRoot) ? groupedRoot : groupedRoot ? [groupedRoot] : [];
-  return [...directRelationships, ...groupedRoots]
+  const fromGrouped = (Array.isArray(groupedRoot) ? groupedRoot : groupedRoot ? [groupedRoot] : [])
+    .map((entry) => {
+      if (typeof entry === "string" && entry.trim()) {
+        return { id: entry.trim(), label: entry.trim() };
+      }
+      const row = asRecord(entry);
+      const id = stringValue(row.target_id) || stringValue(row.to_id) || stringValue(row.id);
+      return id ? { id, label: id } : null;
+    })
+    .filter((row): row is { id: string; label: string } => Boolean(row));
+
+  const directRelationships = Array.isArray(pkg.relationships) ? pkg.relationships : [];
+  const fromEdges = directRelationships
     .map(asRecord)
     .filter((relationship) => {
       const type =
@@ -54,10 +61,28 @@ function draftMechanismRoots(pkg: DrugPackage | null | undefined): Array<Record<
         stringValue(relationship.type) ||
         stringValue(relationship.kind);
       return type === "HAS_MECHANISM_ROOT";
-    });
+    })
+    .map((relationship) => {
+      const id =
+        stringValue(relationship.target_id) ||
+        stringValue(relationship.to_id) ||
+        stringValue(relationship.target);
+      return id ? { id, label: id } : null;
+    })
+    .filter((row): row is { id: string; label: string } => Boolean(row));
+
+  const seen = new Set<string>();
+  const merged: Array<{ id: string; label: string }> = [];
+  for (const row of [...fromGrouped, ...fromEdges]) {
+    if (seen.has(row.id)) continue;
+    seen.add(row.id);
+    merged.push(row);
+  }
+  return merged;
 }
 
 function FocusedMechanismPanel({ drug }: { drug: string }) {
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const slugMode = !isUuid(drug);
   const workflowState = useDrugWorkflowState(slugMode ? drug : "");
   const resolvedDrugId = isUuid(drug) ? drug : (workflowState.data?.data.entity_id ?? "");
@@ -81,7 +106,7 @@ function FocusedMechanismPanel({ drug }: { drug: string }) {
                   Published mechanism DAG
                 </CardTitle>
                 <CardDescription>
-                  Graph-backed /drugs/{"{uuid}"}/mechanism preview for the focused drug.
+                  Interactive /drugs/{"{uuid}"}/mechanism preview for the focused drug.
                 </CardDescription>
               </div>
               <Button asChild size="sm" variant="outline">
@@ -101,10 +126,17 @@ function FocusedMechanismPanel({ drug }: { drug: string }) {
               <p className="text-sm text-destructive">Unable to load published mechanism graph.</p>
             ) : !mechanism || nodes.length === 0 ? (
               <p className="rounded-md border bg-muted/30 p-3 text-sm text-muted-foreground">
-                No published mechanism graph yet. Publish the drug after adding mechanism root data.
+                No published mechanism graph yet. Select mechanism roots in the Drug Editor, then publish.
               </p>
             ) : (
               <>
+                <InteractiveGraphCanvas
+                  nodes={nodes}
+                  edges={edges}
+                  selectedNodeId={selectedNodeId}
+                  onSelectNode={setSelectedNodeId}
+                  emptyMessage="No published mechanism graph yet."
+                />
                 <div className="grid gap-3 md:grid-cols-4">
                   <div className="rounded-md border bg-muted/30 p-3">
                     <p className="text-xs text-muted-foreground">Root</p>
@@ -128,10 +160,15 @@ function FocusedMechanismPanel({ drug }: { drug: string }) {
                   <div className="space-y-2">
                     <p className="text-xs font-medium uppercase text-muted-foreground">Fragments</p>
                     {nodes.slice(0, 8).map((node) => (
-                      <div key={node.id} className="rounded-md border px-3 py-2">
+                      <button
+                        key={node.id}
+                        type="button"
+                        className="w-full rounded-md border px-3 py-2 text-left hover:bg-muted/40"
+                        onClick={() => setSelectedNodeId(node.id === selectedNodeId ? null : node.id)}
+                      >
                         <p className="truncate text-sm font-medium">{nodeLabel(node)}</p>
                         <p className="truncate text-xs text-muted-foreground">{node.entity_type ?? "Node"}</p>
-                      </div>
+                      </button>
                     ))}
                   </div>
                   <div className="space-y-2">
@@ -163,14 +200,14 @@ function FocusedMechanismPanel({ drug }: { drug: string }) {
             {slugMode && workflowState.isLoading ? (
               <p className="text-sm text-muted-foreground">Loading draft package...</p>
             ) : draftRoots.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No draft HAS_MECHANISM_ROOT link found.</p>
+              <p className="text-sm text-muted-foreground">
+                No draft HAS_MECHANISM_ROOT link found. Use the Drug Editor Mechanism picker.
+              </p>
             ) : (
-              draftRoots.map((relationship, index) => (
-                <div key={`${relationship.target_id ?? relationship.to_id ?? index}`} className="rounded-md border bg-muted/30 p-3">
+              draftRoots.map((rootRow) => (
+                <div key={rootRow.id} className="rounded-md border bg-muted/30 p-3">
                   <p className="text-xs font-medium text-muted-foreground">HAS_MECHANISM_ROOT</p>
-                  <p className="mt-1 break-all text-sm">
-                    {String(relationship.target_id ?? relationship.to_id ?? relationship.target ?? "Target pending")}
-                  </p>
+                  <p className="mt-1 break-all text-sm">{rootRow.label}</p>
                 </div>
               ))
             )}
@@ -242,26 +279,26 @@ function MechanismsSurface() {
       <KnowledgeSurface
         eyebrow="Mechanism layer"
         title="Mechanisms"
-        status="API preview live"
-        description="Mechanism fields are still curated through the Drug Editor, while the published mechanism DAG and Explain API preview are now visible from this surface."
+        status="MVP live"
+        description="Select mechanism roots in the Drug Editor catalog picker, then inspect the published DAG and Explain API preview here."
         primary={{
           label: focusedDrug ? "Edit mechanism" : "Open graph context",
           href: focusedDrug ? `/knowledge/drugs/${encodeURIComponent(focusedDrug)}` : "/graph",
           icon: focusedDrug ? Pencil : GitBranch,
           description: focusedDrug
-            ? "Open the focused Drug Editor mechanism fields."
-            : "Inspect the graph surface state before adding a full DAG editor.",
+            ? "Open the focused Drug Editor mechanism picker."
+            : "Inspect the graph surface before deeper pathway authoring.",
         }}
         signals={[
-          { label: "Drug mechanism fields", value: "live", tone: "success" },
-          { label: "Published DAG API", value: "MVP live", tone: "success" },
-          { label: "DAG editor", value: "deferred", tone: "warning" },
+          { label: "Mechanism picker", value: "live", tone: "success" },
+          { label: "Published DAG preview", value: "interactive", tone: "success" },
+          { label: "Full DAG authoring", value: "deferred", tone: "warning" },
         ]}
         links={commonKnowledgeLinks}
         deferred={[
-          "React Flow DAG editor with validation-safe writes",
+          "Full React Flow pathway authoring with validation-safe writes",
           "Assertion-level SUPPORTED_BY evidence attachment",
-          "Interactive pharmacology pathway diagrams",
+          "Interactive pharmacology pathway diagrams beyond root selection",
         ]}
       />
       {focusedDrug && <FocusedMechanismPanel drug={focusedDrug} />}

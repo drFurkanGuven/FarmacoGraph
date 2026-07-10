@@ -81,14 +81,14 @@ export const DRUG_EDITOR_SECTIONS: DrugEditorSection[] = [
   {
     id: "mechanism",
     title: "Mechanism",
-    description: "Mechanism fragment roots for the drug DAG.",
+    description: "Select mechanism fragment roots for the drug DAG.",
     fields: [
       {
         key: "mechanism_root",
         label: "Mechanism roots",
         type: "uuid-list",
         path: "entity_payload.relationships.HAS_MECHANISM_ROOT",
-        description: "One UUID per line — MechanismFragment entity IDs.",
+        description: "MechanismFragment entity IDs selected via the catalog picker.",
       },
     ],
   },

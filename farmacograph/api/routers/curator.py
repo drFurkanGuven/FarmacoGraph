@@ -105,6 +105,33 @@ async def list_curator_diseases(
     }
 
 
+@router.get("/mechanism-fragments")
+async def list_curator_mechanism_fragments(
+    service=Depends(get_curator_service),
+    _auth: Annotated[AuthContext, Depends(require_scope("curator:write"))] = None,
+    search: str = Query(""),
+    sort: str = Query("slug"),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+) -> dict:
+    data, total = await service.list_mechanism_fragments_browser(
+        search=search,
+        sort=sort,
+        limit=limit,
+        offset=offset,
+    )
+    return {
+        "data": data,
+        "meta": {
+            "api_version": "v1",
+            "count": len(data),
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+        },
+    }
+
+
 @router.post("/diseases/{slug}/workflows", status_code=201)
 async def open_disease_workflow(
     slug: str,

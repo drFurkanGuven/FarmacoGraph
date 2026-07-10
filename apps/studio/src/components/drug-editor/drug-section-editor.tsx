@@ -6,6 +6,7 @@ import type { ValidationResult } from "@/lib/api";
 import { DrugEvidenceSection } from "./drug-evidence-section";
 import { EducationSection } from "./education-section";
 import { IndicationsSection } from "./indications-section";
+import { MechanismSection } from "./mechanism-section";
 import { sectionFieldValues } from "./package";
 import type { DrugEditorSection, DrugPublishPackage } from "./types";
 
@@ -64,6 +65,22 @@ export function DrugSectionEditor({
           drugId={drugId}
           slug={slug}
           validation={validation}
+          disabled={disabled}
+          onPackageChange={(next) => onPackageChange?.(next)}
+        />
+      </div>
+    );
+  }
+
+  if (section.id === "mechanism") {
+    return (
+      <div className={cn("space-y-4", className)}>
+        <div>
+          <h2 className="text-lg font-semibold tracking-tight">{section.title}</h2>
+          {section.description && <p className="mt-1 text-sm text-muted-foreground">{section.description}</p>}
+        </div>
+        <MechanismSection
+          pkg={pkg}
           disabled={disabled}
           onPackageChange={(next) => onPackageChange?.(next)}
         />

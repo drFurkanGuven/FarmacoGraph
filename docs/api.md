@@ -43,6 +43,7 @@ The OpenAPI file at `openapi/openapi.yaml` describes the **full contract** (impl
 | POST | `/api/v1/curator/drugs/{slug}/workflows` | `curator:write` | Open/create workflow for slug |
 | GET | `/api/v1/curator/drugs/{slug}/package` | `curator:write` | Load draft package |
 | GET | `/api/v1/curator/diseases` | `curator:write` | Curator disease browser |
+| GET | `/api/v1/curator/mechanism-fragments` | `curator:write` | MechanismFragment catalog for Drug Editor picker |
 | POST | `/api/v1/curator/diseases/{slug}/workflows` | `curator:write` | Open/create disease workflow |
 | GET | `/api/v1/curator/diseases/{slug}/package` | `curator:write` | Load disease draft package |
 | GET | `/api/v1/curator/diseases/{slug}/workflow-state` | `curator:write` | Disease workflow aggregate |

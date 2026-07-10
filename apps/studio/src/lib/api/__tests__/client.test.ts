@@ -136,4 +136,16 @@ describe("FarmacoGraphClient", () => {
     });
     expect(transport.request).toHaveBeenNthCalledWith(2, "/snapshots/2026.1.0", {});
   });
+
+  it("calls curator mechanism-fragments route", async () => {
+    const transport = createMockTransport();
+    const client = new FarmacoGraphClient({ baseUrl: "http://api.test/api/v1/" });
+    Object.defineProperty(client, "transport", { value: transport });
+
+    await client.curatorMechanismFragments({ search: "ace", limit: 40 });
+
+    expect(transport.request).toHaveBeenCalledWith("/curator/mechanism-fragments", {
+      params: { search: "ace", sort: undefined, limit: 40, offset: undefined },
+    });
+  });
 });

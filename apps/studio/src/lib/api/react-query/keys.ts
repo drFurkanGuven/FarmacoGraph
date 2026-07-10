@@ -21,6 +21,8 @@ export const apiQueryKeys = {
     [...apiQueryKeys.all, "curator-drugs", filters] as const,
   curatorDiseases: (filters: Record<string, unknown>) =>
     [...apiQueryKeys.all, "curator-diseases", filters] as const,
+  curatorMechanismFragments: (filters: Record<string, unknown>) =>
+    [...apiQueryKeys.all, "curator-mechanism-fragments", filters] as const,
   diseases: (filters?: Record<string, unknown>) =>
     [...apiQueryKeys.all, "diseases", filters ?? {}] as const,
   diseasePackage: (slug: string) => [...apiQueryKeys.all, "disease-package", slug] as const,
