@@ -65,8 +65,8 @@ cd apps/studio && npm test && npm run build
 
 ## 7. Repo güvenliği (özet)
 
-- **Kaynak kod:** private GitHub repo (public clone = çalınabilir).  
-- **Halka açık vitrin:** ayrı docs/site veya Pages — kod yok, sadece mimari + API yüzeyi.  
+- **Kaynak kod:** private — https://github.com/drFurkanGuven/FarmacoGraph  
+- **Halka açık vitrin:** https://github.com/drFurkanGuven/FarmacoGraph-docs  
 - Detay: [repo-visibility.md](repo-visibility.md)
 
 ## 8. Sonraki insan işi

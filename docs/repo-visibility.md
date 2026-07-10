@@ -68,11 +68,15 @@ Tam koruma yok; hedef **makul zorluk + private kaynak**.
 
 ## Hemen yapılacak checklist
 
-- [ ] `drFurkanGuven/FarmacoGraph` visibility → **Private**
+- [x] `drFurkanGuven/FarmacoGraph` visibility → **Private**
+- [x] Public vitrin: [`FarmacoGraph-docs`](https://github.com/drFurkanGuven/FarmacoGraph-docs)
 - [ ] Deploy secrets sadece GitHub Actions secrets / sunucu `.env`
-- [ ] İstersen `FarmacoGraph-docs` public repo veya landing page
-- [ ] README’deki GitHub linkini private repo yerine **docs/site** linkine çevir (public yüz)
+- [ ] İstersen GitHub Pages veya süslü landing (docs repo üzerine)
 - [ ] Bu handoff’u oku: [handoff-curator-mvp.md](handoff-curator-mvp.md)
+
+**Public link (paylaşılacak):** https://github.com/drFurkanGuven/FarmacoGraph-docs  
+**Private kaynak:** https://github.com/drFurkanGuven/FarmacoGraph (collaborator only)
+
 
 ---
 

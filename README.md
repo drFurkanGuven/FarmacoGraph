@@ -23,6 +23,7 @@ FarmacoGraph is not a pharmacology database. It is a **long-term biomedical know
 | Cardiovascular module curation | In progress |
 
 > **Primary product:** [Curation Studio](docs/curation-studio.md) (`apps/studio`) — the official knowledge authoring interface.  
+> **Public docs (no source):** https://github.com/drFurkanGuven/FarmacoGraph-docs  
 > **Evidence:** Curators manage citations in **Evidence Manager** (`/knowledge/evidence`) and attach them from the Drug Editor **Evidence** section. Validation and the Publish wizard surface evidence blockers (FG-C012).  
 > Manual JSON editing and shell scripts in `scripts/dev-only/` are **dev-only / deprecated** for curators — see [scripts/dev-only/README.md](scripts/dev-only/README.md).
 
