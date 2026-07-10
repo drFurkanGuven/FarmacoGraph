@@ -200,7 +200,7 @@ sequenceDiagram
 | `POST /auth/refresh` | Rotate access token | **Live** |
 | Bearer validation | JWT decode or API key hash lookup | **Live** |
 | `POST /auth/introspect` | JWT/API key scope lookup without full login | **Live** |
-| Self-service key management | `admin:api_keys` CRUD | Planned |
+| Self-service key management | `admin:api_keys` / `admin:org` CRUD via `/users/{id}/api-keys` | **Live** (Studio `/users`) |
 
 **Security rules:**
 - Refresh tokens cannot authenticate API requests (access tokens only).

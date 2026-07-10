@@ -55,7 +55,7 @@ export const navigation: NavSection[] = [
   {
     label: "Administration",
     items: [
-      { title: "Users", href: "/users", icon: Users, badge: "Soon" },
+      { title: "Users", href: "/users", icon: Users, badge: "4.5" },
       { title: "Settings", href: "/settings", icon: Settings },
     ],
   },

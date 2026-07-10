@@ -20,6 +20,7 @@ from farmacograph.repositories.jobs import JobRepository
 from farmacograph.repositories.outbox import OutboxRepository
 from farmacograph.repositories.snapshots import SnapshotRepository
 from farmacograph.search.graph_provider import GraphSearchProvider
+from farmacograph.services.admin_users import AdminUsersService
 from farmacograph.services.compare import CompareService
 from farmacograph.services.curator import CuratorService
 from farmacograph.services.curriculum import CurriculumService
@@ -76,6 +77,7 @@ class Container:
     dashboard_service: DashboardService = field(init=False)
     curator_service: CuratorService = field(init=False)
     snapshot_service: SnapshotService = field(init=False)
+    admin_users_service: AdminUsersService = field(init=False)
     graph_validation_worker: GraphValidationWorker = field(init=False)
 
     def __post_init__(self) -> None:
@@ -159,6 +161,10 @@ class Container:
             event_bus=self.event_bus,
             snapshot_service=self.snapshot_service,
             graph_validation_worker=self.graph_validation_worker,
+        )
+        self.admin_users_service = AdminUsersService(
+            session_factory=self.session_factory,
+            settings=self.settings,
         )
 
     async def startup(self) -> None:

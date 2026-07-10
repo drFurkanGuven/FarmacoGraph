@@ -25,7 +25,7 @@ Login → Drug/Disease Editor → Evidence/Education/Mechanism roots
 | Mechanism | **MVP** | Catalog picker + interactive published DAG; full pathway authoring yok |
 | Graph | **MVP** | React Flow neighborhood; `POST /graph/query` yok |
 | Snapshots | **MVP** | List/detail; diff yok |
-| `/users` | **Placeholder** | Seed / `create-curator.sh` |
+| `/users` | **MVP** | Create/edit users + API tokens (`admin:org`) |
 
 ## 3. İçerik doldururken bil
 

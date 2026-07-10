@@ -31,6 +31,8 @@ import type {
   ValidationResult,
   WorkflowItem,
   WorkflowTimelineEvent,
+  AdminUser,
+  AdminApiKey,
 } from "./types";
 
 export interface ClientConfig {
@@ -383,6 +385,56 @@ export class FarmacoGraphClient {
 
   compare(body: CompareInput) {
     return this.request<Record<string, unknown>>("/compare", { method: "POST", body });
+  }
+
+  listUsers(options?: PaginationParams & { search?: string }) {
+    const { search, ...pagination } = options ?? {};
+    return this.request<AdminUser[]>("/users", {
+      params: { search, ...buildPaginationParams(pagination) },
+    });
+  }
+
+  createUser(body: {
+    email: string;
+    password: string;
+    full_name?: string;
+    role?: string;
+    scopes?: string[];
+    is_active?: boolean;
+  }) {
+    return this.request<AdminUser>("/users", { method: "POST", body });
+  }
+
+  getUser(userId: string) {
+    return this.request<AdminUser>(`/users/${userId}`);
+  }
+
+  updateUser(
+    userId: string,
+    body: {
+      email?: string;
+      password?: string;
+      full_name?: string;
+      role?: string;
+      scopes?: string[];
+      is_active?: boolean;
+    },
+  ) {
+    return this.request<AdminUser>(`/users/${userId}`, { method: "PATCH", body });
+  }
+
+  listUserApiKeys(userId: string) {
+    return this.request<AdminApiKey[]>(`/users/${userId}/api-keys`);
+  }
+
+  createUserApiKey(userId: string, body: { name: string; scopes?: string[] }) {
+    return this.request<AdminApiKey>(`/users/${userId}/api-keys`, { method: "POST", body });
+  }
+
+  revokeUserApiKey(userId: string, keyId: string) {
+    return this.request<AdminApiKey>(`/users/${userId}/api-keys/${keyId}/revoke`, {
+      method: "POST",
+    });
   }
 }
 

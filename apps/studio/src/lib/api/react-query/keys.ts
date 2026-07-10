@@ -47,4 +47,8 @@ export const apiQueryKeys = {
   snapshots: (filters?: Record<string, unknown>) =>
     [...apiQueryKeys.all, "snapshots", filters ?? {}] as const,
   snapshot: (versionTag: string) => [...apiQueryKeys.all, "snapshot", versionTag] as const,
+  users: (filters?: Record<string, unknown>) =>
+    [...apiQueryKeys.all, "users", filters ?? {}] as const,
+  user: (userId: string) => [...apiQueryKeys.all, "user", userId] as const,
+  userApiKeys: (userId: string) => [...apiQueryKeys.all, "user-api-keys", userId] as const,
 };

@@ -26,7 +26,7 @@ The Curation Studio is the official interface for authoring, reviewing, validati
 | `/graph` | **MVP live** | Interactive React Flow neighborhood (`GET /drugs/{uuid}/graph`); generic query explorer deferred |
 | `/snapshots` | **MVP live** | `GET /snapshots`, `GET /snapshots/{version_tag}`; list + detail with manifest JSON; diff/release manager deferred |
 | `/activity` | **Connected** | Audit log + background jobs surface |
-| `/users` | **Placeholder** | Admin view deferred |
+| `/users` | **MVP live** | Admin user directory + create/edit + API key issue/revoke |
 
 **Shell features (complete):** sidebar navigation, dark mode, command palette (⌘K), workspace switcher, error boundaries, loading skeletons, typed API client with retries, React Query data layer, Docker production build, two-layer route protection (middleware + client guards).
 

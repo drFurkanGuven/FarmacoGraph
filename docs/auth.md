@@ -76,7 +76,24 @@ cd /opt/FarmacoGraph
 
 `create-curator.sh` prompts for a password when `--password` is omitted and **never prints** the password.
 
+Promote to administrator (or use Studio **Users** after promote):
+
+```bash
+./scripts/promote-admin.sh --email curator@farmacograph.local
+```
+
 Then open https://farmacograph.furkanguven.space/studio/login/ from your browser. Dashboard `GET /api/v1/dashboard` returns **401** until you sign in — that is expected (Studio is not broken).
+
+## Admin user + API key management (live)
+
+Administrators (`admin:org`) manage accounts in Studio at `/users`, backed by:
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| GET/POST | `/api/v1/users` | List / create users |
+| GET/PATCH | `/api/v1/users/{id}` | Detail / update role, password, active |
+| GET/POST | `/api/v1/users/{id}/api-keys` | List / create API keys (full `fg_…` secret once) |
+| POST | `/api/v1/users/{id}/api-keys/{key_id}/revoke` | Soft-revoke |
 
 If login succeeds but API calls still 401, the browser may hold a JWT signed with an old `FG_JWT_SECRET_KEY`. Clear site data for the origin or use a private window.
 

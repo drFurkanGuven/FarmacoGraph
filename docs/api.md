@@ -27,6 +27,13 @@ The OpenAPI file at `openapi/openapi.yaml` describes the **full contract** (impl
 | GET | `/api/v1/jobs` | `knowledge:read` | Background job list |
 | GET | `/api/v1/snapshots` | `curator:publish` | List knowledge release manifests |
 | GET | `/api/v1/snapshots/{version_tag}` | `curator:publish` | Snapshot detail + manifest JSON |
+| GET | `/api/v1/users` | `admin:org` | List Studio users |
+| POST | `/api/v1/users` | `admin:org` | Create user (email, password, role) |
+| GET | `/api/v1/users/{id}` | `admin:org` | User detail |
+| PATCH | `/api/v1/users/{id}` | `admin:org` | Update user / role / password / active |
+| GET | `/api/v1/users/{id}/api-keys` | `admin:org` | List API key metadata |
+| POST | `/api/v1/users/{id}/api-keys` | `admin:org` | Create API key (full secret returned once) |
+| POST | `/api/v1/users/{id}/api-keys/{key_id}/revoke` | `admin:org` | Soft-revoke API key |
 | GET | `/api/v1/drugs` | `knowledge:read` | List drugs |
 | GET | `/api/v1/drugs/{drug_id}` | `knowledge:read` | Drug detail |
 | GET | `/api/v1/search` | `knowledge:search` | Drug search (Neo4j when enabled) |

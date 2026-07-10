@@ -12,6 +12,7 @@ from prometheus_client import make_asgi_app
 
 from farmacograph.api.middleware import CorrelationMiddleware
 from farmacograph.api.routers import (
+    admin_users,
     auth,
     curator,
     dashboard,
@@ -117,6 +118,7 @@ def create_app() -> FastAPI:
     api_v1.include_router(platform.stats_router)
     api_v1.include_router(learning.router)
     api_v1.include_router(snapshots.router)
+    api_v1.include_router(admin_users.router)
 
     app.mount("/api/v1", api_v1)
 

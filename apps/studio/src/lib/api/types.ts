@@ -514,4 +514,31 @@ export interface Workspace {
   slug: string;
 }
 
+export interface AdminUser {
+  id: string;
+  email: string;
+  full_name: string | null;
+  is_active: boolean;
+  is_superuser: boolean;
+  role: string | null;
+  roles: string[];
+  scopes: string[];
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export interface AdminApiKey {
+  id: string;
+  name: string;
+  key_prefix: string;
+  scopes: string[];
+  is_active: boolean;
+  expires_at: string | null;
+  last_used_at: string | null;
+  created_at: string | null;
+  user_id: string | null;
+  /** Present only on create response — shown once. */
+  api_key?: string;
+}
+
 export type { ApiError, ApiErrorBody } from "./errors";
