@@ -106,7 +106,7 @@ export interface PackageValidationSnapshot extends ValidationResult {
   warning_count: number;
 }
 
-export type PublishWizardAction = "submit" | "approve" | "publish";
+export type PublishWizardAction = "submit" | "approve" | "publish" | "returnToDraft";
 
 export interface PublishActionGate {
   allowed: boolean;

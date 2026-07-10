@@ -24,12 +24,14 @@ const REQUIRED_WORKFLOW_STATE: Record<PublishWizardAction, string> = {
   submit: "draft",
   approve: "review",
   publish: "approved",
+  returnToDraft: "approved",
 };
 
 const ACTION_LABELS: Record<PublishWizardAction, string> = {
   submit: "submitting for review",
   approve: "approval",
   publish: "publishing",
+  returnToDraft: "returning to draft",
 };
 
 function readCuratorAttestation(packageInput: PublishPackageInput): boolean {
@@ -221,6 +223,16 @@ export function gatePublishAction(
 ): PublishActionGate {
   const requiredState = REQUIRED_WORKFLOW_STATE[action];
   const actionLabel = ACTION_LABELS[action];
+
+  if (action === "returnToDraft") {
+    if (workflowState !== requiredState) {
+      return {
+        allowed: false,
+        reason: buildWorkflowStateIssue(workflowState, requiredState, actionLabel).message,
+      };
+    }
+    return { allowed: true, reason: null };
+  }
 
   if (!state) {
     return { allowed: false, reason: "Validation has not completed yet." };

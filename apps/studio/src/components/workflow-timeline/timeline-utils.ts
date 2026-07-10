@@ -11,6 +11,7 @@ const KIND_LABELS: Record<WorkflowTimelineKind, string> = {
   validation_run: "Validation run",
   submitted: "Submitted for review",
   approved: "Approved",
+  returned_to_draft: "Returned to draft",
   published: "Published",
   publish_failed: "Publish failed",
   snapshot_created: "Snapshot created",

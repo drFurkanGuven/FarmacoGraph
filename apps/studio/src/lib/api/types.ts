@@ -329,6 +329,7 @@ export type WorkflowTimelineKind =
   | "validation_run"
   | "submitted"
   | "approved"
+  | "returned_to_draft"
   | "published"
   | "publish_failed"
   | "snapshot_created"

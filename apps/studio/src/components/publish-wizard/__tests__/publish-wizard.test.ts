@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { gatePublishAction, computePublishValidationState, toPackageValidationSnapshot } from "../validation/publish-validation";
 import { resolveSectionForField } from "../issue-section-map";
 
@@ -63,6 +63,20 @@ describe("gatePublishAction", () => {
     });
     const gate = gatePublishAction("submit", state, "review");
     expect(gate.allowed).toBe(false);
+  });
+
+  it("allows return to draft from approved even when publish validation is blocked", () => {
+    const packageValidation = toPackageValidationSnapshot(
+      { valid: false, issues: [{ message: "Missing indication", severity: "error", level: "biomedical" }] },
+      basePackage,
+    );
+    const state = computePublishValidationState({
+      packageValidation,
+      packageInput: basePackage,
+      workflowState: "approved",
+    });
+    const gate = gatePublishAction("returnToDraft", state, "approved");
+    expect(gate.allowed).toBe(true);
   });
 });
 

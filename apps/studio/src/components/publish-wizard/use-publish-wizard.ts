@@ -5,7 +5,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ApiError,
   type PublishPackageInput,
-  type PublishWorkflowResult,
   type WorkflowItem,
 } from "@/lib/api";
 import { apiQueryKeys } from "@/lib/api/react-query/keys";
@@ -24,18 +23,15 @@ const ACTION_LABELS: Record<PublishWizardAction, string> = {
   submit: "Submit for review",
   approve: "Approve",
   publish: "Publish to graph",
+  returnToDraft: "Return to draft",
 };
 
 const ACTION_VERBS: Record<PublishWizardAction, string> = {
   submit: "submitted",
   approve: "approved",
   publish: "published",
+  returnToDraft: "returned to draft",
 };
-
-interface WorkflowMutationResult {
-  workflow: WorkflowItem;
-  publishOutcome?: PublishWorkflowResult;
-}
 
 interface UsePublishWizardOptions {
   drugId: string;
@@ -144,6 +140,11 @@ export function usePublishWizard({
         return { workflow: envelope.data, publishOutcome: null };
       }
 
+      if (action === "returnToDraft") {
+        const envelope = await client.returnWorkflowToDraft(id);
+        return { workflow: envelope.data, publishOutcome: null };
+      }
+
       await client.saveWorkflowPackage(id, packageInput);
       const envelope = await client.publishWorkflow(id, packageInput);
       return { workflow: envelope.data.workflow, publishOutcome: envelope.data };
@@ -235,7 +236,7 @@ export function usePublishWizard({
         blockers.push("Unsaved editor changes must finish saving first.");
       }
 
-      if (action === "approve" || action === "publish") {
+      if (action === "approve" || action === "publish" || action === "returnToDraft") {
         if (!hasPermission("curator:publish")) {
           blockers.push("Reviewer permission (curator:publish) is required.");
         }

@@ -490,6 +490,22 @@ async def approve_workflow(
         raise HTTPException(status_code=400, detail=exc.message) from exc
 
 
+@router.post("/workflows/{workflow_id}/return-to-draft")
+async def return_workflow_to_draft(
+    workflow_id: UUID,
+    service=Depends(get_curator_service),
+    auth: Annotated[AuthContext, Depends(require_scope("curator:publish"))] = None,
+) -> dict:
+    try:
+        workflow = await service.return_to_draft(workflow_id, actor_id=auth.user_id)
+        return {
+            "data": WorkflowResponse.from_model(workflow).model_dump(),
+            "meta": {"api_version": "v1"},
+        }
+    except (ValidationError, NotFoundError) as exc:
+        raise HTTPException(status_code=400, detail=exc.message) from exc
+
+
 @router.post("/workflows/{workflow_id}/publish")
 async def publish_workflow(
     workflow_id: UUID,

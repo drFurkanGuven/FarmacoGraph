@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { Loader2, Rocket, Send, ShieldCheck } from "lucide-react";
+import { Loader2, Rocket, RotateCcw, Send, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -24,6 +24,7 @@ const ACTION_ICONS: Record<PublishWizardAction, React.ReactNode> = {
   submit: <Send className="h-4 w-4" />,
   approve: <ShieldCheck className="h-4 w-4" />,
   publish: <Rocket className="h-4 w-4" />,
+  returnToDraft: <RotateCcw className="h-4 w-4" />,
 };
 
 function toEditorSnapshot(props: PublishWizardProps): DrugEditorSnapshot {
@@ -109,6 +110,10 @@ export function PublishWizard({
   const primaryAction = wizard.availableAction;
   const primaryBlockers = primaryAction ? wizard.getActionBlockers(primaryAction) : [];
   const primaryLabel = primaryAction ? wizard.actionLabels[primaryAction] : null;
+  const secondaryAction: PublishWizardAction | null =
+    wizard.workflowState === "approved" ? "returnToDraft" : null;
+  const secondaryBlockers = secondaryAction ? wizard.getActionBlockers(secondaryAction) : [];
+  const secondaryLabel = secondaryAction ? wizard.actionLabels[secondaryAction] : null;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -185,6 +190,28 @@ export function PublishWizard({
                       {ACTION_ICONS[primaryAction]}
                       {primaryLabel}
                     </Button>
+                  </div>
+                )}
+
+                {secondaryAction && secondaryLabel && (
+                  <div className="mt-3 border-t pt-3">
+                    <Button
+                      variant="outline"
+                      className="w-full sm:w-auto"
+                      onClick={() => wizard.requestAction(secondaryAction)}
+                      disabled={
+                        wizard.ensuringWorkflow ||
+                        wizard.isExecuting ||
+                        secondaryBlockers.length > 0 ||
+                        !wizard.workflowId
+                      }
+                    >
+                      {ACTION_ICONS[secondaryAction]}
+                      {secondaryLabel}
+                    </Button>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Use this when an approved package needs more edits before publishing.
+                    </p>
                   </div>
                 )}
               </div>

@@ -38,7 +38,7 @@ export function PublishConfirmation({
       <DialogHeader>
         <DialogTitle>Confirm {actionLabel.toLowerCase()}</DialogTitle>
         <DialogDescription>
-          This will advance the workflow from <span className="font-mono">{workflowState ?? "unknown"}</span> using
+          This will update the workflow from <span className="font-mono">{workflowState ?? "unknown"}</span> using
           the live curator API.
         </DialogDescription>
       </DialogHeader>
@@ -47,6 +47,13 @@ export function PublishConfirmation({
         {action === "publish" && (
           <p className="text-sm text-muted-foreground">
             Publishing writes the current package to the knowledge graph and creates a snapshot when configured.
+          </p>
+        )}
+
+        {action === "returnToDraft" && (
+          <p className="text-sm text-muted-foreground">
+            Returning to draft unlocks the package so missing indications, education, and evidence can be edited
+            before review.
           </p>
         )}
 

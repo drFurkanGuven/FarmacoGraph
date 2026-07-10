@@ -182,6 +182,10 @@ export class FarmacoGraphClient {
     return this.request<WorkflowItem>(`/curator/workflows/${workflowId}/approve`, { method: "POST" });
   }
 
+  returnWorkflowToDraft(workflowId: string) {
+    return this.request<WorkflowItem>(`/curator/workflows/${workflowId}/return-to-draft`, { method: "POST" });
+  }
+
   curatorDrugs(options?: {
     module?: string;
     search?: string;

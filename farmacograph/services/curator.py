@@ -46,6 +46,7 @@ ACTION_TIMELINE_KIND: dict[str, str] = {
     "curator.validated": "validation_run",
     "curator.submitted": "submitted",
     "curator.approved": "approved",
+    "curator.returned_to_draft": "returned_to_draft",
     "curator.published": "published",
     "curator.publish_failed": "publish_failed",
     "curator.snapshot_created": "snapshot_created",
@@ -108,6 +109,17 @@ class CuratorService:
     ) -> CuratorWorkflow:
         return await self._transition(
             workflow_id, "approved", action="curator.approved", actor_id=actor_id, notes=notes
+        )
+
+    async def return_to_draft(
+        self, workflow_id: uuid.UUID, *, actor_id: uuid.UUID | None = None, notes: str | None = None
+    ) -> CuratorWorkflow:
+        return await self._transition(
+            workflow_id,
+            "draft",
+            action="curator.returned_to_draft",
+            actor_id=actor_id,
+            notes=notes,
         )
 
     async def publish(
@@ -734,6 +746,8 @@ def _timeline_detail(action: str, diff: dict[str, Any]) -> str | None:
         return "Submitted for review"
     if action == "curator.approved":
         return "Approved for publish"
+    if action == "curator.returned_to_draft":
+        return "Returned to draft for edits"
     if action == "curator.published":
         return "Published to knowledge graph"
     if action == "curator.publish_failed":

@@ -43,6 +43,18 @@ describe("FarmacoGraphClient publish workflow mutations", () => {
     });
   });
 
+  it("calls return workflow to draft endpoint", async () => {
+    const transport = createMockTransport();
+    const client = new FarmacoGraphClient({ baseUrl: "http://api.test/api/v1/" });
+    Object.defineProperty(client, "transport", { value: transport });
+
+    await client.returnWorkflowToDraft("workflow-1");
+
+    expect(transport.request).toHaveBeenCalledWith("/curator/workflows/workflow-1/return-to-draft", {
+      method: "POST",
+    });
+  });
+
   it("calls publish workflow endpoint with package body", async () => {
     const transport = createMockTransport();
     transport.request.mockResolvedValueOnce({

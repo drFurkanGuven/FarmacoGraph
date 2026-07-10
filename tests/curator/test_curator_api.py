@@ -93,6 +93,29 @@ async def test_cannot_publish_invalid_payload(client: AsyncClient):
 
 
 @pytest.mark.asyncio
+async def test_return_approved_workflow_to_draft_allows_package_edits(client: AsyncClient):
+    package = build_cardiovascular_publish_package()
+    r = await client.post(
+        "/api/v1/curator/workflows",
+        json={"entity_id": CV_STUB_DRUG_ID, "entity_type": "Drug"},
+    )
+    workflow_id = r.json()["data"]["id"]
+    await client.post(f"/api/v1/curator/workflows/{workflow_id}/submit")
+    await client.post(f"/api/v1/curator/workflows/{workflow_id}/approve")
+
+    returned = await client.post(f"/api/v1/curator/workflows/{workflow_id}/return-to-draft")
+    assert returned.status_code == 200
+    assert returned.json()["data"]["state"] == "draft"
+
+    saved = await client.put(
+        f"/api/v1/curator/workflows/{workflow_id}/package",
+        json=package,
+    )
+    assert saved.status_code == 200
+    assert saved.json()["data"]["workflow"]["state"] == "draft"
+
+
+@pytest.mark.asyncio
 async def test_cardiovascular_stub_endpoint(client: AsyncClient):
     r = await client.get("/api/v1/curator/stubs/cardiovascular")
     assert r.status_code == 200
