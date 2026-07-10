@@ -1,9 +1,8 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, PanelRight, Rocket } from "lucide-react";
-import type { WorkflowItem } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -42,7 +41,6 @@ function EditorSkeleton() {
 export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
   const [contextOpen, setContextOpen] = useState(false);
   const [publishOpen, setPublishOpen] = useState(false);
-  const [workflowOverride, setWorkflowOverride] = useState<WorkflowItem | null>(null);
   const {
     loading,
     loadError,
@@ -53,13 +51,13 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
     updatePackage,
     retrySave,
     retryLoad,
+    onWorkflowUpdated,
   } = useDrugEditor({ drugId });
 
-  const workflow = workflowOverride ?? snapshot.workflow;
-
-  const handleWorkflowUpdated = useCallback((nextWorkflow: WorkflowItem) => {
-    setWorkflowOverride(nextWorkflow);
-  }, []);
+  const workflow = snapshot.workflow;
+  const workflowState = workflow?.state ?? null;
+  const packageLocked =
+    workflowState === "approved" || workflowState === "published" || workflowState === "deprecated";
 
   if (loading) {
     return <EditorSkeleton />;
@@ -118,7 +116,7 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
             error={snapshot.saveError}
             lastSavedAt={snapshot.lastSavedAt}
             strategy={snapshot.lastSaveStrategy}
-            onRetry={retrySave}
+            onRetry={packageLocked ? undefined : retrySave}
           />
           <Button
             variant="outline"
@@ -131,6 +129,23 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
           </Button>
         </div>
       </header>
+
+      {packageLocked ? (
+        <div className="border-b border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm">
+          <p className="font-medium">
+            Package locked in <span className="font-mono">{workflowState}</span>
+          </p>
+          <p className="mt-1 text-muted-foreground">
+            {workflowState === "approved"
+              ? "Approved packages cannot be edited or autosaved. Open Publish → Return to draft to keep editing, or Publish to write the drug into Neo4j (required before graph-backed evidence attach)."
+              : "This workflow state is read-only. Open Publish to advance or return to draft for a new edit cycle."}
+          </p>
+          <Button className="mt-2" size="sm" variant="outline" onClick={() => setPublishOpen(true)}>
+            <Rocket className="h-4 w-4" />
+            Open publish wizard
+          </Button>
+        </div>
+      ) : null}
 
       <div className="border-b px-2 py-2 lg:hidden">
         <DrugSectionNav
@@ -156,17 +171,21 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
             pkg={snapshot.package}
             drugId={drugId}
             validation={snapshot.validation}
-            disabled={snapshot.saveStatus === "saving"}
-            onFieldChange={(fieldKey, value) =>
-              updateField(snapshot.activeSectionId, fieldKey, value)
-            }
-            onPackageChange={(next) => updatePackage(snapshot.activeSectionId, next)}
+            disabled={packageLocked || snapshot.saveStatus === "saving"}
+            onFieldChange={(fieldKey, value) => {
+              if (packageLocked) return;
+              updateField(snapshot.activeSectionId, fieldKey, value);
+            }}
+            onPackageChange={(next) => {
+              if (packageLocked) return;
+              updatePackage(snapshot.activeSectionId, next);
+            }}
           />
         </main>
 
         <div className="hidden min-h-0 min-w-0 overflow-hidden border-l lg:block">
           <DrugContextPanel
-            snapshot={{ ...snapshot, workflow }}
+            snapshot={snapshot}
             onOpenEvidenceSection={() => setActiveSection("evidence")}
             className="h-full"
           />
@@ -182,7 +201,7 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
             </DrawerDescription>
           </DrawerHeader>
           <DrugContextPanel
-            snapshot={{ ...snapshot, workflow }}
+            snapshot={snapshot}
             onOpenEvidenceSection={() => {
               setActiveSection("evidence");
               setContextOpen(false);
@@ -202,7 +221,7 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
         dirtySections={snapshot.dirtySections}
         editorValidation={snapshot.validation}
         validationPending={snapshot.validationPending}
-        onWorkflowUpdated={handleWorkflowUpdated}
+        onWorkflowUpdated={onWorkflowUpdated}
         onNavigateSection={setActiveSection}
       />
     </div>

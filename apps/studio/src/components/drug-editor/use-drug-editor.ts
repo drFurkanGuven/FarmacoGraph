@@ -20,6 +20,7 @@ import { applyFieldChange, createEmptyDrugPackage } from "./package";
 import { ensureTreatsRelationshipEdges } from "./treats-relationships";
 import { DEFAULT_SECTION_ID, getSectionById } from "./sections";
 import type { DrugEditorSnapshot, DrugPublishPackage, SaveStatus } from "./types";
+import type { WorkflowItem } from "@/lib/api";
 
 interface UseDrugEditorOptions {
   drugId: string;
@@ -172,8 +173,13 @@ export function useDrugEditor({ drugId }: UseDrugEditorOptions) {
     setSnapshot((current) => ({ ...current, activeSectionId: sectionId }));
   }, []);
 
+  const isPackageLocked = useCallback((state: string | null | undefined) => {
+    return state === "approved" || state === "published" || state === "deprecated";
+  }, []);
+
   const updateField = useCallback(
     (sectionId: string, fieldKey: string, value: string) => {
+      if (isPackageLocked(workflowRef.current?.state)) return;
       const section = getSectionById(sectionId);
       const field = section?.fields.find((entry) => entry.key === fieldKey);
       if (!field) return;
@@ -192,11 +198,12 @@ export function useDrugEditor({ drugId }: UseDrugEditorOptions) {
       runValidation(packageRef.current);
       runSave(sectionId, packageRef.current);
     },
-    [runSave, runValidation],
+    [isPackageLocked, runSave, runValidation],
   );
 
   const updatePackage = useCallback(
     (sectionId: string, nextPackage: DrugPublishPackage) => {
+      if (isPackageLocked(workflowRef.current?.state)) return;
       packageRef.current = nextPackage;
       setSnapshot((current) => ({
         ...current,
@@ -207,7 +214,7 @@ export function useDrugEditor({ drugId }: UseDrugEditorOptions) {
       runValidation(nextPackage);
       runSave(sectionId, nextPackage);
     },
-    [runSave, runValidation],
+    [isPackageLocked, runSave, runValidation],
   );
 
   const retrySave = useCallback(() => {
@@ -237,6 +244,11 @@ export function useDrugEditor({ drugId }: UseDrugEditorOptions) {
     setReloadToken((value) => value + 1);
   }, []);
 
+  const onWorkflowUpdated = useCallback((workflow: WorkflowItem) => {
+    workflowRef.current = workflow;
+    setSnapshot((current) => ({ ...current, workflow }));
+  }, []);
+
   const activeSection = getSectionById(snapshot.activeSectionId) ?? getSectionById(DEFAULT_SECTION_ID)!;
 
   return {
@@ -249,5 +261,6 @@ export function useDrugEditor({ drugId }: UseDrugEditorOptions) {
     updatePackage,
     retrySave,
     retryLoad,
+    onWorkflowUpdated,
   };
 }
