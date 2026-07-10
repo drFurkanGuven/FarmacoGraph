@@ -416,6 +416,23 @@ export interface DashboardSnapshot {
   entity_count: number;
 }
 
+export interface SnapshotItem {
+  id: string;
+  version_tag: string;
+  module: string | null;
+  status: string;
+  ontology_version: string;
+  api_version: string;
+  entity_count: number;
+  relationship_count: number;
+  evidence_count: number;
+  manifest: Record<string, unknown>;
+  released_at: string | null;
+  released_by: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
 export interface DashboardValidationFailure {
   source: string;
   job_id?: string;

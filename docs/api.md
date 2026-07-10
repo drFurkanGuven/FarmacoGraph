@@ -13,7 +13,7 @@
 
 The OpenAPI file at `openapi/openapi.yaml` describes the **full contract** (implemented + planned). FastAPI serves the live spec at `/openapi.json`.
 
-### Implemented endpoints (30 routes)
+### Implemented endpoints (32 routes)
 
 | Method | Path | Auth scope | Notes |
 |--------|------|------------|-------|
@@ -25,6 +25,8 @@ The OpenAPI file at `openapi/openapi.yaml` describes the **full contract** (impl
 | GET | `/api/v1/dashboard` | `knowledge:read` | Studio ops dashboard |
 | GET | `/api/v1/audit-logs` | `knowledge:read` | Recent audit entries |
 | GET | `/api/v1/jobs` | `knowledge:read` | Background job list |
+| GET | `/api/v1/snapshots` | `curator:publish` | List knowledge release manifests |
+| GET | `/api/v1/snapshots/{version_tag}` | `curator:publish` | Snapshot detail + manifest JSON |
 | GET | `/api/v1/drugs` | `knowledge:read` | List drugs |
 | GET | `/api/v1/drugs/{drug_id}` | `knowledge:read` | Drug detail |
 | GET | `/api/v1/search` | `knowledge:search` | Drug search (Neo4j when enabled) |
@@ -230,6 +232,8 @@ draft → review → approved → published → deprecated
 **Workflow timeline:** `GET /curator/workflows/{id}/timeline?limit=50&offset=0` — audit-backed activity feed (autosave, validation, submit, approve, publish, snapshot). Used by Drug Editor sidebar and Publish wizard.
 
 **Publish response:** `POST .../publish` returns `data.workflow` plus `published_slug`, `dataset_version`, `published_at`, `graph_write`, `snapshot`, and `validation_summary`.
+
+**Snapshot manifests (read-only):** `GET /snapshots` lists `KnowledgeSnapshot` rows from PostgreSQL (newest first). `GET /snapshots/{version_tag}` returns one manifest including `entity_count`, `relationship_count`, `evidence_count`, and `manifest` JSON. Used by Studio `/snapshots`. Returns an empty list when no snapshots exist; Neo4j is not required for reads.
 
 ### Dev-only / deprecated publishing paths
 

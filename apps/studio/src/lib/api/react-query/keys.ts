@@ -42,4 +42,7 @@ export const apiQueryKeys = {
   evidenceSearch: (q: string, limit?: number) =>
     [...apiQueryKeys.all, "evidence-search", q, limit ?? 100] as const,
   evidence: (id: string) => [...apiQueryKeys.all, "evidence", id] as const,
+  snapshots: (filters?: Record<string, unknown>) =>
+    [...apiQueryKeys.all, "snapshots", filters ?? {}] as const,
+  snapshot: (versionTag: string) => [...apiQueryKeys.all, "snapshot", versionTag] as const,
 };

@@ -28,6 +28,32 @@ class SnapshotService:
     async def get_by_version(self, version_tag: str) -> KnowledgeSnapshot | None:
         return await self._snapshots.get_by_version(version_tag)
 
+    async def list_snapshots(
+        self,
+        *,
+        limit: int = 50,
+        offset: int = 0,
+        module: str | None = None,
+    ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+        rows = await self._snapshots.list_all()
+        if module:
+            rows = [row for row in rows if row.module == module]
+        total = len(rows)
+        page = rows[offset : offset + limit]
+        return [serialize_snapshot(row) for row in page], {
+            "api_version": self._api_version,
+            "count": len(page),
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+        }
+
+    async def get_snapshot_detail(self, version_tag: str) -> dict[str, Any] | None:
+        snapshot = await self.get_by_version(version_tag)
+        if snapshot is None:
+            return None
+        return serialize_snapshot(snapshot)
+
     async def create_module_snapshot(
         self,
         module: str,
@@ -62,3 +88,22 @@ class SnapshotService:
             released_at=datetime.now(UTC),
         )
         return await self._snapshots.create(snapshot)
+
+
+def serialize_snapshot(snapshot: KnowledgeSnapshot) -> dict[str, Any]:
+    return {
+        "id": str(snapshot.id),
+        "version_tag": snapshot.version_tag,
+        "module": snapshot.module,
+        "status": snapshot.status,
+        "ontology_version": snapshot.ontology_version,
+        "api_version": snapshot.api_version,
+        "entity_count": snapshot.entity_count,
+        "relationship_count": snapshot.relationship_count,
+        "evidence_count": snapshot.evidence_count,
+        "manifest": snapshot.manifest_json or {},
+        "released_at": snapshot.released_at.isoformat() if snapshot.released_at else None,
+        "released_by": str(snapshot.released_by) if snapshot.released_by else None,
+        "created_at": snapshot.created_at.isoformat() if snapshot.created_at else None,
+        "updated_at": snapshot.updated_at.isoformat() if snapshot.updated_at else None,
+    }

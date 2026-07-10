@@ -24,7 +24,7 @@ The Curation Studio is the official interface for authoring, reviewing, validati
 | `/knowledge/mechanisms` | **MVP live** | Published mechanism DAG + Explain API preview; full DAG editor deferred |
 | `/knowledge/evidence` | **Complete** | Evidence manager — browse/search/create via `GET/POST /evidence` |
 | `/graph` | **Connected surface** | Drug graph projection API is routed; interactive graph query explorer deferred |
-| `/snapshots` | **Connected** | Dashboard snapshot marker + recently published workflows |
+| `/snapshots` | **MVP live** | `GET /snapshots`, `GET /snapshots/{version_tag}`; list + detail with manifest JSON; diff/release manager deferred |
 | `/activity` | **Connected** | Audit log + background jobs surface |
 | `/users` | **Placeholder** | Admin view deferred |
 
@@ -175,7 +175,7 @@ flowchart LR
 | Deliverable | API dependency | Status |
 |-------------|----------------|--------|
 | Diff Viewer (draft vs published) | Snapshot comparison (planned) | Not started |
-| Snapshot Manager | `KnowledgeSnapshot` HTTP API (planned) | `/snapshots` connected to dashboard snapshot marker; diff/release manager deferred |
+| Snapshot Manager | `GET /snapshots`, `GET /snapshots/{version_tag}` | `/snapshots` lists release manifests; diff/release manager deferred |
 | **Publish Wizard** | `POST /curator/workflows/{id}/submit`, `/approve`, `/publish` | **Complete** — Drug Editor dialog |
 | AI Draft Assistant | External LLM plugin (draft only, never auto-publish) | Planned |
 

@@ -141,7 +141,7 @@ See [api.md §1.3](api.md#13-curator-publish-workflow) and [studio-roadmap.md](s
 - AI Draft Assistant — drafts only, never auto-publish
 - Validation Center — grouped errors + fixes
 - Diff Viewer — draft vs published
-- Snapshot surface — current release marker + recently published workflows; full release diff manager deferred until snapshot HTTP API lands
+- Snapshot surface — `GET /snapshots` release list + detail; diff/release manager deferred
 - Publish Wizard — validation + approvals + snapshot
 - Search — global, synonym-ready
 - Activity Timeline — audit events

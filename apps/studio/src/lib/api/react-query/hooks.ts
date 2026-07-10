@@ -246,6 +246,25 @@ export function useDiseaseWorkflowState(slug: string) {
   );
 }
 
+export function useSnapshots(options?: { module?: string; limit?: number; offset?: number }) {
+  const client = useApiClient();
+  const filters = options ?? {};
+  return useApiQuery(
+    apiQueryKeys.snapshots(filters),
+    () => client.snapshots(options),
+    defaultQueryOptions,
+  );
+}
+
+export function useSnapshot(versionTag: string) {
+  const client = useApiClient();
+  return useApiQuery(
+    apiQueryKeys.snapshot(versionTag),
+    () => client.snapshot(versionTag),
+    { ...defaultQueryOptions, enabled: Boolean(versionTag) },
+  );
+}
+
 export function useOpenDrugWorkflow() {
   const client = useApiClient();
   return useMutation({

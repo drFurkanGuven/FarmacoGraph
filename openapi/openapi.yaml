@@ -227,6 +227,53 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  /snapshots:
+    get:
+      tags: [Snapshots]
+      summary: List knowledge release snapshots
+      operationId: listSnapshots
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: module
+          in: query
+          schema: { type: string }
+        - $ref: "#/components/parameters/PageLimit"
+        - $ref: "#/components/parameters/PageOffset"
+      responses:
+        "200":
+          description: Snapshot list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SnapshotListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /snapshots/{version_tag}:
+    get:
+      tags: [Snapshots]
+      summary: Get snapshot by version tag
+      operationId: getSnapshot
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: version_tag
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Snapshot detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SnapshotDetailResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /curator/drugs:
     get:
       tags: [Curator]
@@ -1864,6 +1911,38 @@ components:
       type: object
       properties:
         data: { type: array, items: { type: object } }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    SnapshotItem:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        version_tag: { type: string }
+        module: { type: string, nullable: true }
+        status: { type: string }
+        ontology_version: { type: string }
+        api_version: { type: string }
+        entity_count: { type: integer }
+        relationship_count: { type: integer }
+        evidence_count: { type: integer }
+        manifest: { type: object, additionalProperties: true }
+        released_at: { type: string, format: date-time, nullable: true }
+        released_by: { type: string, format: uuid, nullable: true }
+        created_at: { type: string, format: date-time, nullable: true }
+        updated_at: { type: string, format: date-time, nullable: true }
+
+    SnapshotListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/SnapshotItem" }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    SnapshotDetailResponse:
+      type: object
+      properties:
+        data: { $ref: "#/components/schemas/SnapshotItem" }
         meta: { $ref: "#/components/schemas/ResponseMeta" }
 
     CuratorDrugListResponse:

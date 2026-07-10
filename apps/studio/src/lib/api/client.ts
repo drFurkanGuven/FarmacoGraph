@@ -26,6 +26,7 @@ import type {
   PublishWorkflowResult,
   StatisticsData,
   StudyViewData,
+  SnapshotItem,
   ValidationResult,
   WorkflowItem,
   WorkflowTimelineEvent,
@@ -317,6 +318,17 @@ export class FarmacoGraphClient {
 
   getCardiovascularStub() {
     return this.request<Record<string, unknown>>("/curator/stubs/cardiovascular");
+  }
+
+  snapshots(options?: PaginationParams & { module?: string }) {
+    const { module, ...pagination } = options ?? {};
+    return this.request<SnapshotItem[]>("/snapshots", {
+      params: { module, ...buildPaginationParams(pagination) },
+    });
+  }
+
+  snapshot(versionTag: string) {
+    return this.request<SnapshotItem>(`/snapshots/${encodeURIComponent(versionTag)}`);
   }
 
   explain(params: { drug: string; effect?: string; questionType?: string }) {

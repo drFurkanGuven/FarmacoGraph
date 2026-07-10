@@ -122,4 +122,18 @@ describe("FarmacoGraphClient", () => {
       },
     });
   });
+
+  it("calls snapshot list and detail routes", async () => {
+    const transport = createMockTransport();
+    const client = new FarmacoGraphClient({ baseUrl: "http://api.test/api/v1/" });
+    Object.defineProperty(client, "transport", { value: transport });
+
+    await client.snapshots({ module: "cardiovascular", limit: 25, offset: 0 });
+    await client.snapshot("2026.1.0");
+
+    expect(transport.request).toHaveBeenNthCalledWith(1, "/snapshots", {
+      params: { module: "cardiovascular", limit: 25, offset: 0 },
+    });
+    expect(transport.request).toHaveBeenNthCalledWith(2, "/snapshots/2026.1.0", {});
+  });
 });

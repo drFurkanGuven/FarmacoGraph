@@ -22,6 +22,7 @@ from farmacograph.api.routers import (
     health,
     learning,
     platform,
+    snapshots,
 )
 from farmacograph.auth.middleware import AuthContextMiddleware
 from farmacograph.core.config import get_settings
@@ -115,6 +116,7 @@ def create_app() -> FastAPI:
     api_v1.include_router(platform.modules_router)
     api_v1.include_router(platform.stats_router)
     api_v1.include_router(learning.router)
+    api_v1.include_router(snapshots.router)
 
     app.mount("/api/v1", api_v1)
 
