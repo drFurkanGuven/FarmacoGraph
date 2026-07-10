@@ -11,6 +11,9 @@ import type {
   DiseaseBrowseItem,
   DrugPackage,
   EducationResource,
+  ExplainData,
+  GraphProjectionData,
+  MechanismDAGData,
   DrugSummary,
   DrugWorkflowState,
   HealthData,
@@ -134,6 +137,29 @@ export class FarmacoGraphClient {
 
   getDrugStudyView(drugRef: string) {
     return this.request<StudyViewData>(`/drugs/${drugRef}/study`);
+  }
+
+  getDrugGraph(
+    drugId: string,
+    options?: { depth?: number; datasetVersion?: string | null },
+  ) {
+    const { depth, datasetVersion } = options ?? {};
+    const params: Record<string, string | number | boolean | undefined> = {};
+    if (depth) params.depth = depth;
+    if (datasetVersion) params.dataset_version = datasetVersion;
+    return this.request<GraphProjectionData>(`/drugs/${drugId}/graph`, {
+      params,
+      datasetVersion,
+    });
+  }
+
+  getDrugMechanism(drugId: string, datasetVersion?: string | null) {
+    const params: Record<string, string | number | boolean | undefined> = {};
+    if (datasetVersion) params.dataset_version = datasetVersion;
+    return this.request<MechanismDAGData>(`/drugs/${drugId}/mechanism`, {
+      params,
+      datasetVersion,
+    });
   }
 
   dashboard(module = "cardiovascular") {
@@ -294,7 +320,7 @@ export class FarmacoGraphClient {
   }
 
   explain(params: { drug: string; effect?: string; questionType?: string }) {
-    return this.request<Record<string, unknown>>("/explain", {
+    return this.request<ExplainData>("/explain", {
       params: {
         drug: params.drug,
         effect: params.effect,

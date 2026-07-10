@@ -157,6 +157,24 @@ export function useDrugStudyView(drug: string) {
   );
 }
 
+export function useDrugGraph(drug: string, depth = 2) {
+  const client = useApiClient();
+  return useApiQuery(
+    apiQueryKeys.drugGraph(drug, depth),
+    () => client.getDrugGraph(drug, { depth }),
+    { ...defaultQueryOptions, enabled: Boolean(drug) && isUuid(drug) },
+  );
+}
+
+export function useDrugMechanism(drug: string) {
+  const client = useApiClient();
+  return useApiQuery(
+    apiQueryKeys.drugMechanism(drug),
+    () => client.getDrugMechanism(drug),
+    { ...defaultQueryOptions, enabled: Boolean(drug) && isUuid(drug) },
+  );
+}
+
 export function useExplain(drug: string, effect?: string) {
   const client = useApiClient();
   return useApiQuery(

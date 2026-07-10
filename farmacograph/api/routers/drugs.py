@@ -69,6 +69,33 @@ async def list_drug_evidence(
     return {"data": data, "meta": meta}
 
 
+@router.get("/{drug_id}/graph")
+async def get_drug_graph(
+    drug_id: UUID,
+    service: Annotated[DrugService, Depends(get_drug_service)],
+    _auth: Annotated[AuthContext, Depends(require_scope("knowledge:read"))],
+    depth: int = Query(2, ge=1, le=3),
+    dataset_version: str | None = None,
+) -> dict:
+    data, meta = await service.get_drug_graph(
+        drug_id,
+        depth=depth,
+        dataset_version=dataset_version,
+    )
+    return {"data": data, "meta": meta.model_dump()}
+
+
+@router.get("/{drug_id}/mechanism")
+async def get_drug_mechanism(
+    drug_id: UUID,
+    service: Annotated[DrugService, Depends(get_drug_service)],
+    _auth: Annotated[AuthContext, Depends(require_scope("knowledge:read"))],
+    dataset_version: str | None = None,
+) -> dict:
+    data, meta = await service.get_drug_mechanism(drug_id, dataset_version=dataset_version)
+    return {"data": data, "meta": meta.model_dump()}
+
+
 @router.get("/{drug_id}/education")
 async def list_drug_education(
     drug_id: UUID,

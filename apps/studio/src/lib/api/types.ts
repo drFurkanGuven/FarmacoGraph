@@ -178,6 +178,59 @@ export interface StudyViewData {
   content_layers: string[];
 }
 
+export interface GraphNodeData {
+  id: string;
+  labels?: string[];
+  entity_type?: string;
+  label?: string;
+  slug?: string | null;
+  properties?: Record<string, unknown>;
+}
+
+export interface GraphEdgeData {
+  id: string;
+  relationship_type: string;
+  source_id: string;
+  target_id: string;
+  source_type?: string;
+  target_type?: string;
+  properties?: Record<string, unknown> | null;
+}
+
+export interface GraphProjectionData {
+  nodes: GraphNodeData[];
+  edges: GraphEdgeData[];
+  layout_hint?: string;
+  depth?: number;
+}
+
+export interface MechanismDAGData {
+  drug_id: string;
+  root_fragment_id: string | null;
+  nodes: GraphNodeData[];
+  edges: GraphEdgeData[];
+  clinical_outcomes?: string[];
+  is_acyclic: boolean;
+}
+
+export interface ExplainStepData {
+  step: number;
+  from_entity: Record<string, unknown>;
+  relationship: string;
+  to_entity: Record<string, unknown>;
+  explanation: string;
+  evidence_ids: string[];
+}
+
+export interface ExplainData {
+  question: string;
+  answer_summary: string | null;
+  reasoning_chain: ExplainStepData[];
+  confidence: number | null;
+  evidence_level: string | null;
+  content_layers: string[];
+}
+
 export interface PackageValidation {
   valid: boolean;
   error_count: number;

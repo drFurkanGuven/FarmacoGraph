@@ -86,4 +86,40 @@ describe("FarmacoGraphClient", () => {
       body,
     });
   });
+
+  it("calls graph and mechanism routes with UUID drug identity", async () => {
+    const transport = createMockTransport();
+    const client = new FarmacoGraphClient({ baseUrl: "http://api.test/api/v1/" });
+    Object.defineProperty(client, "transport", { value: transport });
+
+    await client.getDrugGraph("00000000-0000-4000-8000-000000000001", { depth: 3 });
+    await client.getDrugMechanism("00000000-0000-4000-8000-000000000001");
+
+    expect(transport.request).toHaveBeenNthCalledWith(
+      1,
+      "/drugs/00000000-0000-4000-8000-000000000001/graph",
+      { params: { depth: 3 }, datasetVersion: undefined },
+    );
+    expect(transport.request).toHaveBeenNthCalledWith(
+      2,
+      "/drugs/00000000-0000-4000-8000-000000000001/mechanism",
+      { params: {}, datasetVersion: undefined },
+    );
+  });
+
+  it("calls explain mechanism route with slug drug identity", async () => {
+    const transport = createMockTransport();
+    const client = new FarmacoGraphClient({ baseUrl: "http://api.test/api/v1/" });
+    Object.defineProperty(client, "transport", { value: transport });
+
+    await client.explain({ drug: "ramipril" });
+
+    expect(transport.request).toHaveBeenCalledWith("/explain", {
+      params: {
+        drug: "ramipril",
+        effect: undefined,
+        question_type: "mechanism",
+      },
+    });
+  });
 });

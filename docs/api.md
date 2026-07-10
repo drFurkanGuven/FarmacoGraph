@@ -421,39 +421,38 @@ Full drug profile with relationship summaries (not embedded duplicates).
 
 ### `GET /drugs/{id}/graph`
 
-Subgraph for visualization around a drug.
+Native subgraph projection around a published drug UUID.
 
 **Query parameters:**
 
 | Param | Type | Description |
 |-------|------|-------------|
 | `depth` | int | Traversal depth (1–3, default 2) |
-| `include` | string[] | Relationship types to include |
-| `exclude` | string[] | Relationship types to exclude |
-| `format` | string | `react_flow` \| `cytoscape` \| `native` |
+| `dataset_version` | string | Optional published dataset version |
 
-**Response:** Graph projection (see Section 8).
+**Response:** `{nodes, edges, layout_hint, depth}` graph projection. `nodes[].properties` and `edges[].properties` preserve graph-native metadata.
 
 ---
 
 ### `GET /drugs/{id}/mechanism`
 
-Mechanism DAG projection.
+Published mechanism DAG projection for a drug UUID.
 
 **Response:**
 
 ```json
 {
   "data": {
-    "drug_id": "drug:...",
-    "root_fragment_id": "fragment:...",
+    "drug_id": "00000000-0000-4000-8000-000000000101",
+    "root_fragment_id": "00000000-0000-4000-8000-000000000201",
     "nodes": [
-      {"id": "fragment:...", "label": "ACE Inhibition", "type": "MechanismFragment"}
+      {"id": "00000000-0000-4000-8000-000000000201", "label": "ACE Inhibition", "entity_type": "MechanismFragment"}
     ],
     "edges": [
-      {"type": "PRECEDES", "source": "...", "target": "...", "metadata": {}}
+      {"relationship_type": "HAS_MECHANISM_ROOT", "source_id": "00000000-0000-4000-8000-000000000101", "target_id": "00000000-0000-4000-8000-000000000201", "properties": {}}
     ],
-    "clinical_outcomes": []
+    "clinical_outcomes": [],
+    "is_acyclic": true
   }
 }
 ```
@@ -611,19 +610,19 @@ Structured reasoning chain — core explainability endpoint.
 
 | Param | Type | Description |
 |-------|------|-------------|
-| `drug` | string | Drug slug (required) |
+| `drug` | string | Drug slug or UUID (required) |
 | `effect` | string | Side effect or outcome slug |
 | `question_type` | string | mechanism, interaction, indication, monitoring |
 
-**Example:** `GET /explain?drug=ramipril&effect=dry-cough&question_type=mechanism`
+**Example:** `GET /explain?drug=ramipril&question_type=mechanism`
 
 **Response:**
 
 ```json
 {
   "data": {
-    "question": "Why does ramipril cause dry cough?",
-    "answer_summary": "ACE inhibition reduces bradykinin degradation...",
+    "question": "Explain ramipril mechanism",
+    "answer_summary": "Ramipril mechanism starts at ACE Inhibition.",
     "reasoning_chain": [
       {
         "step": 1,

@@ -12,7 +12,6 @@ uv run pytest tests/api/contract/ -m contract
 
 | Test | Reason |
 |------|--------|
-| `test_drugs_contract.py::test_drug_graph_contract` | `GET /drugs/{drug_id}/graph` is documented in OpenAPI but not implemented in FastAPI yet. Unskip when the graph projection route ships. |
 | `test_evidence_contract.py::test_get_evidence_detail_openapi_when_present` | Skips when the evidence list is empty (no Neo4j seed data in contract test env). |
 | `test_evidence_contract.py::test_create_evidence_openapi_envelope` | Skips when `POST /evidence` returns 503 (`FG_NEO4J_ENABLED=false` in contract tests). Unskip in CI with Neo4j enabled. |
 | `test_evidence_contract.py::test_attach_evidence_to_drug_openapi_envelope` | Skips on 503 (Neo4j off) or 404 (no seeded drug/evidence graph). |

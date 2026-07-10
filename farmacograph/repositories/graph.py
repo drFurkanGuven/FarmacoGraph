@@ -160,6 +160,144 @@ class GraphRepository:
         )
         return results[0] if results else None
 
+    async def get_drug_graph_projection(
+        self,
+        drug_id: UUID,
+        *,
+        depth: int = 2,
+        dataset_version: str | None = None,
+    ) -> dict[str, Any]:
+        if not self.is_available:
+            return {"nodes": [], "edges": [], "layout_hint": "dagre", "depth": depth}
+        bounded_depth = max(1, min(depth, 3))
+        results = await self._driver.run_query(
+            f"""
+            MATCH (d:Drug {{id: $id}})
+            WHERE ($dv IS NULL OR d.dataset_version = $dv)
+            OPTIONAL MATCH path = (d)-[*1..{bounded_depth}]-(n)
+            WITH d, [pathItem IN collect(path) WHERE pathItem IS NOT NULL] AS paths
+            WITH collect(DISTINCT d) +
+                 reduce(acc = [], pathItem IN paths | acc + nodes(pathItem)) AS raw_nodes,
+                 reduce(acc = [], pathItem IN paths | acc + relationships(pathItem)) AS rels
+            UNWIND raw_nodes AS node
+            WITH collect(DISTINCT node) AS nodes, rels
+            UNWIND CASE WHEN size(rels) = 0 THEN [null] ELSE rels END AS rel
+            RETURN
+              [node IN nodes WHERE node IS NOT NULL | {{
+                id: node.id,
+                labels: labels(node),
+                entity_type: coalesce(node.entity_type, head(labels(node))),
+                label: coalesce(node.label, node.generic_name, node.slug, node.id),
+                slug: node.slug,
+                properties: node {{.*}}
+              }}] AS nodes,
+              [edge IN collect(DISTINCT CASE WHEN rel IS NULL THEN null ELSE {{
+                id: elementId(rel),
+                relationship_type: type(rel),
+                source_id: startNode(rel).id,
+                target_id: endNode(rel).id,
+                source_type: coalesce(startNode(rel).entity_type, head(labels(startNode(rel)))),
+                target_type: coalesce(endNode(rel).entity_type, head(labels(endNode(rel)))),
+                properties: rel {{.*}}
+              }} END) WHERE edge IS NOT NULL] AS edges
+            """,
+            {"id": str(drug_id), "dv": dataset_version},
+        )
+        if not results:
+            return {"nodes": [], "edges": [], "layout_hint": "dagre", "depth": bounded_depth}
+        row = results[0]
+        edges = [edge for edge in row.get("edges", []) if edge.get("id")]
+        return {
+            "nodes": row.get("nodes", []),
+            "edges": edges,
+            "layout_hint": "dagre",
+            "depth": bounded_depth,
+        }
+
+    async def get_drug_mechanism_dag(
+        self,
+        drug_id: UUID,
+        *,
+        dataset_version: str | None = None,
+    ) -> dict[str, Any]:
+        if not self.is_available:
+            return {
+                "drug_id": str(drug_id),
+                "root_fragment_id": None,
+                "nodes": [],
+                "edges": [],
+                "clinical_outcomes": [],
+                "is_acyclic": True,
+            }
+        results = await self._driver.run_query(
+            """
+            MATCH (d:Drug {id: $id})
+            WHERE ($dv IS NULL OR d.dataset_version = $dv)
+            OPTIONAL MATCH (d)-[rootRel:HAS_MECHANISM_ROOT]->(root:MechanismFragment)
+            OPTIONAL MATCH path = (root)-[:PRECEDES|BRANCHES_TO|MERGES_INTO|RESULTS_IN*0..8]->(n)
+            WITH d, root, rootRel, [pathItem IN collect(path) WHERE pathItem IS NOT NULL] AS paths
+            WITH d, root, rootRel,
+                 collect(DISTINCT root) +
+                 reduce(acc = [], pathItem IN paths | acc + nodes(pathItem)) AS raw_nodes,
+                 reduce(acc = [], pathItem IN paths | acc + relationships(pathItem)) AS rels
+            UNWIND raw_nodes AS node
+            WITH d, root, rootRel, collect(DISTINCT node) AS nodes, rels
+            UNWIND CASE WHEN size(rels) = 0 THEN [null] ELSE rels END AS rel
+            RETURN
+              root.id AS root_fragment_id,
+              [node IN nodes WHERE node IS NOT NULL | {
+                id: node.id,
+                labels: labels(node),
+                entity_type: coalesce(node.entity_type, head(labels(node))),
+                label: coalesce(node.label, node.slug, node.id),
+                slug: node.slug,
+                properties: node {.*}
+              }] AS nodes,
+              CASE WHEN rootRel IS NULL THEN [] ELSE [{
+                id: elementId(rootRel),
+                relationship_type: type(rootRel),
+                source_id: d.id,
+                target_id: root.id,
+                source_type: coalesce(d.entity_type, "Drug"),
+                target_type: coalesce(root.entity_type, "MechanismFragment"),
+                properties: rootRel {.*}
+              }] END +
+              [edge IN collect(DISTINCT CASE WHEN rel IS NULL THEN null ELSE {
+                id: elementId(rel),
+                relationship_type: type(rel),
+                source_id: startNode(rel).id,
+                target_id: endNode(rel).id,
+                source_type: coalesce(startNode(rel).entity_type, head(labels(startNode(rel)))),
+                target_type: coalesce(endNode(rel).entity_type, head(labels(endNode(rel)))),
+                properties: rel {.*}
+              } END) WHERE edge IS NOT NULL] AS edges
+            """,
+            {"id": str(drug_id), "dv": dataset_version},
+        )
+        if not results:
+            return {
+                "drug_id": str(drug_id),
+                "root_fragment_id": None,
+                "nodes": [],
+                "edges": [],
+                "clinical_outcomes": [],
+                "is_acyclic": True,
+            }
+        row = results[0]
+        edges = [edge for edge in row.get("edges", []) if edge.get("id")]
+        return {
+            "drug_id": str(drug_id),
+            "root_fragment_id": row.get("root_fragment_id"),
+            "nodes": row.get("nodes", []),
+            "edges": edges,
+            "clinical_outcomes": [
+                node["id"]
+                for node in row.get("nodes", [])
+                if node.get("entity_type") in {"ClinicalOutcome", "SideEffect"}
+            ],
+            "is_acyclic": True,
+        }
+
     async def find_explain_path(
         self,
         drug_slug: str,

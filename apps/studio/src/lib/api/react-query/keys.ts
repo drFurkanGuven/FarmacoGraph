@@ -31,6 +31,9 @@ export const apiQueryKeys = {
   drugEducation: (drug: string) => [...apiQueryKeys.all, "drug-education", drug] as const,
   drugFlashcards: (drug: string) => [...apiQueryKeys.all, "drug-flashcards", drug] as const,
   drugStudyView: (drug: string) => [...apiQueryKeys.all, "drug-study-view", drug] as const,
+  drugGraph: (drug: string, depth?: number) =>
+    [...apiQueryKeys.all, "drug-graph", drug, depth ?? 2] as const,
+  drugMechanism: (drug: string) => [...apiQueryKeys.all, "drug-mechanism", drug] as const,
   workflow: (workflowId: string) => [...apiQueryKeys.all, "workflow", workflowId] as const,
   workflowTimeline: (workflowId: string, pagination?: { limit?: number; offset?: number }) =>
     [...apiQueryKeys.all, "workflow-timeline", workflowId, pagination ?? {}] as const,

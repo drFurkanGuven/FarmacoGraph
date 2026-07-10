@@ -21,9 +21,9 @@ The Curation Studio is the official interface for authoring, reviewing, validati
 | `/validation` | **Complete** | Validation Center — `GET /curator/validation-summary`, queue dry-runs via `POST /curator/validate` |
 | `/knowledge/diseases` | **Connected** | Disease browser for shared disease nodes and curator workflows |
 | `/knowledge/education` | **MVP live** | Drug Editor education section for summaries, pearls, mnemonics, common mistakes, and flashcards; `GET /drugs/{id}/education` + flashcard read contracts |
-| `/knowledge/mechanisms` | **Connected surface** | Read-only navigation surface; mechanism editor/API contracts deferred |
+| `/knowledge/mechanisms` | **MVP live** | Published mechanism DAG + Explain API preview; full DAG editor deferred |
 | `/knowledge/evidence` | **Complete** | Evidence manager — browse/search/create via `GET/POST /evidence` |
-| `/graph` | **Connected surface** | Preview/navigation surface; graph query explorer deferred |
+| `/graph` | **Connected surface** | Drug graph projection API is routed; interactive graph query explorer deferred |
 | `/snapshots` | **Connected** | Dashboard snapshot marker + recently published workflows |
 | `/activity` | **Connected** | Audit log + background jobs surface |
 | `/users` | **Placeholder** | Admin view deferred |
@@ -132,12 +132,12 @@ The right panel updates as the curator edits so they always see where the drug s
 | Deliverable | Technology | Status |
 |-------------|------------|--------|
 | **Validation Center** | Grouped errors from `/curator/validate`, `/curator/validation-summary` | **Complete** |
-| Mechanism surface | React Flow DAG later | **Connected surface** — editor deferred |
-| Graph Explorer | Cytoscape.js later | **Connected surface** — query/canvas deferred |
+| Mechanism surface | React Flow DAG later | **MVP live** — published DAG + Explain preview; editor deferred |
+| Graph Explorer | Cytoscape.js later | **Connected surface** — projection API routed; query/canvas deferred |
 
 The Validation Center (`/validation`) surfaces summary stats, publish readiness, grouped issue sections (errors, warnings, ontology violations, missing evidence), and client-side dry-runs for up to 15 queue items. Auto-refreshes every 30 seconds.
 
-**Exit criteria (partial):** Resolve validation errors before submit — met via editor + validation center. Mechanism DAG visualization remains planned.
+**Exit criteria (partial):** Resolve validation errors before submit — met via editor + validation center. Mechanism DAG API preview is live; interactive visualization/editor remains planned.
 
 ### Evidence workflow (partial)
 
@@ -332,7 +332,7 @@ Implemented in `apps/studio/src/lib/api/client.ts`:
 | `explain(…)` | `GET /explain` | Drug Editor context panel |
 | `submitWorkflow` / `approveWorkflow` / `publishWorkflow` | Curator transitions | **Wired** — Publish wizard mutations + cache invalidation |
 
-**Not yet wired to feature UI:** graph explorer, mechanism editor, dedicated activity/users pages, snapshot manager page. Dashboard composes some ops data via `GET /dashboard`.
+**Not yet wired to feature UI:** full graph explorer canvas, mechanism DAG editor, users page, snapshot diff/release manager. Dashboard composes some ops data via `GET /dashboard`.
 
 ---
 

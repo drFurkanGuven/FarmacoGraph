@@ -41,6 +41,18 @@ class DrugService:
             content_layers=[ContentLayer.EDUCATION],
         )
 
+    def _graph_meta(
+        self, dataset_version: str | None = None, query_time_ms: int | None = None
+    ) -> ResponseMeta:
+        return ResponseMeta(
+            dataset_version=dataset_version
+            or self._settings.current_dataset_version
+            or "unpublished",
+            ontology_version=self._settings.ontology_version,
+            query_time_ms=query_time_ms,
+            content_layers=[ContentLayer.BIOMEDICAL],
+        )
+
     async def list_drugs(
         self,
         *,
@@ -103,3 +115,37 @@ class DrugService:
     ) -> tuple[list[dict[str, Any]], ResponseMeta]:
         education, meta = await self.get_drug_education(drug_id, dataset_version)
         return [item for item in education if item.get("kind") == "Flashcard"], meta
+
+    async def get_drug_graph(
+        self,
+        drug_id: UUID,
+        *,
+        depth: int = 2,
+        dataset_version: str | None = None,
+    ) -> tuple[dict[str, Any], ResponseMeta]:
+        import time
+
+        start = time.perf_counter()
+        graph = await self._graph.get_drug_graph_projection(
+            drug_id,
+            depth=depth,
+            dataset_version=dataset_version,
+        )
+        elapsed = int((time.perf_counter() - start) * 1000)
+        return graph, self._graph_meta(dataset_version, elapsed)
+
+    async def get_drug_mechanism(
+        self,
+        drug_id: UUID,
+        *,
+        dataset_version: str | None = None,
+    ) -> tuple[dict[str, Any], ResponseMeta]:
+        import time
+
+        start = time.perf_counter()
+        mechanism = await self._graph.get_drug_mechanism_dag(
+            drug_id,
+            dataset_version=dataset_version,
+        )
+        elapsed = int((time.perf_counter() - start) * 1000)
+        return mechanism, self._graph_meta(dataset_version, elapsed)
