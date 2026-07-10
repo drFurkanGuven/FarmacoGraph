@@ -9,6 +9,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { Input } from "@/components/ui/input";
 import { TableSkeleton } from "@/components/ui/loading-skeleton";
 import { ApiError } from "@/lib/api";
+import { CreateDiseaseDialog } from "./create-disease-dialog";
 import { DiseaseTable } from "./disease-table";
 import { useDiseaseBrowser } from "./use-disease-browser";
 import { useState } from "react";
@@ -31,6 +32,7 @@ export function DiseaseBrowser() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <CreateDiseaseDialog />
           <Button asChild variant="outline" size="sm">
             <Link href="/validation">
               <ShieldCheck className="h-4 w-4" />
@@ -77,8 +79,12 @@ export function DiseaseBrowser() {
         <EmptyState
           icon={<Stethoscope className="h-6 w-6" />}
           title="No diseases found"
-          description="Try clearing filters or check API connectivity."
-        />
+          description="Add a disease to start a draft workflow, or clear filters."
+        >
+          <div className="mt-4">
+            <CreateDiseaseDialog />
+          </div>
+        </EmptyState>
       ) : (
         <DiseaseTable
           rows={browser.rows}

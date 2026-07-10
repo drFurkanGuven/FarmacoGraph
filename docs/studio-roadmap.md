@@ -19,7 +19,7 @@ The Curation Studio is the official interface for authoring, reviewing, validati
 | `/knowledge/drugs` | **Complete** | Drug Browser — merges `GET /drugs`, `GET /search`, `GET /modules`, `GET /curator/queue`; opens editor at `/knowledge/drugs/{slug\|id}` |
 | `/knowledge/drugs/[id]` | **Complete** | Drug Editor — sectioned fields, debounced autosave (`PUT .../package`), live validation |
 | `/validation` | **Complete** | Validation Center — `GET /curator/validation-summary`, queue dry-runs via `POST /curator/validate` |
-| `/knowledge/diseases` | **MVP live** | Disease browser + editor with provenance, autosave status, validation context, publish wizard; disease evidence attach deferred |
+| `/knowledge/diseases` | **MVP live** | Disease browser (Add disease) + editor with provenance, autosave status, validation context, publish wizard; disease evidence attach deferred |
 | `/knowledge/education` | **MVP live** | Drug Editor education section for summaries, pearls, mnemonics, common mistakes, and flashcards; `GET /drugs/{id}/education` + flashcard read contracts |
 | `/knowledge/mechanisms` | **MVP live** | Mechanism fragment picker in Drug Editor; published DAG + Explain preview with interactive canvas; full pathway authoring deferred |
 | `/knowledge/evidence` | **Complete** | Evidence manager — browse/search/create via `GET/POST /evidence` |

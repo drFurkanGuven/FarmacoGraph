@@ -33,6 +33,9 @@ apps/studio/test-results/
 *.sqlite
 *.sqlite3
 
+# Curator runtime disease catalog (override with FG_DISEASE_CATALOG_PATH)
+staging/cardiovascular/shared/diseases.runtime.json
+
 # IDE
 .idea/
 .vscode/

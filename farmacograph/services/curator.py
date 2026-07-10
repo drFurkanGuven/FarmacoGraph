@@ -12,6 +12,7 @@ from farmacograph.curator.disease_package import (
     disease_entity_id,
     list_disease_catalog,
     load_disease_package,
+    register_disease,
 )
 from farmacograph.curator.drug_package import (
     CV_DRUGS_DIR,
@@ -486,10 +487,40 @@ class CuratorService:
         total = len(items)
         return items[offset : offset + limit], total
 
+    async def create_disease(
+        self,
+        *,
+        slug: str,
+        label: str,
+        description: str | None = None,
+        icd10: str | None = None,
+        mesh: str | None = None,
+        actor_id: uuid.UUID | None = None,
+    ) -> tuple[dict[str, Any], CuratorWorkflow, dict[str, Any]]:
+        """Register a disease in the runtime catalog and open a draft workflow."""
+        try:
+            entity = register_disease(
+                slug=slug,
+                label=label,
+                description=description,
+                icd10=icd10,
+                mesh=mesh,
+            )
+        except ValueError as exc:
+            raise ValidationError(str(exc)) from exc
+
+        workflow, package = await self.get_or_create_workflow_for_disease_slug(
+            entity["slug"], actor_id=actor_id
+        )
+        return entity, workflow, package
+
     async def get_or_create_workflow_for_disease_slug(
         self, slug: str, *, actor_id: uuid.UUID | None = None
     ) -> tuple[CuratorWorkflow, dict[str, Any]]:
-        entity_id = disease_entity_id(slug)
+        try:
+            entity_id = disease_entity_id(slug)
+        except ValueError as exc:
+            raise NotFoundError(str(exc)) from exc
         workflow = await self._curator.get_by_entity(entity_id)
         package = await self.resolve_disease_package(slug, workflow)
         if workflow is None:
@@ -502,7 +533,10 @@ class CuratorService:
         return workflow, package
 
     async def get_disease_package(self, slug: str) -> tuple[dict[str, Any], CuratorWorkflow | None]:
-        entity_id = disease_entity_id(slug)
+        try:
+            entity_id = disease_entity_id(slug)
+        except ValueError as exc:
+            raise NotFoundError(str(exc)) from exc
         workflow = await self._curator.get_by_entity(entity_id)
         package = await self.resolve_disease_package(slug, workflow)
         return package, workflow
@@ -517,7 +551,10 @@ class CuratorService:
         if package_path.is_file():
             return load_disease_package(package_path).model_dump()
 
-        return build_disease_entry_package(slug)
+        try:
+            return build_disease_entry_package(slug)
+        except ValueError as exc:
+            raise NotFoundError(str(exc)) from exc
 
     async def get_or_create_workflow_for_slug(
         self, slug: str, *, actor_id: uuid.UUID | None = None
@@ -565,7 +602,10 @@ class CuratorService:
 
     async def get_disease_workflow_state(self, slug: str) -> dict[str, Any]:
         """Aggregate workflow, validation, actors, and snapshot for a disease slug."""
-        entity_id = disease_entity_id(slug)
+        try:
+            entity_id = disease_entity_id(slug)
+        except ValueError as exc:
+            raise NotFoundError(str(exc)) from exc
         return await self._get_entity_workflow_state(
             slug, entity_id, package_loader=self.resolve_disease_package
         )

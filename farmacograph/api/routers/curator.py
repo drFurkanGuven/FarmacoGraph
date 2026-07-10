@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from farmacograph.api.deps import get_app_container, get_evidence_service, require_scope
 from farmacograph.api.schemas.curator import (
+    CreateDiseaseRequest,
     CreateWorkflowRequest,
     DrugWorkflowStateResponse,
     EntityWorkflowStateResponse,
@@ -105,6 +106,34 @@ async def list_curator_diseases(
     }
 
 
+@router.post("/diseases", status_code=201)
+async def create_disease(
+    body: CreateDiseaseRequest,
+    service=Depends(get_curator_service),
+    auth: Annotated[AuthContext, Depends(require_scope("curator:write"))] = None,
+) -> dict:
+    try:
+        entity, workflow, package = await service.create_disease(
+            slug=body.slug,
+            label=body.label,
+            description=body.description,
+            icd10=body.icd10,
+            mesh=body.mesh,
+            actor_id=auth.user_id,
+        )
+    except ValidationError as exc:
+        raise HTTPException(status_code=400, detail=exc.message) from exc
+    return {
+        "data": {
+            "entity": entity,
+            "workflow": WorkflowResponse.from_model(workflow).model_dump(),
+            "package": package,
+            "validation": service.validate_draft_package(package),
+        },
+        "meta": {"api_version": "v1", "slug": entity["slug"]},
+    }
+
+
 @router.get("/mechanism-fragments")
 async def list_curator_mechanism_fragments(
     service=Depends(get_curator_service),
@@ -138,9 +167,12 @@ async def open_disease_workflow(
     service=Depends(get_curator_service),
     auth: Annotated[AuthContext, Depends(require_scope("curator:write"))] = None,
 ) -> dict:
-    workflow, package = await service.get_or_create_workflow_for_disease_slug(
-        slug, actor_id=auth.user_id
-    )
+    try:
+        workflow, package = await service.get_or_create_workflow_for_disease_slug(
+            slug, actor_id=auth.user_id
+        )
+    except NotFoundError as exc:
+        raise HTTPException(status_code=404, detail=exc.message) from exc
     return {
         "data": {
             "workflow": WorkflowResponse.from_model(workflow).model_dump(),
@@ -157,7 +189,10 @@ async def get_disease_package(
     service=Depends(get_curator_service),
     _auth: Annotated[AuthContext, Depends(require_scope("curator:write"))] = None,
 ) -> dict:
-    package, workflow = await service.get_disease_package(slug)
+    try:
+        package, workflow = await service.get_disease_package(slug)
+    except NotFoundError as exc:
+        raise HTTPException(status_code=404, detail=exc.message) from exc
     return {
         "data": package,
         "meta": {
@@ -175,7 +210,10 @@ async def get_disease_workflow_state(
     service=Depends(get_curator_service),
     _auth: Annotated[AuthContext, Depends(require_scope("curator:write"))] = None,
 ) -> dict:
-    state = await service.get_disease_workflow_state(slug)
+    try:
+        state = await service.get_disease_workflow_state(slug)
+    except NotFoundError as exc:
+        raise HTTPException(status_code=404, detail=exc.message) from exc
     return {
         "data": EntityWorkflowStateResponse.model_validate(state).model_dump(),
         "meta": {"api_version": "v1", "slug": slug},

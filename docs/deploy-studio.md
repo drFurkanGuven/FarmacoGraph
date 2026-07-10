@@ -13,14 +13,16 @@ chmod +x scripts/*.sh
 ./scripts/migrate-schema.sh
 ./scripts/deploy-production.sh
 ./scripts/create-curator.sh --email curator@farmacograph.local
-./scripts/install-nginx.sh
 ```
+
+`deploy-production.sh` pins `FG_HOST_API_PORT` / `FG_HOST_STUDIO_PORT` in `.env`, syncs nginx upstreams, and fails if public `GET /api/v1/health` is not 200 (the usual post-deploy login 502).
 
 Then open **https://farmacograph.furkanguven.space/studio/login/** in a browser (prefer a private window after JWT secret rotation).
 
 | Symptom | Meaning | Fix |
 |---------|---------|-----|
-| `/studio/` or `/studio/login/` → **502** | Studio container still starting after `docker compose up` (nginx has no upstream) | Wait ~60s and run `./scripts/smoke-studio.sh --wait`, or `docker compose ps studio` until **healthy** |
+| Login / `/api/v1/*` → **502** after every deploy | nginx upstream still points at an old host port (API moved, nginx did not) | `./scripts/diagnose.sh` then `./scripts/install-nginx.sh` — fixed deploys sync this automatically |
+| `/studio/` or `/studio/login/` → **502** while API is fine | Studio container still starting | Wait ~60s and run `./scripts/smoke-studio.sh --wait`, or `docker compose ps studio` until **healthy** |
 | `/studio/` loads, `/api/v1/dashboard` → **401** without login | **Expected** — Studio/API auth works | Sign in |
 | Login → “Invalid email or password” | No curator, wrong password, or **API key tab** selected by mistake | Click **Email & password**; then `./scripts/create-curator.sh --email …` |
 | Login OK but `/dashboard` → **500** | Schema drift (`draft_package_json` missing) | `./scripts/migrate-schema.sh` then restart API |
@@ -78,12 +80,16 @@ ALTER TABLE curator_workflows
 
 ## Nginx
 
+`deploy-production.sh` syncs nginx upstreams from `.env` at the end of every deploy.
+
 ```bash
 ./scripts/install-nginx.sh
 # or:
 sudo cp deploy/nginx/farmacograph.conf /etc/nginx/conf.d/farmacograph.conf
 sudo nginx -t && sudo systemctl reload nginx
 ```
+
+**Do not** run `./scripts/find-ports.sh --force-rescan` on a live host unless you immediately re-run `install-nginx.sh`. Changing `FG_HOST_API_PORT` without updating nginx is the usual cause of post-deploy login **502**.
 
 Studio is served at `/studio/` (trailing slash). API is same-origin at `/api/v1`. The browser must **not** call `127.0.0.1` / `localhost` / `host.docker.internal`.
 
@@ -154,6 +160,7 @@ FG_SEED_DEV_USERS=false
 - `FG_NEO4J_ENABLED=true` for evidence writes and publish to the knowledge graph
 - PostgreSQL for auth, workflow state, and draft packages
 - At least one curator via `create-curator.sh`
+- Optional: set `FG_DISEASE_CATALOG_PATH` to a persistent volume path so diseases created via **Add disease** (`POST /curator/diseases`) survive container rebuilds (default file is `staging/cardiovascular/shared/diseases.runtime.json`)
 
 ## Auth expectations (do not weaken)
 

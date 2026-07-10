@@ -259,6 +259,30 @@ export class FarmacoGraphClient {
     });
   }
 
+  createDisease(input: {
+    slug: string;
+    label: string;
+    description?: string;
+    icd10?: string;
+    mesh?: string;
+  }) {
+    return this.request<{
+      entity: {
+        id: string;
+        slug: string;
+        label: string;
+        entity_type: string;
+        description?: string | null;
+        icd10?: string | null;
+        mesh?: string | null;
+        status?: string;
+      };
+      workflow: WorkflowItem;
+      package: DrugPackage;
+      validation: PackageValidation;
+    }>("/curator/diseases", { method: "POST", body: input });
+  }
+
   curatorMechanismFragments(options?: { search?: string; sort?: string } & PaginationParams) {
     const { search, sort, ...pagination } = options ?? {};
     return this.request<MechanismFragmentBrowseItem[]>("/curator/mechanism-fragments", {

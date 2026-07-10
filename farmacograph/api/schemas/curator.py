@@ -14,6 +14,14 @@ class CreateWorkflowRequest(BaseModel):
     notes: str | None = None
 
 
+class CreateDiseaseRequest(BaseModel):
+    slug: str = Field(description="Lowercase kebab-case disease slug, e.g. heart-failure")
+    label: str = Field(description="Display label")
+    description: str | None = None
+    icd10: str | None = Field(default=None, description="Optional ICD-10 code")
+    mesh: str | None = Field(default=None, description="Optional MeSH identifier")
+
+
 class PublishRequest(BaseModel):
     entity_payload: dict = Field(description="Validated entity properties for Neo4j MERGE")
     related_entities: list[dict] = Field(default_factory=list)

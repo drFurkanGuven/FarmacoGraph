@@ -36,13 +36,14 @@ The OpenAPI file at `openapi/openapi.yaml` describes the **full contract** (impl
 | GET | `/api/v1/explain` | `knowledge:explain` | Reasoning chain |
 | POST | `/api/v1/compare` | `knowledge:read` | Drug comparison |
 | GET | `/api/v1/drugs/{drug_slug}/prerequisites` | `knowledge:read` | Learning prerequisites |
-| GET | `/api/v1/diseases` | `knowledge:read` | Disease catalog (bootstrap nodes index) |
+| GET | `/api/v1/diseases` | `knowledge:read` | Disease catalog (nodes index + runtime catalog) |
 | GET | `/api/v1/diseases/{disease_id}` | `knowledge:read` | Disease detail by canonical UUID |
 | GET | `/api/v1/curator/drugs` | `curator:write` | Curator drug browser |
 | GET | `/api/v1/curator/drugs/{slug}/workflow-state` | `curator:write` | Drug workflow aggregate |
 | POST | `/api/v1/curator/drugs/{slug}/workflows` | `curator:write` | Open/create workflow for slug |
 | GET | `/api/v1/curator/drugs/{slug}/package` | `curator:write` | Load draft package |
 | GET | `/api/v1/curator/diseases` | `curator:write` | Curator disease browser |
+| POST | `/api/v1/curator/diseases` | `curator:write` | Register disease + open draft workflow |
 | GET | `/api/v1/curator/mechanism-fragments` | `curator:write` | MechanismFragment catalog for Drug Editor picker |
 | POST | `/api/v1/curator/diseases/{slug}/workflows` | `curator:write` | Open/create disease workflow |
 | GET | `/api/v1/curator/diseases/{slug}/package` | `curator:write` | Load disease draft package |

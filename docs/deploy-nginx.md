@@ -4,6 +4,8 @@ Reverse proxy from public HTTPS to FarmacoGraph API (Docker on host port `FG_HOS
 
 **Sunucu yolu:** `/opt/FarmacoGraph` (Fedora örneği)
 
+**Kritik:** Her deploy sonrası nginx upstream, `.env` içindeki `FG_HOST_API_PORT` / `FG_HOST_STUDIO_PORT` ile aynı olmalı. Uyuşmazlık → HTTPS **502** (login kırılır). `deploy-production.sh` bunu otomatik sync eder; elle: `./scripts/install-nginx.sh` veya `./scripts/diagnose.sh`.
+
 ## 1. DNS
 
 | Type | Name | Value |

@@ -12,8 +12,9 @@
 #   ./scripts/migrate-schema.sh
 #   ./scripts/deploy-production.sh
 #   ./scripts/create-curator.sh --email curator@farmacograph.local
-#   ./scripts/install-nginx.sh
 #
+# deploy-production.sh now syncs nginx upstreams automatically (API/Studio host ports).
+# Re-run ./scripts/install-nginx.sh only if nginx was installed later or certbot rewrote the vhost.
 # Requires: docker, docker compose, git (for pull), openssl or python3
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -255,14 +256,21 @@ set_env_var FG_NEO4J_PASSWORD farmacograph
 set_env_var FG_LOG_JSON true
 set_env_var FG_LOG_LEVEL INFO
 set_env_var FG_METRICS_ENABLED true
-set_env_var FG_HOST_STUDIO_PORT 3001
+# Keep Studio host port stable unless already set (nginx upstream).
+if [[ -z "$(get_env_var FG_HOST_STUDIO_PORT)" ]]; then
+  set_env_var FG_HOST_STUDIO_PORT 3001
+fi
+# Keep API host port stable unless already set — find-ports will preserve it once written.
+if [[ -z "$(get_env_var FG_HOST_API_PORT)" ]]; then
+  set_env_var FG_HOST_API_PORT 8001
+fi
 set_env_var FG_STUDIO_API_URL "$API_URL"
 set_env_var FG_STUDIO_BASE_PATH /studio
 set_env_var FG_SEED_DEV_USERS false
 
-chmod +x scripts/find-ports.sh scripts/migrate-schema.sh scripts/create-curator.sh 2>/dev/null || true
+chmod +x scripts/find-ports.sh scripts/migrate-schema.sh scripts/create-curator.sh scripts/install-nginx.sh 2>/dev/null || true
 if [[ -x scripts/find-ports.sh ]]; then
-  echo "→ Scanning host ports"
+  echo "→ Scanning host ports (keeps existing FG_HOST_* from .env — avoids nginx 502)"
   ./scripts/find-ports.sh --apply
 fi
 
@@ -409,21 +417,63 @@ else
   exit 1
 fi
 
+sync_nginx_upstreams() {
+  if [[ ! -x scripts/install-nginx.sh ]]; then
+    echo "(!) scripts/install-nginx.sh missing — skip nginx sync" >&2
+    return 0
+  fi
+  if ! command -v nginx >/dev/null 2>&1; then
+    echo "(!) nginx not installed on host — skip upstream sync"
+    echo "    After installing nginx: ./scripts/install-nginx.sh"
+    return 0
+  fi
+  echo "→ Syncing nginx upstreams to API :${API_PORT} / Studio :${STUDIO_PORT}"
+  if ./scripts/install-nginx.sh; then
+    echo "✓ Nginx upstreams synced"
+  else
+    echo "✗ nginx sync failed — public HTTPS will 502 until fixed" >&2
+    echo "  Run as root/sudo: ./scripts/install-nginx.sh" >&2
+    return 1
+  fi
+}
+
+verify_public_api() {
+  local health_url code
+  health_url="${PUBLIC_URL}/api/v1/health"
+  echo "→ Checking public API ${health_url} ..."
+  code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 15 "$health_url" 2>/dev/null || echo 000)"
+  if [[ "$code" == "200" ]]; then
+    echo "✓ Public API healthy (${code})"
+    return 0
+  fi
+  echo "✗ Public API returned HTTP ${code} (login will fail with 502/network error)" >&2
+  echo "  Direct API OK? curl -sf http://127.0.0.1:${API_PORT}/api/v1/health" >&2
+  echo "  Nginx upstream? grep 'server 127.0.0.1' /etc/nginx/conf.d/farmacograph.conf" >&2
+  echo "  Fix: ./scripts/install-nginx.sh && ./scripts/diagnose.sh" >&2
+  return 1
+}
+
+sync_nginx_upstreams || true
+verify_public_api || {
+  echo "" >&2
+  echo "Deploy finished containers, but public login path is broken." >&2
+  echo "This is almost always nginx upstream ≠ FG_HOST_API_PORT." >&2
+  exit 1
+}
+
 echo ""
-echo "Deploy complete (containers)."
+echo "Deploy complete."
 echo "  Quick rebuild: docker compose up -d --build api studio"
 echo "  After FG_STUDIO_* change: docker compose build --no-cache studio && docker compose up -d studio"
 echo "  Studio (direct): http://127.0.0.1:${STUDIO_PORT}${STUDIO_BASE}/"
 echo "  Studio (public): ${PUBLIC_URL}/studio/"
 echo "  Login:           ${PUBLIC_URL}/studio/login/"
 echo "  API:             ${API_URL}/health"
-echo ""
-echo "If public /studio/ is 200 with an empty body while direct :${STUDIO_PORT} returns HTML/redirect,"
-echo "nginx is emptying document responses — run: ./scripts/install-nginx.sh"
+echo "  Host ports:      API=${API_PORT} Studio=${STUDIO_PORT} (pinned in .env; nginx synced)"
 echo ""
 echo "Next (required once): create a curator — production does not auto-seed users."
 echo "  ./scripts/create-curator.sh --email curator@farmacograph.local"
-echo "  ./scripts/install-nginx.sh"
 echo ""
 echo "Note: A 401 on /api/v1/dashboard without login is expected (auth required)."
 echo "      A login failure usually means no curator yet — run create-curator.sh."
+echo "      A 502 on login after deploy means nginx missed a port change — re-run install-nginx.sh."

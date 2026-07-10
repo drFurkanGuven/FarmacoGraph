@@ -293,7 +293,59 @@ export async function mockEvidenceWorkflowApi(page: Page): Promise<{
       return json(route, { data: [], meta: { count: 0 } });
     }
 
-    if (path === "curator/diseases" || path.startsWith("curator/diseases")) {
+    if (path === "curator/diseases") {
+      if (method === "POST") {
+        const body = route.request().postDataJSON() as {
+          slug?: string;
+          label?: string;
+          description?: string;
+          icd10?: string;
+          mesh?: string;
+        };
+        const slug = (body.slug ?? "new-disease").toLowerCase().replace(/\s+/g, "-");
+        const entity = {
+          id: "d1000001-0000-4000-8010-000000009999",
+          entity_type: "Disease",
+          slug,
+          label: body.label ?? slug,
+          description: body.description ?? null,
+          icd10: body.icd10 ?? null,
+          mesh: body.mesh ?? null,
+          status: "draft",
+        };
+        return json(
+          route,
+          {
+            data: {
+              entity,
+              workflow: {
+                id: "wf-new-disease",
+                entity_id: entity.id,
+                entity_type: "Disease",
+                state: "draft",
+                notes: null,
+                entity_slug: slug,
+                entity_label: entity.label,
+              },
+              package: {
+                entity_payload: {
+                  id: entity.id,
+                  entity_type: "Disease",
+                  slug,
+                  label: entity.label,
+                  description: entity.description ?? "",
+                  external_ids: { icd10: entity.icd10, mesh: entity.mesh },
+                },
+                related_entities: [],
+                relationships: [],
+              },
+              validation: { valid: true, issues: [] },
+            },
+            meta: { slug },
+          },
+          201,
+        );
+      }
       const search = (url.searchParams.get("search") ?? "").toLowerCase();
       const data = CATALOG_DISEASES.filter(
         (row) =>

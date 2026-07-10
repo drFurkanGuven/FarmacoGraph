@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import json
+import os
+import re
+import uuid
 from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
@@ -15,6 +18,11 @@ from farmacograph.validators.base import ValidationResult
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 CV_DISEASES_DIR = PROJECT_ROOT / "staging" / "cardiovascular" / "diseases"
+DEFAULT_DISEASE_RUNTIME_PATH = (
+    PROJECT_ROOT / "staging" / "cardiovascular" / "shared" / "diseases.runtime.json"
+)
+DISEASE_ENTITY_NAMESPACE = uuid.UUID("d1000001-0000-4000-8010-000000000000")
+_SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
 
 class DiseasePublishPackage(BaseModel):
@@ -26,9 +34,67 @@ class DiseasePublishPackage(BaseModel):
     create_snapshot: bool = False
 
 
+def disease_runtime_path() -> Path:
+    override = os.environ.get("FG_DISEASE_CATALOG_PATH", "").strip()
+    return Path(override) if override else DEFAULT_DISEASE_RUNTIME_PATH
+
+
+def allocate_disease_entity_id(slug: str) -> str:
+    """Deterministic Disease UUID (uuid5) — stable across register/open/publish."""
+    return str(uuid.uuid5(DISEASE_ENTITY_NAMESPACE, slug))
+
+
+def normalize_disease_slug(raw: str) -> str:
+    slug = raw.strip().lower().replace("_", "-").replace(" ", "-")
+    slug = re.sub(r"-+", "-", slug).strip("-")
+    return slug
+
+
+def validate_disease_slug(slug: str) -> str:
+    normalized = normalize_disease_slug(slug)
+    if not normalized or not _SLUG_RE.match(normalized):
+        raise ValueError("Disease slug must be lowercase kebab-case (e.g. heart-failure).")
+    return normalized
+
+
+def _load_runtime_diseases(path: Path | None = None) -> list[dict[str, Any]]:
+    runtime_path = path or disease_runtime_path()
+    if not runtime_path.is_file():
+        return []
+    try:
+        data = json.loads(runtime_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return []
+    entities = data.get("entities", []) if isinstance(data, dict) else []
+    return [
+        entity
+        for entity in entities
+        if isinstance(entity, dict) and entity.get("entity_type") == "Disease"
+    ]
+
+
+def _save_runtime_diseases(entities: list[dict[str, Any]], path: Path | None = None) -> None:
+    runtime_path = path or disease_runtime_path()
+    runtime_path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "version": "1.0.0",
+        "updated_at": datetime.now(UTC).isoformat(),
+        "entities": entities,
+    }
+    runtime_path.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+
+
 def _diseases_from_index(index: dict[str, Any] | None = None) -> list[dict[str, Any]]:
     data = index or load_nodes_index()
-    return [entity for entity in data.get("entities", []) if entity.get("entity_type") == "Disease"]
+    base = [entity for entity in data.get("entities", []) if entity.get("entity_type") == "Disease"]
+    by_slug = {entity["slug"]: entity for entity in base if entity.get("slug")}
+    for entity in _load_runtime_diseases():
+        slug = entity.get("slug")
+        if isinstance(slug, str) and slug:
+            by_slug[slug] = entity
+    return list(by_slug.values())
 
 
 def _diseases_by_slug(index: dict[str, Any] | None = None) -> dict[str, dict[str, Any]]:
@@ -40,7 +106,7 @@ def find_disease_in_index(slug: str, index: dict[str, Any] | None = None) -> dic
 
 
 def known_disease_ids(index: dict[str, Any] | None = None) -> set[str]:
-    """Canonical Disease entity IDs from the bootstrap nodes index catalog."""
+    """Canonical Disease entity IDs from bootstrap index + runtime catalog."""
     return {entity["id"] for entity in _diseases_from_index(index)}
 
 
@@ -72,12 +138,47 @@ def list_disease_catalog(
                 "label": label,
                 "entity_type": "Disease",
                 "description": entity.get("description"),
-                "status": entity.get("status", "published"),
+                "status": entity.get("status", "draft"),
             }
         )
     rows.sort(key=lambda row: row["slug"])
     total = len(rows)
     return rows[offset : offset + limit], total
+
+
+def register_disease(
+    *,
+    slug: str,
+    label: str,
+    description: str | None = None,
+    icd10: str | None = None,
+    mesh: str | None = None,
+) -> dict[str, Any]:
+    """Register a Disease in the runtime catalog (merged with nodes.index.json)."""
+    normalized = validate_disease_slug(slug)
+    clean_label = label.strip()
+    if not clean_label:
+        raise ValueError("Disease label is required.")
+
+    existing = find_disease_in_index(normalized)
+    if existing is not None:
+        raise ValueError(f"Disease slug already exists: {normalized}")
+
+    entity = {
+        "id": allocate_disease_entity_id(normalized),
+        "entity_type": "Disease",
+        "slug": normalized,
+        "label": clean_label,
+        "description": (description or "").strip() or None,
+        "icd10": (icd10 or "").strip() or None,
+        "mesh": (mesh or "").strip() or None,
+        "status": "draft",
+        "source": "curator_runtime",
+    }
+    runtime = _load_runtime_diseases()
+    runtime.append(entity)
+    _save_runtime_diseases(runtime)
+    return entity
 
 
 def load_disease_package(path: str | Path) -> DiseasePublishPackage:
@@ -105,6 +206,9 @@ def build_disease_entry_package(
     label = disease.get("label", slug.replace("-", " ").title())
     now = datetime.now(UTC).isoformat()
     today = date.today().isoformat()
+    external_ids = (
+        disease.get("external_ids") if isinstance(disease.get("external_ids"), dict) else {}
+    )
 
     return {
         "module": "cardiovascular",
@@ -120,8 +224,8 @@ def build_disease_entry_package(
             "status": "draft",
             "dataset_version": "2026.1.0",
             "external_ids": {
-                "icd10": disease.get("icd10"),
-                "mesh": disease.get("mesh"),
+                "icd10": disease.get("icd10") or external_ids.get("icd10"),
+                "mesh": disease.get("mesh") or external_ids.get("mesh"),
             },
             "provenance": {
                 "created_at": now,

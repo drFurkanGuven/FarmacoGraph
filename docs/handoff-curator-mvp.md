@@ -20,7 +20,7 @@ Login → Drug/Disease Editor → Evidence/Education/Mechanism roots
 | Yüzey | Durum | Not |
 |-------|--------|-----|
 | Drug Editor | **Complete** | Autosave, TREATS, evidence, education, provenance, publish |
-| Disease Editor | **MVP** | Identity/clinical/provenance + publish; disease evidence deferred |
+| Disease Editor | **MVP** | Browser Add disease + identity/clinical/provenance + publish; disease evidence deferred |
 | Evidence Manager | **Complete** | Neo4j gerekir (yoksa 503) |
 | Mechanism | **MVP** | Catalog picker + interactive published DAG; full pathway authoring yok |
 | Graph | **MVP** | React Flow neighborhood; `POST /graph/query` yok |

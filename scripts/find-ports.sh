@@ -1,25 +1,35 @@
 #!/usr/bin/env bash
 # FarmacoGraph — host port scanner & auto-assign for Docker Compose
 # Usage:
-#   ./scripts/find-ports.sh              # scan only
+#   ./scripts/find-ports.sh              # scan only (respects existing .env)
 #   ./scripts/find-ports.sh --apply      # write FG_HOST_* to .env
-#   ./scripts/find-ports.sh --up           # apply + docker compose up -d --build
+#   ./scripts/find-ports.sh --up         # apply + docker compose up -d --build
+#   ./scripts/find-ports.sh --force-rescan  # ignore existing .env ports (dangerous with nginx)
+#
+# Production note: once FG_HOST_API_PORT is set, it is KEPT on every deploy.
+# Re-picking while containers listen makes nginx point at a stale port → HTTPS 502.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 APPLY=false
 DOCKER_UP=false
+FORCE_RESCAN=false
 for arg in "$@"; do
   case "$arg" in
     --apply) APPLY=true ;;
     --up) APPLY=true; DOCKER_UP=true ;;
+    --force-rescan) FORCE_RESCAN=true ;;
   esac
 done
 
-FG_HOST_PG_PORT=""
-FG_HOST_NEO4J_HTTP_PORT=""
-FG_HOST_NEO4J_BOLT_PORT=""
-FG_HOST_API_PORT=""
+get_env_var() {
+  local key="$1"
+  if [[ -f .env ]] && grep -q "^${key}=" .env 2>/dev/null; then
+    grep "^${key}=" .env | tail -1 | cut -d= -f2-
+    return
+  fi
+  echo ""
+}
 
 is_port_in_use() {
   local port="$1"
@@ -81,16 +91,47 @@ pick_port() {
   echo "$chosen"
 }
 
+# Prefer an already-configured .env port so nginx upstreams stay valid across deploys.
+prefer_or_pick() {
+  local label="$1"
+  local env_key="$2"
+  local default="$3"
+  local start="$4"
+  local end="$5"
+  local existing
+
+  existing="$(get_env_var "$env_key")"
+  if [[ "$FORCE_RESCAN" != true && -n "$existing" ]]; then
+    if is_port_in_use "$existing"; then
+      echo "[✓] ${label} :${existing} (keeping .env ${env_key}; in use — likely our stack)" >&2
+    else
+      echo "[✓] ${label} :${existing} (keeping .env ${env_key})" >&2
+    fi
+    echo "$existing"
+    return
+  fi
+
+  if [[ "$FORCE_RESCAN" == true && -n "$existing" ]]; then
+    echo "[!] ${label} forcing rescan (was .env ${env_key}=${existing})" >&2
+  fi
+  pick_port "$label" "$default" "$start" "$end"
+}
+
 echo "=== FarmacoGraph port scan ($(hostname 2>/dev/null || echo localhost)) ==="
+if [[ "$FORCE_RESCAN" == true ]]; then
+  echo "(--force-rescan: ignoring existing .env host ports)"
+fi
 echo ""
 
-FG_HOST_PG_PORT=$(pick_port "postgres" 5433 5433 5450)
+FG_HOST_PG_PORT=$(prefer_or_pick "postgres" FG_HOST_PG_PORT 5433 5433 5450)
 echo ""
-FG_HOST_NEO4J_HTTP_PORT=$(pick_port "neo4j-http" 7474 7474 7490)
+FG_HOST_NEO4J_HTTP_PORT=$(prefer_or_pick "neo4j-http" FG_HOST_NEO4J_HTTP_PORT 7474 7474 7490)
 echo ""
-FG_HOST_NEO4J_BOLT_PORT=$(pick_port "neo4j-bolt" 7687 7687 7700)
+FG_HOST_NEO4J_BOLT_PORT=$(prefer_or_pick "neo4j-bolt" FG_HOST_NEO4J_BOLT_PORT 7687 7687 7700)
 echo ""
-FG_HOST_API_PORT=$(pick_port "api" 8001 8001 8020)
+FG_HOST_API_PORT=$(prefer_or_pick "api" FG_HOST_API_PORT 8001 8001 8020)
+echo ""
+FG_HOST_STUDIO_PORT=$(prefer_or_pick "studio" FG_HOST_STUDIO_PORT 3001 3001 3020)
 echo ""
 
 echo "=== Recommended .env (host ports) ==="
@@ -98,9 +139,13 @@ echo "FG_HOST_PG_PORT=${FG_HOST_PG_PORT}"
 echo "FG_HOST_NEO4J_HTTP_PORT=${FG_HOST_NEO4J_HTTP_PORT}"
 echo "FG_HOST_NEO4J_BOLT_PORT=${FG_HOST_NEO4J_BOLT_PORT}"
 echo "FG_HOST_API_PORT=${FG_HOST_API_PORT}"
+echo "FG_HOST_STUDIO_PORT=${FG_HOST_STUDIO_PORT}"
 echo ""
 echo "API:  curl http://localhost:${FG_HOST_API_PORT}/api/v1/health"
+echo "Studio: curl -I http://localhost:${FG_HOST_STUDIO_PORT}/studio/login/"
 echo "Neo4j: http://localhost:${FG_HOST_NEO4J_HTTP_PORT}"
+echo ""
+echo "After changing FG_HOST_API_PORT or FG_HOST_STUDIO_PORT, run: ./scripts/install-nginx.sh"
 echo ""
 
 set_env_var() {
@@ -124,6 +169,7 @@ if [[ "$APPLY" == true ]]; then
   set_env_var FG_HOST_NEO4J_HTTP_PORT "$FG_HOST_NEO4J_HTTP_PORT"
   set_env_var FG_HOST_NEO4J_BOLT_PORT "$FG_HOST_NEO4J_BOLT_PORT"
   set_env_var FG_HOST_API_PORT "$FG_HOST_API_PORT"
+  set_env_var FG_HOST_STUDIO_PORT "$FG_HOST_STUDIO_PORT"
   echo "✓ Written to .env"
 fi
 

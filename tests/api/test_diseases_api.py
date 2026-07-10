@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 
 import pytest
 import pytest_asyncio
@@ -19,7 +20,9 @@ HYPERTENSION_ID = "d1000001-0000-4000-8010-000000000001"
 
 
 @pytest.fixture(autouse=True)
-def _reset():
+def _reset(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    runtime = tmp_path / "diseases.runtime.json"
+    monkeypatch.setenv("FG_DISEASE_CATALOG_PATH", str(runtime))
     reset_container()
     yield
     reset_container()
@@ -70,6 +73,61 @@ async def test_curator_disease_browser(client: AsyncClient):
 
 
 @pytest.mark.asyncio
+async def test_create_disease_registers_and_opens_workflow(client: AsyncClient):
+    response = await client.post(
+        "/api/v1/curator/diseases",
+        json={
+            "slug": "Heart Failure",
+            "label": "Heart failure",
+            "description": "Impaired cardiac output.",
+            "icd10": "I50",
+        },
+    )
+    assert response.status_code == 201
+    body = response.json()["data"]
+    assert body["entity"]["slug"] == "heart-failure"
+    assert body["entity"]["label"] == "Heart failure"
+    assert body["entity"]["icd10"] == "I50"
+    assert body["workflow"]["entity_type"] == "Disease"
+    assert body["workflow"]["state"] == "draft"
+    assert body["package"]["entity_payload"]["slug"] == "heart-failure"
+    assert body["package"]["entity_payload"]["external_ids"]["icd10"] == "I50"
+
+    listed = await client.get("/api/v1/curator/diseases", params={"search": "heart"})
+    assert listed.status_code == 200
+    assert any(row["slug"] == "heart-failure" for row in listed.json()["data"])
+
+    public = await client.get("/api/v1/diseases", params={"search": "heart-failure"})
+    assert public.status_code == 200
+    assert any(row["slug"] == "heart-failure" for row in public.json()["data"])
+
+
+@pytest.mark.asyncio
+async def test_create_disease_rejects_duplicate_slug(client: AsyncClient):
+    payload = {"slug": "atrial-fibrillation", "label": "Atrial fibrillation"}
+    first = await client.post("/api/v1/curator/diseases", json=payload)
+    assert first.status_code == 201
+    second = await client.post("/api/v1/curator/diseases", json=payload)
+    assert second.status_code == 400
+    assert "already exists" in second.json()["detail"]
+
+
+@pytest.mark.asyncio
+async def test_create_disease_rejects_invalid_slug(client: AsyncClient):
+    response = await client.post(
+        "/api/v1/curator/diseases",
+        json={"slug": "!!!", "label": "Bad"},
+    )
+    assert response.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_open_unknown_disease_workflow_returns_404(client: AsyncClient):
+    response = await client.post("/api/v1/curator/diseases/not-a-real-disease/workflows")
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
 async def test_open_disease_workflow_creates_draft(client: AsyncClient):
     response = await client.post("/api/v1/curator/diseases/hypertension/workflows")
     assert response.status_code == 201
@@ -106,6 +164,7 @@ async def test_curator_disease_routes_are_in_openapi(client: AsyncClient):
     assert response.status_code == 200
     paths = response.json()["paths"]
     assert "/curator/diseases" in paths
+    assert "post" in paths["/curator/diseases"]
     assert "/curator/diseases/{slug}/workflows" in paths
     assert "/curator/diseases/{slug}/package" in paths
     assert "/curator/diseases/{slug}/workflow-state" in paths
