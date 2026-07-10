@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, PanelRight, Rocket } from "lucide-react";
+import { ArrowLeft, Loader2, Lock, PanelRight, Rocket, RotateCcw } from "lucide-react";
+import { toast } from "sonner";
+import { ApiError } from "@/lib/api";
+import { useApiClient } from "@/lib/hooks/use-api-client";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -39,8 +43,10 @@ function EditorSkeleton() {
 }
 
 export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
+  const client = useApiClient();
   const [contextOpen, setContextOpen] = useState(false);
   const [publishOpen, setPublishOpen] = useState(false);
+  const [unlocking, setUnlocking] = useState(false);
   const {
     loading,
     loadError,
@@ -56,8 +62,30 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
 
   const workflow = snapshot.workflow;
   const workflowState = workflow?.state ?? null;
-  const packageLocked =
+  const packageFieldsLocked =
     workflowState === "approved" || workflowState === "published" || workflowState === "deprecated";
+  /** Graph-backed evidence attach is allowed after publish; package JSON stays locked. */
+  const evidenceLocked = workflowState === "approved" || workflowState === "deprecated";
+  const sectionLocked =
+    activeSection.id === "evidence" || activeSection.kind === "evidence"
+      ? evidenceLocked
+      : packageFieldsLocked;
+
+  async function handleReturnToDraft() {
+    if (!workflow?.id || unlocking) return;
+    setUnlocking(true);
+    try {
+      const envelope = await client.returnWorkflowToDraft(workflow.id);
+      onWorkflowUpdated(envelope.data);
+      toast.success("Returned to draft — editing unlocked.");
+    } catch (error) {
+      const message =
+        error instanceof ApiError ? error.message : "Could not return workflow to draft.";
+      toast.error(message);
+    } finally {
+      setUnlocking(false);
+    }
+  }
 
   if (loading) {
     return <EditorSkeleton />;
@@ -101,22 +129,41 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
           </Button>
           <Separator orientation="vertical" className="hidden h-5 sm:block" />
           <div className="min-w-0">
-            <p className="truncate text-sm font-medium">{title}</p>
+            <div className="flex min-w-0 items-center gap-2">
+              <p className="truncate text-sm font-medium">{title}</p>
+              {packageFieldsLocked ? (
+                <Badge variant="warning" className="shrink-0 gap-1">
+                  <Lock className="h-3 w-3" />
+                  {workflowState}
+                </Badge>
+              ) : null}
+            </div>
             <p className="truncate font-mono text-xs text-muted-foreground">{drugId}</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {workflowState === "approved" ? (
+            <Button size="sm" variant="secondary" disabled={unlocking} onClick={handleReturnToDraft}>
+              {unlocking ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+              Return to draft
+            </Button>
+          ) : null}
+          {workflowState === "published" ? (
+            <Button size="sm" variant="outline" onClick={() => setActiveSection("evidence")}>
+              Evidence
+            </Button>
+          ) : null}
           <Button variant="default" size="sm" onClick={() => setPublishOpen(true)}>
             <Rocket className="h-4 w-4" />
-            Publish
+            {workflowState === "published" ? "Workflow" : "Publish"}
           </Button>
           <AutosaveStatus
             status={snapshot.saveStatus}
             error={snapshot.saveError}
             lastSavedAt={snapshot.lastSavedAt}
             strategy={snapshot.lastSaveStrategy}
-            onRetry={packageLocked ? undefined : retrySave}
+            onRetry={packageFieldsLocked ? undefined : retrySave}
           />
           <Button
             variant="outline"
@@ -129,23 +176,6 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
           </Button>
         </div>
       </header>
-
-      {packageLocked ? (
-        <div className="border-b border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm">
-          <p className="font-medium">
-            Package locked in <span className="font-mono">{workflowState}</span>
-          </p>
-          <p className="mt-1 text-muted-foreground">
-            {workflowState === "approved"
-              ? "Approved packages cannot be edited or autosaved. Open Publish → Return to draft to keep editing, or Publish to write the drug into Neo4j (required before graph-backed evidence attach)."
-              : "This workflow state is read-only. Open Publish to advance or return to draft for a new edit cycle."}
-          </p>
-          <Button className="mt-2" size="sm" variant="outline" onClick={() => setPublishOpen(true)}>
-            <Rocket className="h-4 w-4" />
-            Open publish wizard
-          </Button>
-        </div>
-      ) : null}
 
       <div className="border-b px-2 py-2 lg:hidden">
         <DrugSectionNav
@@ -166,18 +196,28 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
         </div>
 
         <main className="minimal-scrollbar min-h-0 overflow-auto p-4 md:p-6">
+          {workflowState === "published" && activeSection.id !== "evidence" ? (
+            <p className="mb-4 text-xs text-muted-foreground">
+              Published package fields are read-only. Use <button type="button" className="underline underline-offset-2" onClick={() => setActiveSection("evidence")}>Evidence</button> to attach graph-backed citations, or open Workflow for history.
+            </p>
+          ) : null}
+          {workflowState === "approved" ? (
+            <p className="mb-4 text-xs text-muted-foreground">
+              Approved — package locked. Use <span className="font-medium text-foreground">Return to draft</span> to edit, or Publish to write Neo4j.
+            </p>
+          ) : null}
           <DrugSectionEditor
             section={activeSection}
             pkg={snapshot.package}
             drugId={drugId}
             validation={snapshot.validation}
-            disabled={packageLocked || snapshot.saveStatus === "saving"}
+            disabled={sectionLocked || snapshot.saveStatus === "saving"}
             onFieldChange={(fieldKey, value) => {
-              if (packageLocked) return;
+              if (packageFieldsLocked) return;
               updateField(snapshot.activeSectionId, fieldKey, value);
             }}
             onPackageChange={(next) => {
-              if (packageLocked) return;
+              if (packageFieldsLocked) return;
               updatePackage(snapshot.activeSectionId, next);
             }}
           />
