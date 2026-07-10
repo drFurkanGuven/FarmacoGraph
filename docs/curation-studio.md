@@ -49,7 +49,7 @@ Docker, curator workflow API, validation, graph writer, snapshots — see `docs/
 | **4.2.3** Drug Editor | ✅ | Obsidian layout; autosave via `PUT /curator/workflows/{id}/package` |
 | **4.3** Validation Center | ✅ | `POST /curator/validate`, grouped issues, publish readiness panel |
 | **4.4** Publish wizard | ✅ | Submit / approve / publish from Drug Editor; snapshot + graph write result |
-| **4.2.4–4.2.9** | Planned | Mechanism editor, evidence manager, AI draft |
+| **4.2.4–4.2.9** | Mixed | Evidence manager live; mechanism/graph previews live; full DAG editor and AI draft planned |
 
 ### Evidence workflow (partial — Studio 4.2.4)
 

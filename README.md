@@ -19,7 +19,7 @@ FarmacoGraph is not a pharmacology database. It is a **long-term biomedical know
 | **Phase 4 Studio 4.2** (drug browser, drug editor, validation center) | **Complete** — secure curation path live |
 | **Phase 4 Studio 4.4** (publish wizard UI) | **Complete** — submit / approve / publish from Drug Editor |
 | **Phase 4 Studio 5** (Evidence Manager + drug evidence workflow) | **Complete** — `/knowledge/evidence`, Drug Editor Evidence section, publish wizard evidence readiness |
-| Phase 4 Studio 4.3 (mechanism editor, graph explorer) | Planned |
+| Phase 4 Studio 4.3 (mechanism + graph previews) | **MVP live** — full DAG editor / graph canvas planned |
 | Cardiovascular module curation | In progress |
 
 > **Primary product:** [Curation Studio](docs/curation-studio.md) (`apps/studio`) — the official knowledge authoring interface.  

@@ -105,7 +105,7 @@ gantt
 | **4.2.3 Drug Editor** (Obsidian-style) | `POST /curator/drugs/{slug}/workflows`, `PUT /curator/workflows/{id}/package`, `POST /curator/validate` | **Complete** |
 | Disease / indication browser | `GET /diseases`, `GET /curator/diseases` | **Connected** — browser surface; full authoring deferred |
 | Evidence Manager | `/evidence` + drug attach endpoints | **Live** — global browser + Drug Editor section; live-stack Neo4j coverage still needed |
-| Educational layer surface | Education endpoints (planned) | **Connected surface** — no fake editor until API contracts land |
+| Educational layer surface | Education endpoints | **MVP live** — Drug Editor authoring + published education/study API preview |
 | Relationship Editor | Graph write via curator publish | Planned |
 
 #### Drug Editor layout (4.2.3 — Obsidian, not Notion)
