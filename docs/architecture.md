@@ -240,7 +240,7 @@ flowchart TB
 | **Storage** | Neo4j knowledge + PostgreSQL operations |
 | **API** | Stable query contracts, explainability responses |
 | **AI** | RAG over validated graph only — never writes facts |
-| **Presentation** | Curation Studio — dashboard, search, auth, drug browser, drug editor, validation center (live); graph explorer, publish wizard (planned) |
+| **Presentation** | Curation Studio — dashboard, search, auth, drug/disease editors, publish wizard, validation center, evidence, and education MVP (live); mechanism DAG editor and advanced graph explorer deferred |
 
 ### 4.1 Curation Studio (implementation status)
 

@@ -130,9 +130,11 @@ function FocusedEducationPanel({ drug }: { drug: string }) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Route className="h-4 w-4" />
-            Study preview
+            Published API preview
           </CardTitle>
-          <CardDescription>The single payload a student app can fetch from `/drugs/{drug}/study`.</CardDescription>
+          <CardDescription>
+            The published graph payload a student app can fetch from `/drugs/{drug}/study`.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           {studyQuery.isLoading ? (
@@ -173,7 +175,7 @@ function FocusedEducationPanel({ drug }: { drug: string }) {
                 <div className="rounded-md border bg-muted/30">
                   <div className="flex items-center gap-2 border-b px-3 py-2 text-xs font-medium text-muted-foreground">
                     <Braces className="h-3.5 w-3.5" />
-                    JSON preview
+                    Published API JSON
                   </div>
                   <pre className="minimal-scrollbar max-h-72 overflow-auto p-3 text-xs">
                     {JSON.stringify(study, null, 2)}

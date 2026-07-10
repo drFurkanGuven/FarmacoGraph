@@ -1009,13 +1009,16 @@ paths:
               schema:
                 $ref: "#/components/schemas/EducationListResponse"
 
-  /drugs/{drug_id}/prerequisites:
+  /drugs/{drug_slug}/prerequisites:
     get:
       tags: [Learning, Drugs]
       summary: Learning prerequisite graph
       operationId: getDrugPrerequisites
       parameters:
-        - $ref: "#/components/parameters/DrugId"
+        - name: drug_slug
+          in: path
+          required: true
+          schema: { type: string }
       responses:
         "200":
           description: Prerequisite graph

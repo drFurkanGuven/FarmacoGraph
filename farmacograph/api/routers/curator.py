@@ -21,6 +21,7 @@ from farmacograph.auth.models import AuthContext
 from farmacograph.core.container import Container
 from farmacograph.core.exceptions import FarmacoGraphError, NotFoundError, ValidationError
 from farmacograph.curator.drug_package import drug_entity_id
+from farmacograph.curator.education_graph import normalize_education_graph
 from farmacograph.curator.publish_validator import validate_publish_package
 from farmacograph.curator.structural_stub import (
     CV_STUB_DRUG_ID,
@@ -332,11 +333,19 @@ async def validate_package(
     workflow_id: UUID | None = Query(None),
 ) -> dict:
     """Dry-run validation — no Neo4j write."""
+    package = normalize_education_graph(
+        {
+            "entity_payload": body.entity_payload,
+            "related_entities": body.related_entities,
+            "relationships": body.relationships,
+            "education": body.education,
+        }
+    )
     result = validate_publish_package(
-        body.entity_payload,
-        related_entities=body.related_entities,
-        relationships=body.relationships,
-        education=body.education,
+        package["entity_payload"],
+        related_entities=package["related_entities"],
+        relationships=package["relationships"],
+        education=package["education"],
     )
     validation = {
         "valid": result.valid,

@@ -486,7 +486,7 @@ Draft education flashcards from the curator package. Requires `curator:write`.
 
 ### `GET /drugs/{drug_ref}/study`
 
-Student-app payload for one drug. `drug_ref` may be a published UUID or slug.
+Published Student API payload for one drug. `drug_ref` may be a published UUID or slug; draft curator education is exposed separately under `/curator/drugs/{slug}/education`.
 
 **Response includes:**
 
@@ -748,7 +748,10 @@ Compare multiple drugs side-by-side.
 
 ```json
 {
-  "drug_ids": ["drug:metoprolol", "drug:propranolol"],
+  "drug_ids": [
+    "00000000-0000-4000-8000-000000000101",
+    "00000000-0000-4000-8000-000000000102"
+  ],
   "dimensions": ["mechanism", "indications", "side_effects", "interactions", "dosing"],
   "include_education": false
 }

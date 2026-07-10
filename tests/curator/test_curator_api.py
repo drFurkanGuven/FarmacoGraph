@@ -246,6 +246,40 @@ async def test_save_workflow_package_draft_autosave(client: AsyncClient):
 
 
 @pytest.mark.asyncio
+async def test_save_workflow_package_normalizes_education_graph_rows(client: AsyncClient):
+    """Saving education content also persists graph-ready education node/edge rows."""
+    from farmacograph.curator.drug_package import build_drug_entry_package
+
+    package = build_drug_entry_package("ramipril")
+    drug_id = package["entity_payload"]["id"]
+    package["education"] = [
+        {
+            "id": "edu-1",
+            "kind": "Flashcard",
+            "content_layer": "education",
+            "front": "What is the recall point?",
+            "back": "Check the mechanism first.",
+        }
+    ]
+
+    r = await client.post("/api/v1/curator/drugs/ramipril/workflows")
+    workflow_id = r.json()["data"]["workflow"]["id"]
+
+    saved = await client.put(f"/api/v1/curator/workflows/{workflow_id}/package", json=package)
+    assert saved.status_code == 200
+
+    workflow = await client.get(f"/api/v1/curator/workflows/{workflow_id}")
+    draft_package = workflow.json()["data"]["draft_package_json"]
+    assert any(item["id"] == "edu-1" for item in draft_package["related_entities"])
+    assert any(
+        row["relationship_type"] == "HAS_EDUCATION"
+        and row["source_id"] == drug_id
+        and row["target_id"] == "edu-1"
+        for row in draft_package["relationships"]
+    )
+
+
+@pytest.mark.asyncio
 async def test_cannot_save_package_in_published_state(client: AsyncClient):
     package = build_cardiovascular_publish_package()
     r = await client.post(

@@ -15,7 +15,7 @@
 | Phase 3 — Platform infrastructure | **Complete** | PostgreSQL ops, Neo4j driver, events, jobs, metrics, CI |
 | Phase 4 — Backend foundation | **Complete** | Curator API, graph writer, snapshots, validation |
 | Phase 4 — Studio 4.1 | **Complete** | App shell, dashboard, search, settings |
-| Phase 4 — Studio 4.2+ | **Planned** | Editors, publish wizard |
+| Phase 4 — Studio 4.2+ | **Mostly complete** | Drug/Disease editors, publish wizard, evidence, and education MVP live; mechanism DAG and advanced graph explorer deferred |
 | Phase 4 — Cardiovascular data | **In progress** | Curation via Studio/API; no full module yet |
 | Phase API 5.1 — Discovery + search | **Complete** | `/info`, Neo4j search provider, public search page |
 | Phase API 5.2 — Auth | **Complete** | `POST /auth/token`, API key validation, curator auth gates |

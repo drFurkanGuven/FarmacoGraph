@@ -20,6 +20,7 @@ from farmacograph.curator.drug_package import (
     load_curriculum,
     load_package,
 )
+from farmacograph.curator.education_graph import normalize_education_graph
 from farmacograph.curator.education_package import education_items_for_entity, flashcards_for_entity
 from farmacograph.curator.publish_validator import (
     require_valid_publish_package,
@@ -147,6 +148,22 @@ class CuratorService:
         entity_payload.setdefault("dataset_version", dataset_version)
         if module:
             entity_payload.setdefault("module", module)
+
+        package = normalize_education_graph(
+            {
+                "entity_payload": entity_payload,
+                "related_entities": related_entities or [],
+                "relationships": relationships or [],
+                "education": education or [],
+                "dataset_version": dataset_version,
+                "module": module,
+                "create_snapshot": create_snapshot,
+            }
+        )
+        entity_payload = package["entity_payload"]
+        related_entities = package["related_entities"]
+        relationships = package["relationships"]
+        education = package["education"]
 
         require_valid_publish_package(
             entity_payload,
@@ -670,6 +687,7 @@ class CuratorService:
         workflow = await self.get_workflow(workflow_id)
         if workflow.state not in ("draft", "review"):
             raise ValidationError(f"Cannot edit package in state: {workflow.state}")
+        package = normalize_education_graph(package)
         updated = await self._curator.save_draft_package(workflow_id, package)
         await self._audit.log(
             "curator.draft_saved",
@@ -699,6 +717,7 @@ class CuratorService:
     def _validate_package_dict(package: dict[str, Any] | None) -> dict[str, Any]:
         if not package:
             return {"valid": False, "error_count": 0, "warning_count": 0, "issues": []}
+        package = normalize_education_graph(package)
         entity = package.get("entity_payload") or {}
         result = validate_publish_package(
             entity,

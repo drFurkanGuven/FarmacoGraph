@@ -23,6 +23,14 @@ CLINICAL_RELATIONSHIP_TYPES = {
     "FIRST_LINE_FOR",
 }
 
+KIND_REQUIRED_FIELDS = {
+    "FiveSecondSummary": ("text",),
+    "BoardExamPearl": ("text",),
+    "Mnemonic": ("mnemonic", "expansion"),
+    "CommonMistake": ("mistake", "correction"),
+    "Flashcard": ("front", "back"),
+}
+
 
 class EducationValidator(BaseValidator):
     level = ValidationLevel.EDUCATIONAL
@@ -41,6 +49,31 @@ class EducationValidator(BaseValidator):
                     entity_id=str(entity.get("id")),
                 )
             )
+
+        kind = entity.get("kind")
+        if kind not in KIND_REQUIRED_FIELDS:
+            issues.append(
+                ValidationIssue(
+                    constraint_id="FG-C030",
+                    level=self.level,
+                    severity=ValidationSeverity.ERROR,
+                    message="Education entities must use a supported kind",
+                    entity_id=str(entity.get("id")),
+                )
+            )
+        else:
+            for field in KIND_REQUIRED_FIELDS[kind]:
+                if not _has_text(entity.get(field)):
+                    issues.append(
+                        ValidationIssue(
+                            constraint_id="FG-C031",
+                            level=self.level,
+                            severity=ValidationSeverity.ERROR,
+                            message=f"{kind} education requires non-empty `{field}`",
+                            entity_id=str(entity.get("id")),
+                            field=field,
+                        )
+                    )
 
         outgoing = entity.get("outgoing_relationships", [])
         for rel in outgoing:
@@ -79,3 +112,7 @@ class EducationValidator(BaseValidator):
         ):
             return self.validate_education_entity(data)
         return ValidationResult(valid=True, issues=[])
+
+
+def _has_text(value: object) -> bool:
+    return isinstance(value, str) and bool(value.strip())

@@ -61,3 +61,48 @@ def test_education_items_are_validated_in_publish_gate():
 
     assert result.valid is False
     assert any(i.constraint_id == "FG-C029" for i in result.errors)
+
+
+def test_education_kind_specific_required_fields_are_validated():
+    package = build_cardiovascular_publish_package()
+    result = validate_publish_package(
+        package["entity_payload"],
+        related_entities=package["related_entities"],
+        relationships=package["relationships"],
+        education=[
+            {
+                "id": "education-1",
+                "entity_type": "EducationResource",
+                "kind": "Flashcard",
+                "content_layer": "education",
+                "front": "What is the key recall point?",
+                "back": "",
+                "outgoing_relationships": [],
+            }
+        ],
+    )
+
+    assert result.valid is False
+    assert any(i.constraint_id == "FG-C031" and i.field == "back" for i in result.errors)
+
+
+def test_unknown_education_kind_fails_validation():
+    package = build_cardiovascular_publish_package()
+    result = validate_publish_package(
+        package["entity_payload"],
+        related_entities=package["related_entities"],
+        relationships=package["relationships"],
+        education=[
+            {
+                "id": "education-1",
+                "entity_type": "EducationResource",
+                "kind": "ClinicalAssertion",
+                "content_layer": "education",
+                "text": "Wrong layer.",
+                "outgoing_relationships": [],
+            }
+        ],
+    )
+
+    assert result.valid is False
+    assert any(i.constraint_id == "FG-C030" for i in result.errors)

@@ -53,8 +53,8 @@ Full context: [platform-architecture.md](../platform-architecture.md#architectur
 |----|----------|-----------|-------------|
 | ADR-020 | Studio is the only curator UI | JSON/scripts are bootstrap only | Yes — drug browser, editor, validation center live |
 | ADR-021 | Studio never touches databases | API-first consistency | Yes — `FarmacoGraphClient` only |
-| ADR-022 | AI drafts, humans publish | Clinical accountability | Partial — draft editing live; publish wizard (4.4) planned |
-| ADR-023 | Separate education editor | Layer separation in UI | Planned — education editor not built |
+| ADR-022 | AI drafts, humans publish | Clinical accountability | Yes — draft editing and Drug/Disease publish wizard live |
+| ADR-023 | Separate education editor | Layer separation in UI | Partial — Drug Editor education MVP live; global education manager deferred |
 | ADR-024 | Next.js App Router + React Query | Typed client, server-state caching | Yes — `apps/studio` |
 
 Full context: [studio-roadmap.md](../studio-roadmap.md#architecture-decisions).
