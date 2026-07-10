@@ -570,8 +570,41 @@ async def return_workflow_to_draft(
     service=Depends(get_curator_service),
     auth: Annotated[AuthContext, Depends(require_scope("curator:publish"))] = None,
 ) -> dict:
+    """approved/review → draft (publisher). published → draft requires admin:org (unpublish)."""
     try:
-        workflow = await service.return_to_draft(workflow_id, actor_id=auth.user_id)
+        current = await service.get_workflow(workflow_id)
+        allow_published = False
+        if current.state == "published":
+            if not auth.has_scope("admin:org"):
+                raise HTTPException(
+                    status_code=403,
+                    detail="Unpublishing a published workflow requires admin:org",
+                )
+            allow_published = True
+        workflow = await service.return_to_draft(
+            workflow_id,
+            actor_id=auth.user_id,
+            allow_published=allow_published,
+        )
+        return {
+            "data": WorkflowResponse.from_model(workflow).model_dump(),
+            "meta": {"api_version": "v1"},
+        }
+    except HTTPException:
+        raise
+    except (ValidationError, NotFoundError) as exc:
+        raise HTTPException(status_code=400, detail=exc.message) from exc
+
+
+@router.post("/workflows/{workflow_id}/deprecate")
+async def deprecate_workflow(
+    workflow_id: UUID,
+    service=Depends(get_curator_service),
+    auth: Annotated[AuthContext, Depends(require_scope("admin:org"))] = None,
+) -> dict:
+    """Soft-delete: published → deprecated (admin only). Hides entity from public graph reads."""
+    try:
+        workflow = await service.deprecate(workflow_id, actor_id=auth.user_id)
         return {
             "data": WorkflowResponse.from_model(workflow).model_dump(),
             "meta": {"api_version": "v1"},

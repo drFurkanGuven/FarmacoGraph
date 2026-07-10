@@ -102,15 +102,17 @@ Curator workflows follow a linear state machine enforced by FG-C023:
 
 ```
 draft → review → approved → published → deprecated
-         ↑__________|
+         ↑__________|           ↓
+                    └──────── draft (admin unpublish)
 ```
 
 | State | Editable in Studio? | Who acts | API |
 |-------|---------------------|----------|-----|
 | `draft` | Yes — Drug Editor autosave | Curator (`curator:write`) | `PUT /curator/workflows/{id}/package` |
 | `review` | Yes — package edits allowed | Curator submits; reviewer approves | `POST .../submit`, `POST .../approve` |
-| `approved` | No — read-only until publish | Publisher (`curator:publish`) | `POST .../publish` |
-| `published` | No — new draft required to change graph | — | Neo4j write + outbox + `graph_validation` job |
+| `approved` | No — Return to draft | Publisher (`curator:publish`) | `POST .../publish` or `.../return-to-draft` |
+| `published` | No — Unpublish first | Admin (`admin:org`) | `POST .../return-to-draft` (unpublish) or `.../deprecate` |
+| `deprecated` | No | Admin soft-delete | Hidden from public graph reads (`status=deprecated`) |
 
 **What exists today**
 

@@ -4,7 +4,7 @@
 # Usage (on server, from repo root):
 #   ./scripts/create-curator.sh --email curator@farmacograph.local
 #   ./scripts/create-curator.sh --email curator@farmacograph.local --password 'StrongPass123!'
-#   ./scripts/create-curator.sh --email curator@farmacograph.local --name 'FarmacoGraph Curator'
+#   ./scripts/create-curator.sh --email curator@farmacograph.local --admin
 #
 # If --password is omitted, the script prompts securely (input is not echoed).
 # The password is never printed.
@@ -16,6 +16,7 @@ cd "$(dirname "$0")/.."
 EMAIL="${FG_CURATOR_EMAIL:-}"
 PASSWORD="${FG_CURATOR_PASSWORD:-}"
 NAME="${FG_CURATOR_NAME:-FarmacoGraph Curator}"
+AS_ADMIN=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -25,6 +26,7 @@ while [[ $# -gt 0 ]]; do
     --password) shift; PASSWORD="${1:?--password requires a value}" ;;
     --name=*) NAME="${1#*=}" ;;
     --name) shift; NAME="${1:?--name requires a value}" ;;
+    --admin) AS_ADMIN=true ;;
     -h|--help)
       sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//'
       exit 0
@@ -83,7 +85,7 @@ if ! docker compose ps --status running --services 2>/dev/null | grep -qx postgr
   exit 1
 fi
 
-echo "→ Creating/updating curator ${EMAIL} via farmacograph-api..."
+echo "→ Creating/updating ${AS_ADMIN:+administrator }${EMAIL} via farmacograph-api..."
 
 set +e
 RESULT="$(
@@ -91,6 +93,7 @@ RESULT="$(
     -e FG_BOOTSTRAP_EMAIL="$EMAIL" \
     -e FG_BOOTSTRAP_PASSWORD="$PASSWORD" \
     -e FG_BOOTSTRAP_NAME="$NAME" \
+    -e FG_BOOTSTRAP_ADMIN="$AS_ADMIN" \
     api python - <<'PY' 2>&1
 import asyncio
 import os
@@ -103,6 +106,7 @@ from farmacograph.db.postgres.session import create_session_factory, init_db
 EMAIL = os.environ["FG_BOOTSTRAP_EMAIL"]
 PASSWORD = os.environ["FG_BOOTSTRAP_PASSWORD"]
 NAME = os.environ.get("FG_BOOTSTRAP_NAME") or "FarmacoGraph Curator"
+AS_ADMIN = os.environ.get("FG_BOOTSTRAP_ADMIN", "false").lower() in ("1", "true", "yes")
 
 
 async def main() -> None:
@@ -115,9 +119,12 @@ async def main() -> None:
             email=EMAIL,
             password=PASSWORD,
             full_name=NAME,
+            role="administrator" if AS_ADMIN else "curator",
         )
         # Never print the password.
-        print(f"OK curator {result['action']}: {result['email']}")
+        label = "admin" if AS_ADMIN else "curator"
+        print(f"OK {label} {result['action']}: {result['email']}")
+        print(f"role={result['role']}")
         print("scopes=" + ",".join(result["scopes"]))
     finally:
         await engine.dispose()
@@ -134,7 +141,7 @@ RC=$?
 set -e
 
 # Never echo raw RESULT if it could contain secrets from unrelated tooling noise.
-SAFE_RESULT="$(printf '%s\n' "$RESULT" | grep -E '^(OK curator|scopes=|ERROR:)' || true)"
+SAFE_RESULT="$(printf '%s\n' "$RESULT" | grep -E '^(OK |role=|scopes=|ERROR:)' || true)"
 
 if [[ "$RC" -ne 0 ]]; then
   echo "✗ Curator bootstrap failed" >&2
@@ -143,10 +150,17 @@ if [[ "$RC" -ne 0 ]]; then
 fi
 
 echo ""
-echo "✓ Curator ready"
+if [[ "$AS_ADMIN" == true ]]; then
+  echo "✓ Administrator ready"
+else
+  echo "✓ Curator ready"
+fi
 printf '%s\n' "$SAFE_RESULT" | sed 's/^/  /'
 echo "  Name:  ${NAME}"
 echo ""
 echo "Sign in: https://farmacograph.furkanguven.space/studio/login/"
 echo "Password was not printed. Use the password you entered (or --password)."
 echo "If an old JWT still 401s after FG_JWT_SECRET_KEY rotation, use a private window."
+if [[ "$AS_ADMIN" == true ]]; then
+  echo "Admin: Unpublish to edit published records; Deprecate to soft-delete."
+fi

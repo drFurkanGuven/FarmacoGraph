@@ -14,6 +14,7 @@ const KIND_LABELS: Record<WorkflowTimelineKind, string> = {
   returned_to_draft: "Returned to draft",
   published: "Published",
   publish_failed: "Publish failed",
+  deprecated: "Deprecated",
   snapshot_created: "Snapshot created",
   unknown: "Activity",
 };

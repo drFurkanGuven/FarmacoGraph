@@ -2,6 +2,7 @@
 
 import {
   AlertCircle,
+  Archive,
   Camera,
   CheckCircle2,
   FileCheck2,
@@ -37,6 +38,7 @@ const KIND_ICONS: Record<WorkflowTimelineKind, React.ReactNode> = {
   returned_to_draft: <RotateCcw className="h-4 w-4" />,
   published: <CheckCircle2 className="h-4 w-4" />,
   publish_failed: <AlertCircle className="h-4 w-4 text-destructive" />,
+  deprecated: <Archive className="h-4 w-4" />,
   snapshot_created: <Camera className="h-4 w-4" />,
   unknown: <Loader2 className="h-4 w-4" />,
 };

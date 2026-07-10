@@ -394,6 +394,7 @@ export type WorkflowTimelineKind =
   | "returned_to_draft"
   | "published"
   | "publish_failed"
+  | "deprecated"
   | "snapshot_created"
   | "unknown";
 

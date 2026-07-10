@@ -63,6 +63,16 @@ Production does **not** auto-seed users.
 
 Scopes granted: `knowledge:read`, `knowledge:search`, `knowledge:explain`, `education:read`, `curator:write`, `curator:publish`.
 
+Promote the same account to administrator (edit/deprecate published records):
+
+```bash
+./scripts/promote-admin.sh --email curator@farmacograph.local
+# or create with admin from the start:
+./scripts/create-curator.sh --email curator@farmacograph.local --admin
+```
+
+Then **sign out and sign in again** (JWT must include `admin:org`). Admins get **Unpublish to edit** and **Deprecate** on published drug/disease editors — package edits still go through the normal draft → review → approve → publish machine (no silent bypass).
+
 Use a strong password (≥12 chars) and rotate it after the first smoke test.
 
 ## Schema migrate

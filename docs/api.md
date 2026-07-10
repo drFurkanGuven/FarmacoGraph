@@ -57,6 +57,8 @@ The OpenAPI file at `openapi/openapi.yaml` describes the **full contract** (impl
 | GET | `/api/v1/curator/validation-summary` | `curator:write` | Validation stats |
 | POST | `/api/v1/curator/workflows/{id}/submit` | `curator:write` | draft → review |
 | POST | `/api/v1/curator/workflows/{id}/approve` | `curator:publish` | review → approved |
+| POST | `/api/v1/curator/workflows/{id}/return-to-draft` | `curator:publish` (+ `admin:org` if published) | approved/review → draft; published → draft (admin unpublish) |
+| POST | `/api/v1/curator/workflows/{id}/deprecate` | `admin:org` | published → deprecated (soft-delete) |
 | POST | `/api/v1/curator/workflows/{id}/publish` | `curator:publish` | approved → published |
 
 ### App-level routes (not under `/api/v1`)

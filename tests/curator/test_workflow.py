@@ -26,6 +26,11 @@ def test_published_to_deprecated_allowed():
     validate_transition("published", "deprecated")
 
 
+def test_published_to_draft_allowed():
+    """Admin unpublish path — API gates with admin:org."""
+    validate_transition("published", "draft")
+
+
 def test_deprecated_no_transitions():
     with pytest.raises(InvalidTransitionError):
         validate_transition("deprecated", "draft")

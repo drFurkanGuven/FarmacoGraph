@@ -11,6 +11,12 @@ from farmacograph.core.config import Settings
 from farmacograph.db.postgres.models import ApiKey, User, UserRole
 
 CURATOR_SCOPES = ["curator:write", "curator:publish", "knowledge:read"]
+ADMIN_SCOPES = [
+    *CURATOR_SCOPES,
+    "graph:query",
+    "admin:org",
+    "admin:api_keys",
+]
 
 
 async def seed_curator_user(
@@ -18,20 +24,38 @@ async def seed_curator_user(
     *,
     email: str = "curator@test.local",
     password: str = "test-password-123",
+    scopes: list[str] | None = None,
+    role: str = "curator",
 ) -> tuple[User, str]:
     user = User(
         email=email,
         hashed_password=hash_password(password),
         full_name="Test Curator",
         is_active=True,
+        is_superuser=role == "administrator",
     )
-    role = UserRole(user=user, role="curator", scopes=CURATOR_SCOPES)
+    role_row = UserRole(user=user, role=role, scopes=scopes or CURATOR_SCOPES)
     async with session_factory() as session:
         session.add(user)
-        session.add(role)
+        session.add(role_row)
         await session.commit()
         await session.refresh(user)
     return user, password
+
+
+async def seed_admin_user(
+    session_factory: async_sessionmaker[AsyncSession],
+    *,
+    email: str = "admin@test.local",
+    password: str = "test-password-123",
+) -> tuple[User, str]:
+    return await seed_curator_user(
+        session_factory,
+        email=email,
+        password=password,
+        scopes=ADMIN_SCOPES,
+        role="administrator",
+    )
 
 
 async def seed_api_key(
@@ -64,6 +88,11 @@ def bearer_headers(token: str) -> dict[str, str]:
 def curator_token(settings: Settings, user_id: uuid.UUID | None = None) -> str:
     subject = str(user_id or uuid.uuid4())
     return create_access_token(subject, settings, scopes=CURATOR_SCOPES)
+
+
+def admin_token(settings: Settings, user_id: uuid.UUID | None = None) -> str:
+    subject = str(user_id or uuid.uuid4())
+    return create_access_token(subject, settings, scopes=ADMIN_SCOPES)
 
 
 INSECURE_JWT_SECRETS = (

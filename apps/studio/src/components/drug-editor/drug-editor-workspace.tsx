@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Loader2, Lock, PanelRight, Rocket, RotateCcw } from "lucide-react";
+import { Archive, ArrowLeft, Loader2, Lock, PanelRight, Rocket, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { ApiError } from "@/lib/api";
 import { useApiClient } from "@/lib/hooks/use-api-client";
+import { usePermissions } from "@/lib/auth/hooks";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -44,9 +45,12 @@ function EditorSkeleton() {
 
 export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
   const client = useApiClient();
+  const { hasPermission } = usePermissions();
+  const isAdmin = hasPermission("admin:org");
   const [contextOpen, setContextOpen] = useState(false);
   const [publishOpen, setPublishOpen] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
+  const [deprecating, setDeprecating] = useState(false);
   const {
     loading,
     loadError,
@@ -77,13 +81,36 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
     try {
       const envelope = await client.returnWorkflowToDraft(workflow.id);
       onWorkflowUpdated(envelope.data);
-      toast.success("Returned to draft — editing unlocked.");
+      toast.success(
+        workflowState === "published"
+          ? "Unpublished — editing unlocked (admin)."
+          : "Returned to draft — editing unlocked.",
+      );
     } catch (error) {
       const message =
         error instanceof ApiError ? error.message : "Could not return workflow to draft.";
       toast.error(message);
     } finally {
       setUnlocking(false);
+    }
+  }
+
+  async function handleDeprecate() {
+    if (!workflow?.id || deprecating) return;
+    const ok = window.confirm(
+      "Deprecate this published record? It will be soft-deleted from public graph reads.",
+    );
+    if (!ok) return;
+    setDeprecating(true);
+    try {
+      const envelope = await client.deprecateWorkflow(workflow.id);
+      onWorkflowUpdated(envelope.data);
+      toast.success("Deprecated — hidden from public graph reads.");
+    } catch (error) {
+      const message = error instanceof ApiError ? error.message : "Could not deprecate workflow.";
+      toast.error(message);
+    } finally {
+      setDeprecating(false);
     }
   }
 
@@ -143,13 +170,19 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
         </div>
 
         <div className="flex flex-wrap items-center justify-end gap-2">
-          {workflowState === "approved" ? (
+          {workflowState === "approved" || (workflowState === "published" && isAdmin) ? (
             <Button size="sm" variant="secondary" disabled={unlocking} onClick={handleReturnToDraft}>
               {unlocking ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
-              Return to draft
+              {workflowState === "published" ? "Unpublish to edit" : "Return to draft"}
             </Button>
           ) : null}
-          {workflowState === "published" ? (
+          {workflowState === "published" && isAdmin ? (
+            <Button size="sm" variant="outline" disabled={deprecating} onClick={handleDeprecate}>
+              {deprecating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Archive className="h-4 w-4" />}
+              Deprecate
+            </Button>
+          ) : null}
+          {workflowState === "published" && !isAdmin ? (
             <Button size="sm" variant="outline" onClick={() => setActiveSection("evidence")}>
               Evidence
             </Button>
@@ -198,12 +231,33 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
         <main className="minimal-scrollbar min-h-0 overflow-auto p-4 md:p-6">
           {workflowState === "published" && activeSection.id !== "evidence" ? (
             <p className="mb-4 text-xs text-muted-foreground">
-              Published package fields are read-only. Use <button type="button" className="underline underline-offset-2" onClick={() => setActiveSection("evidence")}>Evidence</button> to attach graph-backed citations, or open Workflow for history.
+              {isAdmin ? (
+                <>
+                  Published package is read-only until you{" "}
+                  <button type="button" className="underline underline-offset-2" onClick={() => void handleReturnToDraft()}>
+                    Unpublish to edit
+                  </button>
+                  . Deprecate soft-deletes from public graph reads.
+                </>
+              ) : (
+                <>
+                  Published package fields are read-only. Use{" "}
+                  <button type="button" className="underline underline-offset-2" onClick={() => setActiveSection("evidence")}>
+                    Evidence
+                  </button>{" "}
+                  to attach graph-backed citations, or open Workflow for history.
+                </>
+              )}
             </p>
           ) : null}
           {workflowState === "approved" ? (
             <p className="mb-4 text-xs text-muted-foreground">
               Approved — package locked. Use <span className="font-medium text-foreground">Return to draft</span> to edit, or Publish to write Neo4j.
+            </p>
+          ) : null}
+          {workflowState === "deprecated" ? (
+            <p className="mb-4 text-xs text-muted-foreground">
+              Deprecated — soft-deleted from public reads. Package edits are closed.
             </p>
           ) : null}
           <DrugSectionEditor

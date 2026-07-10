@@ -50,8 +50,10 @@ ACTION_TIMELINE_KIND: dict[str, str] = {
     "curator.submitted": "submitted",
     "curator.approved": "approved",
     "curator.returned_to_draft": "returned_to_draft",
+    "curator.unpublished": "returned_to_draft",
     "curator.published": "published",
     "curator.publish_failed": "publish_failed",
+    "curator.deprecated": "deprecated",
     "curator.snapshot_created": "snapshot_created",
 }
 
@@ -115,15 +117,101 @@ class CuratorService:
         )
 
     async def return_to_draft(
-        self, workflow_id: uuid.UUID, *, actor_id: uuid.UUID | None = None, notes: str | None = None
+        self,
+        workflow_id: uuid.UUID,
+        *,
+        actor_id: uuid.UUID | None = None,
+        notes: str | None = None,
+        allow_published: bool = False,
     ) -> CuratorWorkflow:
-        return await self._transition(
+        """Return workflow to draft. Published → draft requires allow_published (admin unpublish)."""
+        workflow = await self.get_workflow(workflow_id)
+        if workflow.state == "published" and not allow_published:
+            raise ValidationError(
+                "Cannot return published workflow to draft without admin unpublish "
+                "(requires admin:org)."
+            )
+        was_published = workflow.state == "published"
+        action = "curator.unpublished" if was_published else "curator.returned_to_draft"
+        workflow = await self._transition(
             workflow_id,
             "draft",
-            action="curator.returned_to_draft",
+            action=action,
             actor_id=actor_id,
             notes=notes,
         )
+        workflow = await self._patch_package_status(workflow, "draft")
+        if was_published:
+            await self._sync_graph_status(workflow, status="draft", deprecated=False)
+        return workflow
+
+    async def deprecate(
+        self,
+        workflow_id: uuid.UUID,
+        *,
+        actor_id: uuid.UUID | None = None,
+        notes: str | None = None,
+    ) -> CuratorWorkflow:
+        """Soft-delete a published workflow (published → deprecated) and hide from public graph reads."""
+        workflow = await self.get_workflow(workflow_id)
+        if workflow.state != "published":
+            raise ValidationError(f"Cannot deprecate from state: {workflow.state}")
+        workflow = await self._transition(
+            workflow_id,
+            "deprecated",
+            action="curator.deprecated",
+            actor_id=actor_id,
+            notes=notes,
+        )
+        workflow = await self._patch_package_status(workflow, "deprecated", deprecated=True)
+        await self._sync_graph_status(workflow, status="deprecated", deprecated=True)
+        return workflow
+
+    async def _patch_package_status(
+        self,
+        workflow: CuratorWorkflow,
+        status: str,
+        *,
+        deprecated: bool | None = None,
+    ) -> CuratorWorkflow:
+        package = workflow.draft_package_json
+        if not isinstance(package, dict):
+            return workflow
+        payload = dict(package)
+        entity = dict(payload.get("entity_payload") or {})
+        entity["status"] = status
+        if deprecated is not None:
+            entity["deprecated"] = deprecated
+        versioning = entity.get("versioning")
+        if isinstance(versioning, dict):
+            versioning = dict(versioning)
+            versioning["status"] = status
+            entity["versioning"] = versioning
+        payload["entity_payload"] = entity
+        return await self._curator.save_draft_package(workflow.id, payload)
+
+    async def _sync_graph_status(
+        self,
+        workflow: CuratorWorkflow,
+        *,
+        status: str,
+        deprecated: bool,
+    ) -> None:
+        if not self._writer.is_available:
+            return
+        label = workflow.entity_type or "BiomedicalEntity"
+        try:
+            await self._writer.merge_entity(
+                label,
+                {
+                    "id": workflow.entity_id,
+                    "status": status,
+                    "deprecated": deprecated,
+                },
+            )
+        except Exception:
+            # Graph sync is best-effort; workflow transition already committed.
+            return
 
     async def publish(
         self,
@@ -837,6 +925,10 @@ def _timeline_detail(action: str, diff: dict[str, Any]) -> str | None:
         return "Approved for publish"
     if action == "curator.returned_to_draft":
         return "Returned to draft for edits"
+    if action == "curator.unpublished":
+        return "Unpublished — returned to draft for admin edits"
+    if action == "curator.deprecated":
+        return "Deprecated (soft-deleted from public graph)"
     if action == "curator.published":
         return "Published to knowledge graph"
     if action == "curator.publish_failed":
