@@ -345,6 +345,15 @@ if [[ -x scripts/migrate-schema.sh ]]; then
     echo "✗ Schema migrate failed — dashboard/curator will 500 until fixed" >&2
     exit 1
   }
+  # ORM models expect new columns; bounce API so startup patches + connections are fresh
+  echo "→ Restarting API after schema patches"
+  docker compose restart api
+  for _ in $(seq 1 30); do
+    if curl -sf "http://127.0.0.1:${API_PORT}/api/v1/health" >/dev/null 2>&1; then
+      break
+    fi
+    sleep 1
+  done
 fi
 
 STUDIO_BASE="$(get_env_var FG_STUDIO_BASE_PATH)"

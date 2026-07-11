@@ -92,6 +92,23 @@ else
   exit 1
 fi
 
+echo "→ Ensuring curator_workflows unpublish-request columns..."
+psql_exec <<'SQL'
+ALTER TABLE curator_workflows
+  ADD COLUMN IF NOT EXISTS unpublish_requested_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS unpublish_requested_by UUID,
+  ADD COLUMN IF NOT EXISTS unpublish_request_notes TEXT;
+SQL
+for col in unpublish_requested_at unpublish_requested_by unpublish_request_notes; do
+  present="$(psql_exec -Atc "SELECT COUNT(*) FROM information_schema.columns WHERE table_name='curator_workflows' AND column_name='${col}';")"
+  if [[ "$present" == "1" ]]; then
+    echo "  ✓ column curator_workflows.${col}"
+  else
+    echo "  ✗ missing column curator_workflows.${col}" >&2
+    exit 1
+  fi
+done
+
 echo "→ Spot-checking other curator/auth columns..."
 psql_exec -Atc "
 SELECT column_name
