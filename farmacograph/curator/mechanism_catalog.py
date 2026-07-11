@@ -62,15 +62,22 @@ def _load_runtime_fragments(path: Path | None = None) -> list[dict[str, Any]]:
 
 def _save_runtime_fragments(entities: list[dict[str, Any]], path: Path | None = None) -> None:
     runtime_path = path or mechanism_runtime_path()
-    runtime_path.parent.mkdir(parents=True, exist_ok=True)
-    payload = {
-        "version": "1.0.0",
-        "updated_at": datetime.now(UTC).isoformat(),
-        "entities": entities,
-    }
-    runtime_path.write_text(
-        json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
-    )
+    try:
+        runtime_path.parent.mkdir(parents=True, exist_ok=True)
+        payload = {
+            "version": "1.0.0",
+            "updated_at": datetime.now(UTC).isoformat(),
+            "entities": entities,
+        }
+        runtime_path.write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+        )
+    except OSError as exc:
+        raise OSError(
+            "Cannot write mechanism runtime catalog "
+            f"({runtime_path}). Set FG_MECHANISM_CATALOG_PATH to a writable path "
+            "(Docker: /app/data/catalog/mechanisms.runtime.json on the catalogdata volume)."
+        ) from exc
 
 
 def _fragments_from_index(index: dict[str, Any] | None = None) -> list[dict[str, Any]]:
@@ -149,5 +156,8 @@ def register_mechanism_fragment(
     }
     runtime = _load_runtime_fragments()
     runtime.append(entity)
-    _save_runtime_fragments(runtime)
+    try:
+        _save_runtime_fragments(runtime)
+    except OSError as exc:
+        raise ValueError(str(exc)) from exc
     return entity

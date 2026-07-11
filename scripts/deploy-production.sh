@@ -267,6 +267,13 @@ fi
 set_env_var FG_STUDIO_API_URL "$API_URL"
 set_env_var FG_STUDIO_BASE_PATH /studio
 set_env_var FG_SEED_DEV_USERS false
+# Writable curator catalogs (staging/ is :ro in docker-compose — Add disease/fragment need this)
+if [[ -z "$(get_env_var FG_DISEASE_CATALOG_PATH)" ]]; then
+  set_env_var FG_DISEASE_CATALOG_PATH /app/data/catalog/diseases.runtime.json
+fi
+if [[ -z "$(get_env_var FG_MECHANISM_CATALOG_PATH)" ]]; then
+  set_env_var FG_MECHANISM_CATALOG_PATH /app/data/catalog/mechanisms.runtime.json
+fi
 
 chmod +x scripts/find-ports.sh scripts/migrate-schema.sh scripts/create-curator.sh scripts/install-nginx.sh 2>/dev/null || true
 if [[ -x scripts/find-ports.sh ]]; then

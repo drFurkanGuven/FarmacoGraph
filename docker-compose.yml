@@ -54,6 +54,9 @@ services:
       FG_NEO4J_PASSWORD: ${FG_NEO4J_PASSWORD:-farmacograph}
       FG_LOG_JSON: ${FG_LOG_JSON:-false}
       FG_JWT_SECRET_KEY: ${FG_JWT_SECRET_KEY:-dev-secret-change-in-production-32chars}
+      # staging/ is mounted :ro — curator runtime catalogs must live on a writable volume
+      FG_DISEASE_CATALOG_PATH: ${FG_DISEASE_CATALOG_PATH:-/app/data/catalog/diseases.runtime.json}
+      FG_MECHANISM_CATALOG_PATH: ${FG_MECHANISM_CATALOG_PATH:-/app/data/catalog/mechanisms.runtime.json}
     ports:
       - "${FG_HOST_API_PORT:-8001}:8000"
     healthcheck:
@@ -66,6 +69,7 @@ services:
       - ./farmacograph:/app/farmacograph:ro
       - ./ontology:/app/ontology:ro
       - ./staging:/app/staging:ro
+      - catalogdata:/app/data/catalog
 
   # Studio: NEXT_PUBLIC_* are baked at *build* time into JS chunks.
   # Changing FG_STUDIO_API_URL / FG_STUDIO_BASE_PATH requires rebuilding the image
@@ -115,3 +119,4 @@ services:
 volumes:
   pgdata:
   neo4jdata:
+  catalogdata:

@@ -67,3 +67,17 @@ def test_register_disease_rejects_duplicate():
     register_disease(slug="pericarditis", label="Pericarditis")
     with pytest.raises(ValueError, match="already exists"):
         register_disease(slug="pericarditis", label="Pericarditis again")
+
+
+def test_register_disease_rejects_unwritable_catalog(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    readonly_dir = tmp_path / "readonly"
+    readonly_dir.mkdir()
+    readonly_dir.chmod(0o555)
+    monkeypatch.setenv("FG_DISEASE_CATALOG_PATH", str(readonly_dir / "diseases.runtime.json"))
+    try:
+        with pytest.raises(ValueError, match="Cannot write disease runtime catalog"):
+            register_disease(slug="readonly-fail", label="Readonly fail")
+    finally:
+        readonly_dir.chmod(0o755)

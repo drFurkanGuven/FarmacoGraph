@@ -171,6 +171,7 @@ FG_SEED_DEV_USERS=false
 - PostgreSQL for auth, workflow state, and draft packages
 - At least one curator via `create-curator.sh`
 - Optional: set `FG_DISEASE_CATALOG_PATH` to a persistent volume path so diseases created via **Add disease** (`POST /curator/diseases`) survive container rebuilds (default file is `staging/cardiovascular/shared/diseases.runtime.json`)
+- **Docker / production:** `staging/` is mounted read-only. `deploy-production.sh` and `docker-compose.yml` set `FG_DISEASE_CATALOG_PATH` / `FG_MECHANISM_CATALOG_PATH` to `/app/data/catalog/*.runtime.json` on the writable `catalogdata` volume. Without this, **Add disease** / **New fragment** fail with a write error.
 
 ## Auth expectations (do not weaken)
 
