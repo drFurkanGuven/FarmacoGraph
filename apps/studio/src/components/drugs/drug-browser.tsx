@@ -12,6 +12,7 @@ import { useAuth } from "@/lib/auth/context";
 import { DrugFilters } from "./drug-filters";
 import { DrugPagination } from "./drug-pagination";
 import { DrugTable } from "./drug-table";
+import { CreateDrugDialog } from "./create-drug-dialog";
 import { useDrugBrowser } from "./hooks/use-drug-browser";
 import { useDrugBrowserState } from "./hooks/use-drug-browser-state";
 
@@ -58,15 +59,18 @@ export function DrugBrowser() {
             </p>
           )}
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => void browser.refetch()}
-          disabled={browser.isFetching}
-        >
-          <RefreshCw className={`h-4 w-4 ${browser.isFetching ? "animate-spin" : ""}`} />
-          Refresh
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <CreateDrugDialog />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void browser.refetch()}
+            disabled={browser.isFetching}
+          >
+            <RefreshCw className={`h-4 w-4 ${browser.isFetching ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       <Card>

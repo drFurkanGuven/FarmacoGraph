@@ -57,6 +57,7 @@ services:
       # staging/ is mounted :ro — curator runtime catalogs must live on a writable volume
       FG_DISEASE_CATALOG_PATH: ${FG_DISEASE_CATALOG_PATH:-/app/data/catalog/diseases.runtime.json}
       FG_MECHANISM_CATALOG_PATH: ${FG_MECHANISM_CATALOG_PATH:-/app/data/catalog/mechanisms.runtime.json}
+      FG_DRUG_CATALOG_PATH: ${FG_DRUG_CATALOG_PATH:-/app/data/catalog/drugs.runtime.json}
     ports:
       - "${FG_HOST_API_PORT:-8001}:8000"
     healthcheck:

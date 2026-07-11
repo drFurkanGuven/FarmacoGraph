@@ -291,6 +291,40 @@ export class FarmacoGraphClient {
     });
   }
 
+  curatorDrugClasses() {
+    return this.request<
+      Array<{
+        id: string;
+        slug: string;
+        label: string;
+        entity_type: string;
+        organ_system?: string;
+      }>
+    >("/curator/drug-classes");
+  }
+
+  createDrug(input: {
+    slug: string;
+    label: string;
+    drug_class_slug: string;
+    description?: string;
+  }) {
+    return this.request<{
+      entity: {
+        id: string;
+        slug: string;
+        label: string;
+        entity_type: string;
+        drug_class_slug?: string;
+        description?: string | null;
+        status?: string;
+      };
+      workflow: WorkflowItem;
+      package: DrugPackage;
+      validation: PackageValidation;
+    }>("/curator/drugs", { method: "POST", body: input });
+  }
+
   createDisease(input: {
     slug: string;
     label: string;

@@ -22,6 +22,13 @@ from farmacograph.curator.drug_package import (
     load_curriculum,
     load_package,
 )
+from farmacograph.curator.drug_runtime import (
+    build_drug_package_for_class,
+    find_runtime_drug,
+    list_drug_classes,
+    list_runtime_drug_entries,
+    register_drug,
+)
 from farmacograph.curator.education_graph import normalize_education_graph
 from farmacograph.curator.education_package import education_items_for_entity, flashcards_for_entity
 from farmacograph.curator.mechanism_catalog import (
@@ -547,10 +554,12 @@ class CuratorService:
         workflow_by_entity = {w.entity_id: w for w in workflows}
         items: list[dict[str, Any]] = []
         needle = search.strip().lower()
+        seen_slugs: set[str] = set()
 
         for category in curriculum.get("categories", []):
             for drug in category.get("drugs", []):
                 slug = drug["slug"]
+                seen_slugs.add(slug)
                 if (
                     needle
                     and needle not in slug.lower()
@@ -594,6 +603,48 @@ class CuratorService:
                     }
                 )
 
+        class_labels = {row["slug"]: row["label"] for row in list_drug_classes()}
+        for drug in list_runtime_drug_entries():
+            slug = drug["slug"]
+            if slug in seen_slugs:
+                continue
+            label = drug.get("label") or slug.replace("-", " ").title()
+            if needle and needle not in slug.lower() and needle not in label.lower():
+                continue
+
+            entity_id = drug["id"]
+            workflow = workflow_by_entity.get(entity_id)
+            graph_drug = (
+                await self._graph.get_drug_by_slug(slug) if self._graph.is_available else None
+            )
+            publication_status = "published" if graph_drug else drug.get("status", "draft")
+            if status and publication_status != status:
+                continue
+            if workflow_state and (workflow is None or workflow.state != workflow_state):
+                continue
+
+            validation = self._validate_package_dict(
+                workflow.draft_package_json if workflow else None
+            )
+            class_slug = drug.get("drug_class_slug") or drug.get("category_slug")
+            items.append(
+                {
+                    "slug": slug,
+                    "label": label,
+                    "entity_id": entity_id,
+                    "module": module,
+                    "category_slug": drug.get("category_slug") or class_slug,
+                    "category_name": class_labels.get(class_slug, class_slug),
+                    "curriculum_status": drug.get("status", "draft"),
+                    "publication_status": publication_status,
+                    "workflow_id": str(workflow.id) if workflow else None,
+                    "workflow_state": workflow.state if workflow else None,
+                    "validation_valid": validation["valid"],
+                    "validation_errors": validation["error_count"],
+                    "confidence_score": graph_drug.get("confidence_score") if graph_drug else None,
+                }
+            )
+
         reverse = sort.startswith("-")
         key_name = sort.lstrip("-")
         if key_name == "label":
@@ -603,6 +654,39 @@ class CuratorService:
 
         total = len(items)
         return items[offset : offset + limit], total
+
+    async def list_drug_classes_browser(self) -> list[dict[str, Any]]:
+        return list_drug_classes()
+
+    async def create_drug(
+        self,
+        *,
+        slug: str,
+        label: str,
+        drug_class_slug: str,
+        description: str | None = None,
+        actor_id: uuid.UUID | None = None,
+    ) -> tuple[dict[str, Any], CuratorWorkflow, dict[str, Any]]:
+        try:
+            entity = register_drug(
+                slug=slug,
+                label=label,
+                drug_class_slug=drug_class_slug,
+                description=description,
+            )
+            package = build_drug_package_for_class(
+                slug=entity["slug"],
+                label=entity["label"],
+                drug_class_slug=drug_class_slug,
+            )
+        except ValueError as exc:
+            raise ValidationError(str(exc)) from exc
+
+        workflow, _existing = await self.get_or_create_workflow_for_slug(
+            entity["slug"], actor_id=actor_id
+        )
+        workflow = await self._curator.save_draft_package(workflow.id, package)
+        return entity, workflow, package
 
     async def list_mechanism_fragments_browser(
         self,
@@ -960,7 +1044,18 @@ class CuratorService:
         if package_path.is_file():
             return load_package(package_path).model_dump()
 
-        return build_drug_entry_package(slug)
+        runtime = find_runtime_drug(slug)
+        if runtime is not None:
+            return build_drug_package_for_class(
+                slug=runtime["slug"],
+                label=runtime.get("label") or runtime["slug"],
+                drug_class_slug=runtime["drug_class_slug"],
+            )
+
+        try:
+            return build_drug_entry_package(slug)
+        except ValueError as exc:
+            raise NotFoundError(str(exc)) from exc
 
     async def save_draft_package(
         self,

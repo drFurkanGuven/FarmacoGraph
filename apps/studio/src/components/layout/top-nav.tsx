@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, Moon, Sun, Laptop } from "lucide-react";
+import { Moon, Sun, Laptop } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,7 +21,7 @@ interface TopNavProps {
 }
 
 export function TopNav({ onOpenCommand }: TopNavProps) {
-  const { session, workspaces, activeWorkspace, setActiveWorkspace } = useAuth();
+  const { session } = useAuth();
   const { setTheme, theme } = useTheme();
   const pathname = usePathname();
 
@@ -42,23 +42,9 @@ export function TopNav({ onOpenCommand }: TopNavProps) {
         <kbd className="ml-2 rounded border bg-muted px-1.5 py-0.5 text-[10px] font-medium">⌘K</kbd>
       </Button>
 
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="max-w-[180px] justify-between">
-            <span className="truncate">{activeWorkspace.name}</span>
-            <ChevronDown className="opacity-60" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuLabel>Workspace</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          {workspaces.map((ws) => (
-            <DropdownMenuItem key={ws.id} onClick={() => setActiveWorkspace(ws)}>
-              {ws.name}
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <span className="hidden rounded-md border px-2.5 py-1 text-xs font-medium text-muted-foreground sm:inline-flex">
+        Cardiovascular
+      </span>
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>

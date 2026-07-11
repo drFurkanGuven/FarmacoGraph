@@ -38,6 +38,13 @@ class CreateDiseaseRequest(BaseModel):
     mesh: str | None = Field(default=None, description="Optional MeSH identifier")
 
 
+class CreateDrugRequest(BaseModel):
+    slug: str = Field(description="Lowercase kebab-case drug slug, e.g. ramipril")
+    label: str = Field(description="Display label / generic name")
+    drug_class_slug: str = Field(description="DrugClass slug from nodes index, e.g. ace-inhibitors")
+    description: str | None = None
+
+
 class CreateMechanismFragmentRequest(BaseModel):
     slug: str = Field(description="Lowercase kebab-case fragment slug, e.g. ace-inhibition")
     label: str = Field(description="Display label")

@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from farmacograph.api.deps import get_app_container, get_evidence_service, require_scope
 from farmacograph.api.schemas.curator import (
     CreateDiseaseRequest,
+    CreateDrugRequest,
     CreateMechanismFragmentRequest,
     CreateWorkflowRequest,
     DrugWorkflowStateResponse,
@@ -75,6 +76,45 @@ async def list_curator_drugs(
             "offset": offset,
             "module": module,
         },
+    }
+
+
+@router.get("/drug-classes")
+async def list_curator_drug_classes(
+    service=Depends(get_curator_service),
+    _auth: Annotated[AuthContext, Depends(require_scope("curator:write"))] = None,
+) -> dict:
+    data = await service.list_drug_classes_browser()
+    return {
+        "data": data,
+        "meta": {"api_version": "v1", "count": len(data), "total": len(data)},
+    }
+
+
+@router.post("/drugs", status_code=201)
+async def create_drug(
+    body: CreateDrugRequest,
+    service=Depends(get_curator_service),
+    auth: Annotated[AuthContext, Depends(require_scope("curator:write"))] = None,
+) -> dict:
+    try:
+        entity, workflow, package = await service.create_drug(
+            slug=body.slug,
+            label=body.label,
+            drug_class_slug=body.drug_class_slug,
+            description=body.description,
+            actor_id=auth.user_id,
+        )
+    except ValidationError as exc:
+        raise HTTPException(status_code=400, detail=exc.message) from exc
+    return {
+        "data": {
+            "entity": entity,
+            "workflow": WorkflowResponse.from_model(workflow).model_dump(),
+            "package": package,
+            "validation": service.validate_draft_package(package),
+        },
+        "meta": {"api_version": "v1", "slug": entity["slug"]},
     }
 
 

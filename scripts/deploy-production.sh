@@ -274,6 +274,9 @@ fi
 if [[ -z "$(get_env_var FG_MECHANISM_CATALOG_PATH)" ]]; then
   set_env_var FG_MECHANISM_CATALOG_PATH /app/data/catalog/mechanisms.runtime.json
 fi
+if [[ -z "$(get_env_var FG_DRUG_CATALOG_PATH)" ]]; then
+  set_env_var FG_DRUG_CATALOG_PATH /app/data/catalog/drugs.runtime.json
+fi
 
 chmod +x scripts/find-ports.sh scripts/migrate-schema.sh scripts/create-curator.sh scripts/install-nginx.sh 2>/dev/null || true
 if [[ -x scripts/find-ports.sh ]]; then

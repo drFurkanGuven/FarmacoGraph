@@ -47,6 +47,9 @@ The OpenAPI file at `openapi/openapi.yaml` describes the **full contract** (impl
 | GET | `/api/v1/diseases/{disease_id}` | `knowledge:read` | Disease detail by canonical UUID |
 | GET | `/api/v1/curator/drugs` | `curator:write` | Curator drug browser |
 | GET | `/api/v1/curator/drugs/{slug}/workflow-state` | `curator:write` | Drug workflow aggregate |
+| GET | `/api/v1/curator/drugs` | `curator:write` | Drug browser (curriculum + runtime) |
+| GET | `/api/v1/curator/drug-classes` | `curator:write` | DrugClass catalog for Add drug |
+| POST | `/api/v1/curator/drugs` | `curator:write` | Register drug (class + slug) and open draft workflow |
 | POST | `/api/v1/curator/drugs/{slug}/workflows` | `curator:write` | Open/create workflow for slug |
 | GET | `/api/v1/curator/drugs/{slug}/package` | `curator:write` | Load draft package |
 | GET | `/api/v1/curator/diseases` | `curator:write` | Curator disease browser |
