@@ -127,7 +127,7 @@ function FocusedMechanismPanel({ drug }: { drug: string }) {
               <p className="text-sm text-destructive">Unable to load published mechanism graph.</p>
             ) : !mechanism || nodes.length === 0 ? (
               <p className="rounded-md border bg-muted/30 p-3 text-sm text-muted-foreground">
-                No published mechanism graph yet. Select mechanism roots in the Drug Editor, then publish.
+                No published mechanism graph yet. Author roots and pathway edges in the Drug Editor, then publish.
               </p>
             ) : (
               <>
@@ -281,30 +281,29 @@ function MechanismsSurface() {
         eyebrow="Mechanism layer"
         title="Mechanisms"
         status="MVP live"
-        description="Pick a drug to inspect its published mechanism DAG and Explain preview. Root selection still happens in the Drug Editor."
+        description="Pick a drug to inspect its published mechanism DAG and Explain preview. Author the pathway on the Drug Editor canvas (Add node, set roots, connect steps)."
         primary={{
-          label: focusedDrug ? "Edit mechanism" : "Open drug browser",
+          label: focusedDrug ? "Edit pathway" : "Open drug browser",
           href: focusedDrug ? `/knowledge/drugs/${encodeURIComponent(focusedDrug)}` : "/knowledge/drugs",
           icon: focusedDrug ? Pencil : GitBranch,
           description: focusedDrug
-            ? "Open the focused Drug Editor mechanism picker."
-            : "Choose a drug in the editor to attach HAS_MECHANISM_ROOT, then publish.",
+            ? "Open the focused Drug Editor pathway canvas."
+            : "Choose a drug, author the mechanism pathway on the canvas, then publish.",
         }}
         signals={[
-          { label: "Mechanism picker", value: "live", tone: "success" },
+          { label: "Pathway canvas", value: "live", tone: "success" },
+          { label: "Root + step edges", value: "live", tone: "success" },
           { label: "Published DAG preview", value: "interactive", tone: "success" },
-          { label: "Full DAG authoring", value: "deferred", tone: "warning" },
         ]}
         links={commonKnowledgeLinks}
         deferred={[
-          "Full React Flow pathway authoring with validation-safe writes",
-          "Assertion-level SUPPORTED_BY evidence attachment",
-          "Interactive pharmacology pathway diagrams beyond root selection",
+          "Assertion-level SUPPORTED_BY evidence on mechanism edges",
+          "RESULTS_IN outcomes (SideEffect / ClinicalOutcome) on the canvas",
         ]}
       />
       <DrugFocusPicker
         title="Drug for mechanism preview"
-        description="Select a drug to load /drugs/{uuid}/mechanism. Attach roots in the Drug Editor, then publish before expecting a DAG."
+        description="Select a drug to load /drugs/{uuid}/mechanism. Author roots and steps on the Drug Editor canvas, then publish before expecting a multi-step DAG."
       />
       {focusedDrug ? <FocusedMechanismPanel drug={focusedDrug} /> : null}
     </div>

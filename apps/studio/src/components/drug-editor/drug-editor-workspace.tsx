@@ -25,6 +25,7 @@ import { DrugSectionEditor } from "./drug-section-editor";
 import { DrugSectionNav } from "./drug-section-nav";
 import { useDrugEditor } from "./use-drug-editor";
 import { PublishWizard } from "@/components/publish-wizard";
+import { UnpublishRequestControls } from "@/components/workflow/unpublish-request-controls";
 
 export interface DrugEditorWorkspaceProps {
   drugId: string;
@@ -84,7 +85,9 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
       toast.success(
         workflowState === "published"
           ? "Unpublished — editing unlocked (admin)."
-          : "Returned to draft — editing unlocked.",
+          : workflowState === "deprecated"
+            ? "Restored from deprecated — editing unlocked (admin)."
+            : "Returned to draft — editing unlocked.",
       );
     } catch (error) {
       const message =
@@ -170,10 +173,16 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
         </div>
 
         <div className="flex flex-wrap items-center justify-end gap-2">
-          {workflowState === "approved" || (workflowState === "published" && isAdmin) ? (
+          {workflowState === "approved" ||
+          (workflowState === "published" && isAdmin) ||
+          (workflowState === "deprecated" && isAdmin) ? (
             <Button size="sm" variant="secondary" disabled={unlocking} onClick={handleReturnToDraft}>
               {unlocking ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
-              {workflowState === "published" ? "Unpublish to edit" : "Return to draft"}
+              {workflowState === "published"
+                ? "Unpublish to edit"
+                : workflowState === "deprecated"
+                  ? "Restore to draft"
+                  : "Return to draft"}
             </Button>
           ) : null}
           {workflowState === "published" && isAdmin ? (
@@ -182,7 +191,8 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
               Deprecate
             </Button>
           ) : null}
-          {workflowState === "published" && !isAdmin ? (
+          <UnpublishRequestControls workflow={workflow} onWorkflowUpdated={onWorkflowUpdated} />
+          {workflowState === "published" && !isAdmin && !workflow?.unpublish_requested_at ? (
             <Button size="sm" variant="outline" onClick={() => setActiveSection("evidence")}>
               Evidence
             </Button>
@@ -241,11 +251,12 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
                 </>
               ) : (
                 <>
-                  Published package fields are read-only. Use{" "}
+                  Published package fields are read-only. Request unpublish from an administrator to edit
+                  the package, or use{" "}
                   <button type="button" className="underline underline-offset-2" onClick={() => setActiveSection("evidence")}>
                     Evidence
                   </button>{" "}
-                  to attach graph-backed citations, or open Workflow for history.
+                  to attach graph-backed citations.
                 </>
               )}
             </p>
@@ -257,7 +268,21 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
           ) : null}
           {workflowState === "deprecated" ? (
             <p className="mb-4 text-xs text-muted-foreground">
-              Deprecated — soft-deleted from public reads. Package edits are closed.
+              {isAdmin ? (
+                <>
+                  Deprecated — soft-deleted from public reads.{" "}
+                  <button
+                    type="button"
+                    className="underline underline-offset-2"
+                    onClick={() => void handleReturnToDraft()}
+                  >
+                    Restore to draft
+                  </button>{" "}
+                  to edit and republish.
+                </>
+              ) : (
+                <>Deprecated — soft-deleted from public reads. Package edits are closed.</>
+              )}
             </p>
           ) : null}
           <DrugSectionEditor

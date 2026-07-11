@@ -1,29 +1,31 @@
 "use client";
 
-import { MechanismPicker } from "./mechanism-picker";
-import { listMechanismRootIds, syncMechanismRootSelection } from "./mechanism-roots";
+import { PathwayEditor } from "./pathway-editor";
 import type { DrugPublishPackage } from "./types";
 
 export interface MechanismSectionProps {
   pkg: DrugPublishPackage;
+  drugId: string;
   disabled?: boolean;
   onPackageChange: (next: DrugPublishPackage) => void;
 }
 
-export function MechanismSection({ pkg, disabled = false, onPackageChange }: MechanismSectionProps) {
-  const selectedIds = listMechanismRootIds(pkg);
+export function MechanismSection({
+  pkg,
+  drugId,
+  disabled = false,
+  onPackageChange,
+}: MechanismSectionProps) {
+  const drugEntityId = String(pkg.entity_payload.id ?? drugId);
 
   return (
-    <div className="max-w-2xl space-y-4">
-      <MechanismPicker
-        selectedIds={selectedIds}
+    <div className="max-w-5xl space-y-4">
+      <PathwayEditor
+        pkg={pkg}
+        drugEntityId={drugEntityId}
         disabled={disabled}
-        onChange={(nextIds) => onPackageChange(syncMechanismRootSelection(pkg, nextIds))}
+        onPackageChange={onPackageChange}
       />
-      <p className="text-xs text-muted-foreground">
-        Full pathway DAG editing remains deferred. Selecting roots here is enough for publish and the
-        Mechanisms / Graph preview surfaces.
-      </p>
     </div>
   );
 }

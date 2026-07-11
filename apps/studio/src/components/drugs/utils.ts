@@ -1,6 +1,6 @@
 import type { ConfidenceLevel } from "@/components/ui/confidence-badge";
 import type { ValidationStatus } from "@/components/ui/validation-badge";
-import type { CurriculumData, WorkflowItem } from "@/lib/api/types";
+import type { CurriculumData, DrugBrowseItem, WorkflowItem } from "@/lib/api/types";
 import type {
   ApiDrugSummary,
   DrugBrowserFilters,
@@ -21,17 +21,45 @@ export function confidenceLevelFromScore(score: number | null | undefined): Conf
   return "low";
 }
 
+/**
+ * Map package validation fields to a badge status.
+ * Matches disease browser: valid → Valid, errors → Invalid, else Pending.
+ * Published graph drugs without an open draft are treated as Valid (validated at publish).
+ */
 export function validationStatusFromRow(input: {
-  status: string;
-  workflowState?: string;
+  status?: string;
   curriculumStatus?: string;
-  source: DrugBrowserRow["source"];
+  validation_valid?: boolean | null;
+  validation_errors?: number | null;
+  source?: DrugBrowserRow["source"];
+  workflowState?: string;
 }): ValidationStatus {
-  if (input.workflowState === "review") return "pending";
-  if (input.workflowState === "draft") return "pending";
+  if (input.validation_valid === true) return "valid";
+  if ((input.validation_errors ?? 0) > 0) return "invalid";
   if (input.status === "published" || input.curriculumStatus === "published") return "valid";
-  if (input.source === "curriculum") return "pending";
   return "pending";
+}
+
+export function browseItemToRow(item: DrugBrowseItem): DrugBrowserRow {
+  return {
+    id: item.entity_id,
+    slug: item.slug,
+    label: item.label,
+    module: item.module,
+    status: item.publication_status,
+    confidenceScore: item.confidence_score ?? null,
+    confidenceLevel: confidenceLevelFromScore(item.confidence_score),
+    validationStatus: validationStatusFromRow({
+      status: item.publication_status,
+      curriculumStatus: item.curriculum_status,
+      validation_valid: item.validation_valid,
+      validation_errors: item.validation_errors,
+    }),
+    curriculumStatus: item.curriculum_status,
+    workflowState: item.workflow_state ?? undefined,
+    workflowId: item.workflow_id ?? undefined,
+    source: item.publication_status === "published" ? "graph" : "curriculum",
+  };
 }
 
 export function buildDrugRows(input: {
@@ -61,13 +89,18 @@ export function buildDrugRows(input: {
       status,
       confidenceScore: drug.confidence_score ?? null,
       confidenceLevel: confidenceLevelFromScore(drug.confidence_score),
-      validationStatus: "valid",
+      validationStatus: "pending",
       workflowState: workflow?.state,
       workflowId: workflow?.id,
       curriculumStatus: "published",
       source: "graph",
     };
-    row.validationStatus = validationStatusFromRow(row);
+    row.validationStatus = validationStatusFromRow({
+      status: row.status,
+      curriculumStatus: row.curriculumStatus,
+      validation_valid: drug.validation_valid,
+      validation_errors: drug.validation_errors,
+    });
     bySlug.set(drug.slug, row);
   }
 
@@ -79,7 +112,6 @@ export function buildDrugRows(input: {
 
       if (existing) {
         existing.curriculumStatus = curriculumDrug.status;
-        existing.validationStatus = validationStatusFromRow(existing);
         continue;
       }
 
@@ -97,7 +129,10 @@ export function buildDrugRows(input: {
         curriculumStatus: curriculumDrug.status,
         source: "curriculum",
       };
-      row.validationStatus = validationStatusFromRow(row);
+      row.validationStatus = validationStatusFromRow({
+        status: row.status,
+        curriculumStatus: row.curriculumStatus,
+      });
       bySlug.set(curriculumDrug.slug, row);
     }
   }

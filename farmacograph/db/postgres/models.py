@@ -230,6 +230,13 @@ class CuratorWorkflow(Base, TimestampMixin):
     state: Mapped[str] = mapped_column(String(20), default="draft", nullable=False, index=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     draft_package_json: Mapped[dict | None] = mapped_column(JsonType, nullable=True)
+    unpublish_requested_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    unpublish_requested_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True
+    )
+    unpublish_request_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
 class FeatureFlag(Base, TimestampMixin):

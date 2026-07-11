@@ -16,12 +16,13 @@ class WorkflowState(str, Enum):
 # Valid transitions: from_state -> set of allowed to_states
 # published → draft is admin unpublish (API gates with admin:org).
 # published → deprecated is soft-delete (API gates with admin:org).
+# deprecated → draft is admin restore (API gates with admin:org).
 VALID_TRANSITIONS: dict[WorkflowState, set[WorkflowState]] = {
     WorkflowState.DRAFT: {WorkflowState.REVIEW},
     WorkflowState.REVIEW: {WorkflowState.DRAFT, WorkflowState.APPROVED},
     WorkflowState.APPROVED: {WorkflowState.PUBLISHED, WorkflowState.DRAFT},
     WorkflowState.PUBLISHED: {WorkflowState.DEPRECATED, WorkflowState.DRAFT},
-    WorkflowState.DEPRECATED: set(),
+    WorkflowState.DEPRECATED: {WorkflowState.DRAFT},
 }
 
 

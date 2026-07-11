@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import type { CurriculumData } from "@/lib/api/types";
+import type { CurriculumData, DrugBrowseItem } from "@/lib/api/types";
 import {
+  browseItemToRow,
   buildDrugRows,
   confidenceLevelFromScore,
   drugEditorHref,
@@ -29,23 +30,71 @@ describe("confidenceLevelFromScore", () => {
 });
 
 describe("validationStatusFromRow", () => {
-  it("marks published graph drugs as valid", () => {
+  it("marks packages that passed validation as valid", () => {
     expect(
       validationStatusFromRow({
-        status: "published",
-        source: "graph",
+        status: "draft",
+        validation_valid: true,
+        validation_errors: 0,
       }),
     ).toBe("valid");
   });
 
-  it("marks workflow drugs as pending", () => {
+  it("marks packages with validation errors as invalid", () => {
     expect(
       validationStatusFromRow({
         status: "draft",
-        workflowState: "review",
-        source: "graph",
+        validation_valid: false,
+        validation_errors: 3,
+      }),
+    ).toBe("invalid");
+  });
+
+  it("marks unpublished drugs without validation results as pending", () => {
+    expect(
+      validationStatusFromRow({
+        status: "pending",
+        curriculumStatus: "pending",
+        validation_valid: false,
+        validation_errors: 0,
       }),
     ).toBe("pending");
+  });
+
+  it("marks published drugs without an open draft as valid", () => {
+    expect(
+      validationStatusFromRow({
+        status: "published",
+        validation_valid: false,
+        validation_errors: 0,
+      }),
+    ).toBe("valid");
+  });
+});
+
+describe("browseItemToRow", () => {
+  it("maps curator browse items including real validation", () => {
+    const item: DrugBrowseItem = {
+      slug: "ramipril",
+      label: "Ramipril",
+      entity_id: "drug-1",
+      module: "cardiovascular",
+      category_slug: "acei",
+      category_name: "ACE inhibitors",
+      curriculum_status: "pending",
+      publication_status: "pending",
+      workflow_id: "wf-1",
+      workflow_state: "draft",
+      validation_valid: true,
+      validation_errors: 0,
+      confidence_score: 0.9,
+    };
+
+    const row = browseItemToRow(item);
+    expect(row.validationStatus).toBe("valid");
+    expect(row.workflowState).toBe("draft");
+    expect(row.source).toBe("curriculum");
+    expect(row.confidenceLevel).toBe("high");
   });
 });
 
@@ -84,6 +133,8 @@ describe("buildDrugRows", () => {
           module: "cardiovascular",
           status: "published",
           confidence_score: 0.92,
+          validation_valid: true,
+          validation_errors: 0,
         },
       ],
       curriculum,
@@ -105,17 +156,47 @@ describe("buildDrugRows", () => {
     const published = rows.find((row) => row.slug === "drug-published");
     expect(published?.confidenceLevel).toBe("high");
     expect(published?.workflowState).toBe("draft");
-    expect(published?.validationStatus).toBe("pending");
+    expect(published?.validationStatus).toBe("valid");
 
     const pending = rows.find((row) => row.slug === "drug-pending");
     expect(pending?.source).toBe("curriculum");
     expect(pending?.validationStatus).toBe("pending");
   });
+
+  it("surfaces invalid package validation on graph drugs", () => {
+    const rows = buildDrugRows({
+      drugs: [
+        {
+          id: "drug-1",
+          slug: "drug-published",
+          label: "Published drug",
+          status: "published",
+          validation_valid: false,
+          validation_errors: 2,
+        },
+      ],
+      curriculum: null,
+      drafts: [],
+      reviews: [],
+    });
+
+    expect(rows[0]?.validationStatus).toBe("invalid");
+  });
 });
 
 describe("filterDrugRows", () => {
   const rows = buildDrugRows({
-    drugs: [{ id: "1", slug: "alpha", label: "Alpha", status: "published", confidence_score: 0.9 }],
+    drugs: [
+      {
+        id: "1",
+        slug: "alpha",
+        label: "Alpha",
+        status: "published",
+        confidence_score: 0.9,
+        validation_valid: true,
+        validation_errors: 0,
+      },
+    ],
     curriculum: null,
     drafts: [],
     reviews: [],

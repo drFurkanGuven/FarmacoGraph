@@ -52,6 +52,7 @@ The OpenAPI file at `openapi/openapi.yaml` describes the **full contract** (impl
 | GET | `/api/v1/curator/diseases` | `curator:write` | Curator disease browser |
 | POST | `/api/v1/curator/diseases` | `curator:write` | Register disease + open draft workflow |
 | GET | `/api/v1/curator/mechanism-fragments` | `curator:write` | MechanismFragment catalog for Drug Editor picker |
+| POST | `/api/v1/curator/mechanism-fragments` | `curator:write` | Register a MechanismFragment in the runtime catalog |
 | POST | `/api/v1/curator/diseases/{slug}/workflows` | `curator:write` | Open/create disease workflow |
 | GET | `/api/v1/curator/diseases/{slug}/package` | `curator:write` | Load disease draft package |
 | GET | `/api/v1/curator/diseases/{slug}/workflow-state` | `curator:write` | Disease workflow aggregate |
@@ -64,7 +65,11 @@ The OpenAPI file at `openapi/openapi.yaml` describes the **full contract** (impl
 | GET | `/api/v1/curator/validation-summary` | `curator:write` | Validation stats |
 | POST | `/api/v1/curator/workflows/{id}/submit` | `curator:write` | draft → review |
 | POST | `/api/v1/curator/workflows/{id}/approve` | `curator:publish` | review → approved |
-| POST | `/api/v1/curator/workflows/{id}/return-to-draft` | `curator:publish` (+ `admin:org` if published) | approved/review → draft; published → draft (admin unpublish) |
+| POST | `/api/v1/curator/workflows/{id}/return-to-draft` | `curator:publish` (+ `admin:org` if published/deprecated) | approved/review → draft; published → draft (admin unpublish); deprecated → draft (admin restore) |
+| POST | `/api/v1/curator/workflows/{id}/request-unpublish` | `curator:write` | Request admin unpublish (published only; required notes) |
+| POST | `/api/v1/curator/workflows/{id}/cancel-unpublish-request` | `curator:write` | Cancel pending request (requester or admin) |
+| POST | `/api/v1/curator/workflows/{id}/reject-unpublish-request` | `admin:org` | Reject pending request (stays published) |
+| GET | `/api/v1/curator/unpublish-requests` | `admin:org` | List pending unpublish requests |
 | POST | `/api/v1/curator/workflows/{id}/deprecate` | `admin:org` | published → deprecated (soft-delete) |
 | POST | `/api/v1/curator/workflows/{id}/publish` | `curator:publish` | approved → published |
 
@@ -216,7 +221,8 @@ State machine (FG-C023), enforced in `farmacograph/curator/workflow.py`:
 
 ```
 draft → review → approved → published → deprecated
-         ↑__________|
+         ↑__________|           ↓              ↓
+                    └──────── draft (admin unpublish / restore)
 ```
 
 | Transition | Endpoint | Scope | Preconditions |
@@ -224,6 +230,11 @@ draft → review → approved → published → deprecated
 | draft → review | `POST /curator/workflows/{id}/submit` | `curator:write` | Valid state transition |
 | review → approved | `POST /curator/workflows/{id}/approve` | `curator:publish` | Workflow in `review` |
 | approved → published | `POST /curator/workflows/{id}/publish` | `curator:publish` | Workflow in `approved`; package passes `require_valid_publish_package` |
+| published → draft | `POST /curator/workflows/{id}/return-to-draft` | `admin:org` | Admin unpublish; clears any pending unpublish request |
+| (request) | `POST /curator/workflows/{id}/request-unpublish` | `curator:write` | Published only; required notes; state unchanged |
+| (reject) | `POST /curator/workflows/{id}/reject-unpublish-request` | `admin:org` | Clears pending request; stays published |
+
+**Unpublish requests:** Curators cannot unpublish directly. They file a request; admins approve via return-to-draft or reject. List pending with `GET /curator/unpublish-requests`.
 
 **Publish request body:** Same shape as autosave (`entity_payload`, `related_entities`, `relationships`, `dataset_version`, optional `module`, `create_snapshot`).
 

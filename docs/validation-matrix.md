@@ -55,8 +55,10 @@ stateDiagram-v2
     review --> approved: senior_curator
     review --> draft: revisions
     approved --> published: release_manager
+    approved --> draft: return_to_draft
     published --> deprecated: supersede
-    deprecated --> [*]
+    published --> draft: admin_unpublish
+    deprecated --> draft: admin_restore
 
     note right of draft: FG-C023 blocks draft→published
 ```

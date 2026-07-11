@@ -102,8 +102,8 @@ Curator workflows follow a linear state machine enforced by FG-C023:
 
 ```
 draft → review → approved → published → deprecated
-         ↑__________|           ↓
-                    └──────── draft (admin unpublish)
+         ↑__________|           ↓              ↓
+                    └──────── draft (admin unpublish / restore)
 ```
 
 | State | Editable in Studio? | Who acts | API |
@@ -111,8 +111,17 @@ draft → review → approved → published → deprecated
 | `draft` | Yes — Drug Editor autosave | Curator (`curator:write`) | `PUT /curator/workflows/{id}/package` |
 | `review` | Yes — package edits allowed | Curator submits; reviewer approves | `POST .../submit`, `POST .../approve` |
 | `approved` | No — Return to draft | Publisher (`curator:publish`) | `POST .../publish` or `.../return-to-draft` |
-| `published` | No — Unpublish first | Admin (`admin:org`) | `POST .../return-to-draft` (unpublish) or `.../deprecate` |
-| `deprecated` | No | Admin soft-delete | Hidden from public graph reads (`status=deprecated`) |
+| `published` | No — Unpublish first | Admin (`admin:org`) unpublishes; curator may **request** unpublish | `POST .../return-to-draft` (admin) · `POST .../request-unpublish` (curator) · `POST .../deprecate` |
+| `deprecated` | No — Restore to draft | Admin (`admin:org`) | `POST .../return-to-draft` (restore); hidden from public graph reads until republished |
+
+**Unpublish request flow**
+
+1. Curator on a `published` workflow: `POST /curator/workflows/{id}/request-unpublish` with required `notes` (state stays `published`).
+2. Admin inbox: `GET /curator/unpublish-requests` (also on Studio dashboard).
+3. Admin **approves** via existing `POST .../return-to-draft` (clears request + unpublishes), or **rejects** via `POST .../reject-unpublish-request`.
+4. Requester (or admin) may `POST .../cancel-unpublish-request`.
+
+Audit actions: `curator.unpublish_requested`, `curator.unpublish_request_cancelled`, `curator.unpublish_request_rejected`, `curator.unpublished`.
 
 **What exists today**
 

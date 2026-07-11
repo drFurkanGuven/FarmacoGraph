@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Archive, ArrowLeft, Loader2, Lock, Rocket, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { PublishWizard } from "@/components/publish-wizard";
+import { UnpublishRequestControls } from "@/components/workflow/unpublish-request-controls";
 import { AutosaveStatus } from "@/components/drug-editor/autosave-status";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -57,7 +58,9 @@ export function DiseaseEditorWorkspace({ diseaseSlug }: { diseaseSlug: string })
       toast.success(
         workflowState === "published"
           ? "Unpublished — editing unlocked (admin)."
-          : "Returned to draft — editing unlocked.",
+          : workflowState === "deprecated"
+            ? "Restored from deprecated — editing unlocked (admin)."
+            : "Returned to draft — editing unlocked.",
       );
     } catch (error) {
       toast.error(error instanceof ApiError ? error.message : "Could not return to draft.");
@@ -108,10 +111,16 @@ export function DiseaseEditorWorkspace({ diseaseSlug }: { diseaseSlug: string })
               lastSavedAt={snapshot.lastSavedAt}
               onRetry={packageLocked ? undefined : editor.retrySave}
             />
-            {workflowState === "approved" || (workflowState === "published" && isAdmin) ? (
+            {workflowState === "approved" ||
+            (workflowState === "published" && isAdmin) ||
+            (workflowState === "deprecated" && isAdmin) ? (
               <Button size="sm" variant="secondary" disabled={unlocking} onClick={() => void handleReturnToDraft()}>
                 {unlocking ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
-                {workflowState === "published" ? "Unpublish to edit" : "Return to draft"}
+                {workflowState === "published"
+                  ? "Unpublish to edit"
+                  : workflowState === "deprecated"
+                    ? "Restore to draft"
+                    : "Return to draft"}
               </Button>
             ) : null}
             {workflowState === "published" && isAdmin ? (
@@ -120,6 +129,10 @@ export function DiseaseEditorWorkspace({ diseaseSlug }: { diseaseSlug: string })
                 Deprecate
               </Button>
             ) : null}
+            <UnpublishRequestControls
+              workflow={workflow}
+              onWorkflowUpdated={editor.onWorkflowUpdated}
+            />
             <Button size="sm" onClick={() => setPublishOpen(true)}>
               <Rocket className="h-4 w-4" />
               Publish
@@ -152,7 +165,11 @@ export function DiseaseEditorWorkspace({ diseaseSlug }: { diseaseSlug: string })
                 <p className="mb-4 text-xs text-muted-foreground">
                   {workflowState === "published" && isAdmin
                     ? "Published — unpublish to edit, or deprecate to soft-delete."
-                    : `Package locked in ${workflowState} state.`}
+                    : workflowState === "published" && !isAdmin
+                      ? "Published — request unpublish from an administrator to edit the package."
+                      : workflowState === "deprecated" && isAdmin
+                        ? "Deprecated — restore to draft to edit and republish."
+                        : `Package locked in ${workflowState} state.`}
                 </p>
               ) : null}
               <DiseaseSectionEditor

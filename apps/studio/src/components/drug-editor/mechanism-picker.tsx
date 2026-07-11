@@ -5,11 +5,12 @@ import { Check, Loader2, Search, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useCuratorMechanismFragments } from "@/lib/api/react-query/hooks";
+import type { MechanismFragmentRef } from "./mechanism-pathway";
 
 interface MechanismPickerProps {
   selectedIds: string[];
   disabled?: boolean;
-  onChange: (nextIds: string[]) => void;
+  onChange: (nextIds: string[], meta?: MechanismFragmentRef[]) => void;
 }
 
 export function MechanismPicker({ selectedIds, disabled = false, onChange }: MechanismPickerProps) {
@@ -20,18 +21,33 @@ export function MechanismPicker({ selectedIds, disabled = false, onChange }: Mec
   const selectedRows = rows.filter((row) => selectedSet.has(row.entity_id));
   const missingSelectedIds = selectedIds.filter((id) => !selectedRows.some((row) => row.entity_id === id));
 
+  function metaFor(ids: string[]): MechanismFragmentRef[] {
+    return ids
+      .map((id) => {
+        const row = rows.find((entry) => entry.entity_id === id);
+        if (!row) return { id };
+        return {
+          id: row.entity_id,
+          slug: row.slug,
+          label: row.label,
+          description: row.description,
+        };
+      })
+      .filter(Boolean);
+  }
+
   function toggle(entityId: string) {
     if (disabled) return;
-    if (selectedSet.has(entityId)) {
-      onChange(selectedIds.filter((id) => id !== entityId));
-      return;
-    }
-    onChange([...selectedIds, entityId]);
+    const nextIds = selectedSet.has(entityId)
+      ? selectedIds.filter((id) => id !== entityId)
+      : [...selectedIds, entityId];
+    onChange(nextIds, metaFor(nextIds));
   }
 
   function remove(entityId: string) {
     if (disabled) return;
-    onChange(selectedIds.filter((id) => id !== entityId));
+    const nextIds = selectedIds.filter((id) => id !== entityId);
+    onChange(nextIds, metaFor(nextIds));
   }
 
   return (
@@ -52,8 +68,8 @@ export function MechanismPicker({ selectedIds, disabled = false, onChange }: Mec
           />
         </div>
         <p className="text-[0.8rem] text-muted-foreground">
-          Select MechanismFragment nodes from the curator catalog. The package stores canonical fragment
-          entity IDs under HAS_MECHANISM_ROOT.
+          Select MechanismFragment roots. Flat HAS_MECHANISM_ROOT edges are written into the package for
+          publish.
         </p>
       </div>
 

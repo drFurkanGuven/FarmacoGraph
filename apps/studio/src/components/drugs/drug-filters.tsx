@@ -90,7 +90,7 @@ export function DrugFilters({
           />
           {isSearching && (
             <p className="mt-1 text-xs text-muted-foreground">
-              Showing search results from the knowledge API.
+              Showing search results from the curator drug browser.
             </p>
           )}
         </div>

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime
 from typing import Any
 
 from farmacograph.core.exceptions import NotFoundError, ValidationError
@@ -23,7 +24,10 @@ from farmacograph.curator.drug_package import (
 )
 from farmacograph.curator.education_graph import normalize_education_graph
 from farmacograph.curator.education_package import education_items_for_entity, flashcards_for_entity
-from farmacograph.curator.mechanism_catalog import list_mechanism_fragment_catalog
+from farmacograph.curator.mechanism_catalog import (
+    list_mechanism_fragment_catalog,
+    register_mechanism_fragment,
+)
 from farmacograph.curator.publish_validator import (
     require_valid_publish_package,
     validate_publish_package,
@@ -51,6 +55,10 @@ ACTION_TIMELINE_KIND: dict[str, str] = {
     "curator.approved": "approved",
     "curator.returned_to_draft": "returned_to_draft",
     "curator.unpublished": "returned_to_draft",
+    "curator.restored": "returned_to_draft",
+    "curator.unpublish_requested": "unpublish_requested",
+    "curator.unpublish_request_cancelled": "unpublish_request_cancelled",
+    "curator.unpublish_request_rejected": "unpublish_request_rejected",
     "curator.published": "published",
     "curator.publish_failed": "publish_failed",
     "curator.deprecated": "deprecated",
@@ -123,16 +131,32 @@ class CuratorService:
         actor_id: uuid.UUID | None = None,
         notes: str | None = None,
         allow_published: bool = False,
+        allow_deprecated: bool = False,
     ) -> CuratorWorkflow:
-        """Return workflow to draft. Published → draft requires allow_published (admin unpublish)."""
+        """Return workflow to draft.
+
+        Published → draft requires allow_published (admin unpublish).
+        Deprecated → draft requires allow_deprecated (admin restore).
+        """
         workflow = await self.get_workflow(workflow_id)
         if workflow.state == "published" and not allow_published:
             raise ValidationError(
                 "Cannot return published workflow to draft without admin unpublish "
                 "(requires admin:org)."
             )
+        if workflow.state == "deprecated" and not allow_deprecated:
+            raise ValidationError(
+                "Cannot restore deprecated workflow to draft without admin restore "
+                "(requires admin:org)."
+            )
         was_published = workflow.state == "published"
-        action = "curator.unpublished" if was_published else "curator.returned_to_draft"
+        was_deprecated = workflow.state == "deprecated"
+        if was_deprecated:
+            action = "curator.restored"
+        elif was_published:
+            action = "curator.unpublished"
+        else:
+            action = "curator.returned_to_draft"
         workflow = await self._transition(
             workflow_id,
             "draft",
@@ -140,9 +164,92 @@ class CuratorService:
             actor_id=actor_id,
             notes=notes,
         )
-        workflow = await self._patch_package_status(workflow, "draft")
-        if was_published:
+        if was_published or was_deprecated:
+            workflow = await self._patch_package_status(workflow, "draft", deprecated=False)
+            workflow = await self._curator.clear_unpublish_request(workflow.id)
             await self._sync_graph_status(workflow, status="draft", deprecated=False)
+        else:
+            workflow = await self._patch_package_status(workflow, "draft")
+        return workflow
+
+    async def request_unpublish(
+        self,
+        workflow_id: uuid.UUID,
+        *,
+        actor_id: uuid.UUID,
+        notes: str,
+    ) -> CuratorWorkflow:
+        """Curator asks admin to unpublish; does not change workflow state."""
+        workflow = await self.get_workflow(workflow_id)
+        if workflow.state != "published":
+            raise ValidationError(
+                f"Unpublish requests require published state, got: {workflow.state}"
+            )
+        if workflow.unpublish_requested_at is not None:
+            raise ValidationError("An unpublish request is already pending for this workflow")
+        reason = notes.strip()
+        if not reason:
+            raise ValidationError("Unpublish request notes are required")
+        workflow = await self._curator.set_unpublish_request(
+            workflow_id,
+            requested_by=actor_id,
+            notes=reason,
+            requested_at=datetime.now(UTC),
+        )
+        await self._audit.log(
+            "curator.unpublish_requested",
+            WORKFLOW_RESOURCE_TYPE,
+            resource_id=str(workflow_id),
+            actor_id=actor_id,
+            diff={"notes": reason},
+        )
+        return workflow
+
+    async def cancel_unpublish_request(
+        self,
+        workflow_id: uuid.UUID,
+        *,
+        actor_id: uuid.UUID,
+        allow_admin: bool = False,
+    ) -> CuratorWorkflow:
+        """Requester (or admin) cancels a pending unpublish request."""
+        workflow = await self.get_workflow(workflow_id)
+        if workflow.unpublish_requested_at is None:
+            raise ValidationError("No pending unpublish request for this workflow")
+        if not allow_admin and workflow.unpublish_requested_by != actor_id:
+            raise ValidationError("Only the requester or an admin can cancel this request")
+        workflow = await self._curator.clear_unpublish_request(workflow_id)
+        await self._audit.log(
+            "curator.unpublish_request_cancelled",
+            WORKFLOW_RESOURCE_TYPE,
+            resource_id=str(workflow_id),
+            actor_id=actor_id,
+            diff={},
+        )
+        return workflow
+
+    async def reject_unpublish_request(
+        self,
+        workflow_id: uuid.UUID,
+        *,
+        actor_id: uuid.UUID,
+        notes: str | None = None,
+    ) -> CuratorWorkflow:
+        """Admin rejects a pending unpublish request without changing state."""
+        workflow = await self.get_workflow(workflow_id)
+        if workflow.unpublish_requested_at is None:
+            raise ValidationError("No pending unpublish request for this workflow")
+        workflow = await self._curator.clear_unpublish_request(workflow_id)
+        diff: dict[str, Any] = {}
+        if notes and notes.strip():
+            diff["notes"] = notes.strip()
+        await self._audit.log(
+            "curator.unpublish_request_rejected",
+            WORKFLOW_RESOURCE_TYPE,
+            resource_id=str(workflow_id),
+            actor_id=actor_id,
+            diff=diff,
+        )
         return workflow
 
     async def deprecate(
@@ -164,6 +271,7 @@ class CuratorService:
             notes=notes,
         )
         workflow = await self._patch_package_status(workflow, "deprecated", deprecated=True)
+        workflow = await self._curator.clear_unpublish_request(workflow.id)
         await self._sync_graph_status(workflow, status="deprecated", deprecated=True)
         return workflow
 
@@ -340,6 +448,9 @@ class CuratorService:
 
     async def get_queue(self, state: str = "review", *, limit: int = 50) -> list[CuratorWorkflow]:
         return await self._curator.list_by_state(state, limit=limit)
+
+    async def get_unpublish_requests(self, *, limit: int = 50) -> list[CuratorWorkflow]:
+        return await self._curator.list_unpublish_requests(limit=limit)
 
     async def get_workflow(self, workflow_id: uuid.UUID) -> CuratorWorkflow:
         workflow = await self._curator.get(workflow_id)
@@ -521,6 +632,22 @@ class CuratorService:
             items.sort(key=lambda row: row["slug"], reverse=reverse)
         total = len(items)
         return items[offset : offset + limit], total
+
+    async def create_mechanism_fragment(
+        self,
+        *,
+        slug: str,
+        label: str,
+        description: str | None = None,
+    ) -> dict[str, Any]:
+        try:
+            return register_mechanism_fragment(
+                slug=slug,
+                label=label,
+                description=description,
+            )
+        except ValueError as exc:
+            raise ValidationError(str(exc)) from exc
 
     async def list_diseases_browser(
         self,
@@ -927,6 +1054,16 @@ def _timeline_detail(action: str, diff: dict[str, Any]) -> str | None:
         return "Returned to draft for edits"
     if action == "curator.unpublished":
         return "Unpublished — returned to draft for admin edits"
+    if action == "curator.restored":
+        return "Restored from deprecated — returned to draft for admin edits"
+    if action == "curator.unpublish_requested":
+        reason = diff.get("notes")
+        return f"Unpublish requested: {reason}" if reason else "Unpublish requested"
+    if action == "curator.unpublish_request_cancelled":
+        return "Unpublish request cancelled"
+    if action == "curator.unpublish_request_rejected":
+        reason = diff.get("notes")
+        return f"Unpublish request rejected: {reason}" if reason else "Unpublish request rejected"
     if action == "curator.deprecated":
         return "Deprecated (soft-deleted from public graph)"
     if action == "curator.published":

@@ -12,6 +12,15 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from farmacograph.core.config import Settings, get_settings
 from farmacograph.db.postgres.base import Base
 
+# Columns create_all cannot add to existing tables (production volumes).
+_CURATOR_WORKFLOW_PATCHES: tuple[tuple[str, str, str], ...] = (
+    # (column_name, postgresql_type, sqlite_type)
+    ("draft_package_json", "JSONB", "JSON"),
+    ("unpublish_requested_at", "TIMESTAMPTZ", "DATETIME"),
+    ("unpublish_requested_by", "UUID", "CHAR(36)"),
+    ("unpublish_request_notes", "TEXT", "TEXT"),
+)
+
 
 def create_engine(settings: Settings | None = None):
     settings = settings or get_settings()
@@ -37,14 +46,12 @@ def _ensure_schema_patches(sync_conn: Any) -> None:
         return
 
     columns = {col["name"] for col in inspector.get_columns("curator_workflows")}
-    if "draft_package_json" in columns:
-        return
-
     dialect = sync_conn.dialect.name
-    col_type = "JSONB" if dialect == "postgresql" else "JSON"
-    sync_conn.execute(
-        text(f"ALTER TABLE curator_workflows ADD COLUMN draft_package_json {col_type}")
-    )
+    for name, pg_type, sqlite_type in _CURATOR_WORKFLOW_PATCHES:
+        if name in columns:
+            continue
+        col_type = pg_type if dialect == "postgresql" else sqlite_type
+        sync_conn.execute(text(f"ALTER TABLE curator_workflows ADD COLUMN {name} {col_type}"))
 
 
 async def init_db(engine: Any) -> None:

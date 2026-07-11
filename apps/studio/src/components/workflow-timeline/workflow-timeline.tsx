@@ -8,10 +8,12 @@ import {
   FileCheck2,
   GitBranchPlus,
   Loader2,
+  MessageSquareWarning,
   RotateCcw,
   Save,
   Send,
   ShieldCheck,
+  XCircle,
 } from "lucide-react";
 import {
   Card,
@@ -36,6 +38,9 @@ const KIND_ICONS: Record<WorkflowTimelineKind, React.ReactNode> = {
   submitted: <Send className="h-4 w-4" />,
   approved: <ShieldCheck className="h-4 w-4" />,
   returned_to_draft: <RotateCcw className="h-4 w-4" />,
+  unpublish_requested: <MessageSquareWarning className="h-4 w-4" />,
+  unpublish_request_cancelled: <XCircle className="h-4 w-4" />,
+  unpublish_request_rejected: <XCircle className="h-4 w-4" />,
   published: <CheckCircle2 className="h-4 w-4" />,
   publish_failed: <AlertCircle className="h-4 w-4 text-destructive" />,
   deprecated: <Archive className="h-4 w-4" />,

@@ -22,7 +22,7 @@ Login → Drug/Disease Editor → Evidence/Education/Mechanism roots
 | Drug Editor | **Complete** | Autosave, TREATS, evidence, education, provenance, publish |
 | Disease Editor | **MVP** | Browser Add disease + identity/clinical/provenance + publish; disease evidence deferred |
 | Evidence Manager | **Complete** | Neo4j gerekir (yoksa 503) |
-| Mechanism | **MVP** | Catalog picker + interactive published DAG; full pathway authoring yok |
+| Mechanism | **MVP** | Catalog picker + React Flow pathway editor (PRECEDES/BRANCHES_TO/MERGES_INTO) + published DAG preview |
 | Graph | **MVP** | React Flow neighborhood; `POST /graph/query` yok |
 | Snapshots | **MVP** | List/detail; diff yok |
 | `/users` | **MVP** | Create/edit users + API tokens (`admin:org`) |

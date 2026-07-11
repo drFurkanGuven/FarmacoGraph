@@ -49,7 +49,7 @@ export function DrugBrowser() {
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">Drug browser</h2>
           <p className="text-sm text-muted-foreground">
-            Published graph drugs, curriculum queue, and curator workflows — powered by the public API.
+            Curriculum drugs, curator workflows, and package validation — powered by the curator API.
           </p>
           {browser.curriculumStats && (
             <p className="mt-1 text-xs text-muted-foreground">
@@ -91,8 +91,8 @@ export function DrugBrowser() {
           <CardTitle className="text-base">Drugs</CardTitle>
           <CardDescription>
             {browser.isSearching
-              ? "Search results from GET /search"
-              : "Paginated list from GET /drugs with curriculum enrichment"}
+              ? "Search results from GET /curator/drugs"
+              : "Curriculum + workflow list from GET /curator/drugs"}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

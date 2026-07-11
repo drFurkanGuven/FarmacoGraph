@@ -197,6 +197,141 @@ async def test_admin_can_deprecate_published(client: AsyncClient):
 
 
 @pytest.mark.asyncio
+async def test_admin_can_restore_deprecated_to_draft(client: AsyncClient):
+    from farmacograph.core.config import get_settings
+    from farmacograph.core.container import get_container
+    from tests.auth.helpers import admin_token, seed_admin_user
+
+    workflow_id = await _publish_stub_workflow(client)
+    container = get_container()
+    admin, _ = await seed_admin_user(container.session_factory, email="admin-restore@test.local")
+    settings = get_settings()
+    admin_headers = bearer_headers(admin_token(settings, admin.id))
+
+    deprecated = await client.post(
+        f"/api/v1/curator/workflows/{workflow_id}/deprecate",
+        headers=admin_headers,
+    )
+    assert deprecated.status_code == 200
+    assert deprecated.json()["data"]["state"] == "deprecated"
+
+    curator_denied = await client.post(f"/api/v1/curator/workflows/{workflow_id}/return-to-draft")
+    assert curator_denied.status_code == 403
+
+    restored = await client.post(
+        f"/api/v1/curator/workflows/{workflow_id}/return-to-draft",
+        headers=admin_headers,
+    )
+    assert restored.status_code == 200
+    assert restored.json()["data"]["state"] == "draft"
+
+    saved = await client.put(
+        f"/api/v1/curator/workflows/{workflow_id}/package",
+        json=build_cardiovascular_publish_package(),
+        headers=admin_headers,
+    )
+    assert saved.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_curator_can_request_unpublish_and_admin_approves(client: AsyncClient):
+    from farmacograph.core.config import get_settings
+    from farmacograph.core.container import get_container
+    from tests.auth.helpers import admin_token, seed_admin_user
+
+    workflow_id = await _publish_stub_workflow(client)
+
+    requested = await client.post(
+        f"/api/v1/curator/workflows/{workflow_id}/request-unpublish",
+        json={"notes": "Need to fix indication linkage"},
+    )
+    assert requested.status_code == 200
+    body = requested.json()["data"]
+    assert body["state"] == "published"
+    assert body["unpublish_requested_at"] is not None
+    assert body["unpublish_request_notes"] == "Need to fix indication linkage"
+
+    duplicate = await client.post(
+        f"/api/v1/curator/workflows/{workflow_id}/request-unpublish",
+        json={"notes": "Again"},
+    )
+    assert duplicate.status_code == 400
+
+    still_locked = await client.post(f"/api/v1/curator/workflows/{workflow_id}/return-to-draft")
+    assert still_locked.status_code == 403
+
+    container = get_container()
+    admin, _ = await seed_admin_user(container.session_factory, email="admin-unpub@test.local")
+    settings = get_settings()
+    admin_headers = bearer_headers(admin_token(settings, admin.id))
+
+    inbox = await client.get("/api/v1/curator/unpublish-requests", headers=admin_headers)
+    assert inbox.status_code == 200
+    assert any(item["id"] == workflow_id for item in inbox.json()["data"])
+
+    curator_inbox = await client.get("/api/v1/curator/unpublish-requests")
+    assert curator_inbox.status_code == 403
+
+    approved = await client.post(
+        f"/api/v1/curator/workflows/{workflow_id}/return-to-draft",
+        headers=admin_headers,
+    )
+    assert approved.status_code == 200
+    approved_body = approved.json()["data"]
+    assert approved_body["state"] == "draft"
+    assert approved_body["unpublish_requested_at"] is None
+
+
+@pytest.mark.asyncio
+async def test_admin_can_reject_unpublish_request(client: AsyncClient):
+    from farmacograph.core.config import get_settings
+    from farmacograph.core.container import get_container
+    from tests.auth.helpers import admin_token, seed_admin_user
+
+    workflow_id = await _publish_stub_workflow(client)
+    await client.post(
+        f"/api/v1/curator/workflows/{workflow_id}/request-unpublish",
+        json={"notes": "Please unpublish"},
+    )
+
+    container = get_container()
+    admin, _ = await seed_admin_user(container.session_factory, email="admin-reject@test.local")
+    settings = get_settings()
+    admin_headers = bearer_headers(admin_token(settings, admin.id))
+
+    rejected = await client.post(
+        f"/api/v1/curator/workflows/{workflow_id}/reject-unpublish-request",
+        json={"notes": "Not warranted"},
+        headers=admin_headers,
+    )
+    assert rejected.status_code == 200
+    body = rejected.json()["data"]
+    assert body["state"] == "published"
+    assert body["unpublish_requested_at"] is None
+
+    cancelled_empty = await client.post(
+        f"/api/v1/curator/workflows/{workflow_id}/cancel-unpublish-request"
+    )
+    assert cancelled_empty.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_curator_can_cancel_own_unpublish_request(client: AsyncClient):
+    workflow_id = await _publish_stub_workflow(client)
+    await client.post(
+        f"/api/v1/curator/workflows/{workflow_id}/request-unpublish",
+        json={"notes": "Changed my mind"},
+    )
+    cancelled = await client.post(
+        f"/api/v1/curator/workflows/{workflow_id}/cancel-unpublish-request"
+    )
+    assert cancelled.status_code == 200
+    body = cancelled.json()["data"]
+    assert body["state"] == "published"
+    assert body["unpublish_requested_at"] is None
+
+
+@pytest.mark.asyncio
 async def test_cardiovascular_stub_endpoint(client: AsyncClient):
     r = await client.get("/api/v1/curator/stubs/cardiovascular")
     assert r.status_code == 200

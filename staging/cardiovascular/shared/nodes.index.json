@@ -119,6 +119,12 @@
       "entity_type": "MechanismFragment",
       "slug": "ace-inhibition",
       "label": "ACE inhibition"
+    },
+    {
+      "id": "m1000001-0000-4000-8010-000000000003",
+      "entity_type": "MechanismFragment",
+      "slug": "bradykinin-accumulation",
+      "label": "Bradykinin accumulation"
     }
   ]
 }

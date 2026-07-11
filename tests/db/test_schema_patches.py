@@ -43,6 +43,9 @@ async def test_init_db_idempotent_when_draft_package_json_missing():
         cols = (await conn.execute(text("PRAGMA table_info(curator_workflows)"))).mappings().all()
         names = {row["name"] for row in cols}
         assert "draft_package_json" in names
+        assert "unpublish_requested_at" in names
+        assert "unpublish_requested_by" in names
+        assert "unpublish_request_notes" in names
 
     # Second run must remain non-destructive / idempotent.
     await init_db(engine)

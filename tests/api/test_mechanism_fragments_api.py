@@ -60,8 +60,45 @@ async def test_list_mechanism_fragments_search(client: AsyncClient):
 
 
 @pytest.mark.asyncio
+async def test_create_mechanism_fragment(client: AsyncClient, tmp_path, monkeypatch):
+    runtime = tmp_path / "mechanisms.runtime.json"
+    monkeypatch.setenv("FG_MECHANISM_CATALOG_PATH", str(runtime))
+    response = await client.post(
+        "/api/v1/curator/mechanism-fragments",
+        json={
+            "slug": "nitric-oxide-release",
+            "label": "Nitric oxide release",
+            "description": "Pathway editor test fragment",
+        },
+    )
+    assert response.status_code == 201
+    body = response.json()
+    assert body["data"]["entity"]["slug"] == "nitric-oxide-release"
+    assert body["data"]["entity"]["entity_type"] == "MechanismFragment"
+
+    listed = await client.get(
+        "/api/v1/curator/mechanism-fragments", params={"search": "nitric-oxide-release"}
+    )
+    assert listed.status_code == 200
+    assert any(row["slug"] == "nitric-oxide-release" for row in listed.json()["data"])
+
+
+@pytest.mark.asyncio
+async def test_create_mechanism_fragment_rejects_duplicate(client: AsyncClient):
+    response = await client.post(
+        "/api/v1/curator/mechanism-fragments",
+        json={"slug": "ace-inhibition", "label": "ACE inhibition"},
+    )
+    assert response.status_code == 400
+
+
+@pytest.mark.asyncio
 async def test_openapi_includes_mechanism_fragments(client: AsyncClient):
     response = await client.get("/api/v1/openapi.json")
     assert response.status_code == 200
     paths = response.json()["paths"]
     assert "/api/v1/curator/mechanism-fragments" in paths or "/curator/mechanism-fragments" in paths
+    post = paths.get("/api/v1/curator/mechanism-fragments") or paths.get(
+        "/curator/mechanism-fragments"
+    )
+    assert "post" in post

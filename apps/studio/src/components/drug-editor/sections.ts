@@ -81,7 +81,8 @@ export const DRUG_EDITOR_SECTIONS: DrugEditorSection[] = [
   {
     id: "mechanism",
     title: "Mechanism",
-    description: "Select mechanism fragment roots for the drug DAG.",
+    description:
+      "Author the mechanism pathway on the canvas: add fragments, set roots from the Drug node, and connect steps.",
     fields: [
       {
         key: "mechanism_root",

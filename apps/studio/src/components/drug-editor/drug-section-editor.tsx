@@ -81,6 +81,7 @@ export function DrugSectionEditor({
         </div>
         <MechanismSection
           pkg={pkg}
+          drugId={drugId}
           disabled={disabled}
           onPackageChange={(next) => onPackageChange?.(next)}
         />

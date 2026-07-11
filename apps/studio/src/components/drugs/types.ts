@@ -11,6 +11,8 @@ export interface ApiDrugSummary {
   status?: string;
   confidence_score?: number | null;
   type?: string;
+  validation_valid?: boolean;
+  validation_errors?: number;
 }
 
 export type DrugSource = "graph" | "curriculum";

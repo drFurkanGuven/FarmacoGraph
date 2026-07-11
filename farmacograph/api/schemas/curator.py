@@ -14,12 +14,34 @@ class CreateWorkflowRequest(BaseModel):
     notes: str | None = None
 
 
+class UnpublishRequestBody(BaseModel):
+    notes: str = Field(
+        min_length=1,
+        max_length=2000,
+        description="Reason the published package should be unpublished",
+    )
+
+
+class RejectUnpublishRequestBody(BaseModel):
+    notes: str | None = Field(
+        default=None,
+        max_length=2000,
+        description="Optional admin rejection reason",
+    )
+
+
 class CreateDiseaseRequest(BaseModel):
     slug: str = Field(description="Lowercase kebab-case disease slug, e.g. heart-failure")
     label: str = Field(description="Display label")
     description: str | None = None
     icd10: str | None = Field(default=None, description="Optional ICD-10 code")
     mesh: str | None = Field(default=None, description="Optional MeSH identifier")
+
+
+class CreateMechanismFragmentRequest(BaseModel):
+    slug: str = Field(description="Lowercase kebab-case fragment slug, e.g. ace-inhibition")
+    label: str = Field(description="Display label")
+    description: str | None = None
 
 
 class PublishRequest(BaseModel):
@@ -119,6 +141,9 @@ class WorkflowResponse(BaseModel):
     entity_label: str | None = None
     entity_slug: str | None = None
     draft_package_json: dict | None = None
+    unpublish_requested_at: datetime | None = None
+    unpublish_requested_by: UUID | None = None
+    unpublish_request_notes: str | None = None
 
     @classmethod
     def from_model(cls, w, *, entity: dict | None = None) -> WorkflowResponse:
@@ -135,4 +160,7 @@ class WorkflowResponse(BaseModel):
             entity_label=(entity or {}).get("label"),
             entity_slug=(entity or {}).get("slug"),
             draft_package_json=getattr(w, "draft_package_json", None),
+            unpublish_requested_at=getattr(w, "unpublish_requested_at", None),
+            unpublish_requested_by=getattr(w, "unpublish_requested_by", None),
+            unpublish_request_notes=getattr(w, "unpublish_request_notes", None),
         )

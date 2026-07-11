@@ -8,6 +8,7 @@ import {
   Database,
   GitPullRequest,
   Layers,
+  MessageSquareWarning,
   RefreshCw,
   Server,
   ShieldAlert,
@@ -21,8 +22,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDashboard } from "@/lib/hooks/use-dashboard";
 import { useAuth } from "@/lib/auth/context";
+import { usePermissions } from "@/lib/auth/hooks";
 import { ApiError } from "@/lib/api";
 import { DASHBOARD_REFRESH_MS } from "@/lib/api/react-query/config";
+import type { WorkflowItem } from "@/lib/api/types";
+
+function editorHref(item: WorkflowItem): string | null {
+  const slug = item.entity_slug;
+  if (!slug) return null;
+  if (item.entity_type === "Disease") {
+    return `/knowledge/diseases/${encodeURIComponent(slug)}`;
+  }
+  return `/knowledge/drugs/${encodeURIComponent(slug)}`;
+}
 
 function StatCard({
   title,
@@ -82,10 +94,14 @@ function SectionSkeleton({ rows = 3 }: { rows?: number }) {
 
 export function DashboardView() {
   const { activeWorkspace } = useAuth();
+  const { hasPermission } = usePermissions();
+  const isAdmin = hasPermission("admin:org");
   const dashboard = useDashboard(activeWorkspace.slug);
   const data = dashboard.data?.data;
   const loading = dashboard.isLoading;
   const isFetching = dashboard.isFetching && !dashboard.isLoading;
+  const unpublishRequests = data?.curator.unpublish_requests ?? [];
+
 
   const publishedCount =
     data?.published_drugs ??
@@ -210,6 +226,46 @@ export function DashboardView() {
                 <p className="text-sm text-muted-foreground">No recently published entities.</p>
               )}
             </div>
+
+            {isAdmin ? (
+              <div>
+                <p className="mb-2 flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  <MessageSquareWarning className="h-3 w-3" />
+                  Unpublish requests
+                </p>
+                {loading ? (
+                  <SectionSkeleton rows={2} />
+                ) : unpublishRequests.length ? (
+                  <ul className="space-y-2">
+                    {unpublishRequests.slice(0, 5).map((item) => {
+                      const href = editorHref(item);
+                      return (
+                        <li
+                          key={item.id}
+                          className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm"
+                        >
+                          <div className="min-w-0">
+                            <p className="truncate font-medium">
+                              {item.entity_label ?? item.entity_id}
+                            </p>
+                            <p className="truncate text-xs text-muted-foreground">
+                              {item.unpublish_request_notes ?? "No reason provided"}
+                            </p>
+                          </div>
+                          {href ? (
+                            <Button asChild size="sm" variant="outline">
+                              <Link href={href}>Review</Link>
+                            </Button>
+                          ) : null}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No pending unpublish requests.</p>
+                )}
+              </div>
+            ) : null}
           </CardContent>
         </Card>
 

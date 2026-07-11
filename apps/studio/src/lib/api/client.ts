@@ -216,6 +216,32 @@ export class FarmacoGraphClient {
     return this.request<WorkflowItem>(`/curator/workflows/${workflowId}/return-to-draft`, { method: "POST" });
   }
 
+  requestUnpublish(workflowId: string, body: { notes: string }) {
+    return this.request<WorkflowItem>(`/curator/workflows/${workflowId}/request-unpublish`, {
+      method: "POST",
+      body,
+    });
+  }
+
+  cancelUnpublishRequest(workflowId: string) {
+    return this.request<WorkflowItem>(`/curator/workflows/${workflowId}/cancel-unpublish-request`, {
+      method: "POST",
+    });
+  }
+
+  rejectUnpublishRequest(workflowId: string, body?: { notes?: string }) {
+    return this.request<WorkflowItem>(`/curator/workflows/${workflowId}/reject-unpublish-request`, {
+      method: "POST",
+      body: body ?? {},
+    });
+  }
+
+  listUnpublishRequests(options?: { limit?: number }) {
+    return this.request<WorkflowItem[]>("/curator/unpublish-requests", {
+      params: { limit: options?.limit },
+    });
+  }
+
   deprecateWorkflow(workflowId: string) {
     return this.request<WorkflowItem>(`/curator/workflows/${workflowId}/deprecate`, { method: "POST" });
   }
@@ -298,6 +324,19 @@ export class FarmacoGraphClient {
         ...buildPaginationParams(pagination),
       },
     });
+  }
+
+  createMechanismFragment(input: { slug: string; label: string; description?: string }) {
+    return this.request<{
+      entity: {
+        id: string;
+        slug: string;
+        label: string;
+        entity_type: string;
+        description?: string | null;
+        status?: string;
+      };
+    }>("/curator/mechanism-fragments", { method: "POST", body: input });
   }
 
   openDiseaseWorkflow(slug: string) {

@@ -11,10 +11,13 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from farmacograph.api.deps import get_app_container, get_evidence_service, require_scope
 from farmacograph.api.schemas.curator import (
     CreateDiseaseRequest,
+    CreateMechanismFragmentRequest,
     CreateWorkflowRequest,
     DrugWorkflowStateResponse,
     EntityWorkflowStateResponse,
     PublishRequest,
+    RejectUnpublishRequestBody,
+    UnpublishRequestBody,
     WorkflowResponse,
 )
 from farmacograph.api.schemas.evidence import AttachDrugEvidenceRequest
@@ -158,6 +161,26 @@ async def list_curator_mechanism_fragments(
             "limit": limit,
             "offset": offset,
         },
+    }
+
+
+@router.post("/mechanism-fragments", status_code=201)
+async def create_mechanism_fragment(
+    body: CreateMechanismFragmentRequest,
+    service=Depends(get_curator_service),
+    _auth: Annotated[AuthContext, Depends(require_scope("curator:write"))] = None,
+) -> dict:
+    try:
+        entity = await service.create_mechanism_fragment(
+            slug=body.slug,
+            label=body.label,
+            description=body.description,
+        )
+    except ValidationError as exc:
+        raise HTTPException(status_code=400, detail=exc.message) from exc
+    return {
+        "data": {"entity": entity},
+        "meta": {"api_version": "v1", "slug": entity["slug"]},
     }
 
 
@@ -523,6 +546,28 @@ async def get_review_queue(
     }
 
 
+@router.get("/unpublish-requests")
+async def list_unpublish_requests(
+    container: Annotated[Container, Depends(get_app_container)],
+    service=Depends(get_curator_service),
+    _auth: Annotated[AuthContext, Depends(require_scope("admin:org"))] = None,
+    limit: int = Query(50, ge=1, le=100),
+) -> dict:
+    """Admin inbox: published workflows with a pending unpublish request."""
+    items = await service.get_unpublish_requests(limit=limit)
+    graph = container.graph_repo
+    data = []
+    for w in items:
+        entity = None
+        if w.entity_type == "Drug" and graph.is_available:
+            entity = await graph.get_drug_summary_by_id(w.entity_id)
+        data.append(WorkflowResponse.from_model(w, entity=entity).model_dump())
+    return {
+        "data": data,
+        "meta": {"api_version": "v1", "count": len(data)},
+    }
+
+
 @router.get("/validation-summary")
 async def get_validation_summary(
     service=Depends(get_dashboard_service),
@@ -564,16 +609,92 @@ async def approve_workflow(
         raise HTTPException(status_code=400, detail=exc.message) from exc
 
 
+@router.post("/workflows/{workflow_id}/request-unpublish")
+async def request_unpublish(
+    workflow_id: UUID,
+    body: UnpublishRequestBody,
+    service=Depends(get_curator_service),
+    auth: Annotated[AuthContext, Depends(require_scope("curator:write"))] = None,
+) -> dict:
+    """Curator requests admin unpublish; workflow stays published until approved."""
+    if auth.user_id is None:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    try:
+        workflow = await service.request_unpublish(
+            workflow_id,
+            actor_id=auth.user_id,
+            notes=body.notes,
+        )
+        return {
+            "data": WorkflowResponse.from_model(workflow).model_dump(),
+            "meta": {"api_version": "v1"},
+        }
+    except (ValidationError, NotFoundError) as exc:
+        raise HTTPException(status_code=400, detail=exc.message) from exc
+
+
+@router.post("/workflows/{workflow_id}/cancel-unpublish-request")
+async def cancel_unpublish_request(
+    workflow_id: UUID,
+    service=Depends(get_curator_service),
+    auth: Annotated[AuthContext, Depends(require_scope("curator:write"))] = None,
+) -> dict:
+    """Requester or admin cancels a pending unpublish request."""
+    if auth.user_id is None:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    try:
+        workflow = await service.cancel_unpublish_request(
+            workflow_id,
+            actor_id=auth.user_id,
+            allow_admin=auth.has_scope("admin:org"),
+        )
+        return {
+            "data": WorkflowResponse.from_model(workflow).model_dump(),
+            "meta": {"api_version": "v1"},
+        }
+    except (ValidationError, NotFoundError) as exc:
+        raise HTTPException(status_code=400, detail=exc.message) from exc
+
+
+@router.post("/workflows/{workflow_id}/reject-unpublish-request")
+async def reject_unpublish_request(
+    workflow_id: UUID,
+    body: RejectUnpublishRequestBody,
+    service=Depends(get_curator_service),
+    auth: Annotated[AuthContext, Depends(require_scope("admin:org"))] = None,
+) -> dict:
+    """Admin rejects a pending unpublish request without unpublishing."""
+    if auth.user_id is None:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    try:
+        workflow = await service.reject_unpublish_request(
+            workflow_id,
+            actor_id=auth.user_id,
+            notes=body.notes,
+        )
+        return {
+            "data": WorkflowResponse.from_model(workflow).model_dump(),
+            "meta": {"api_version": "v1"},
+        }
+    except (ValidationError, NotFoundError) as exc:
+        raise HTTPException(status_code=400, detail=exc.message) from exc
+
+
 @router.post("/workflows/{workflow_id}/return-to-draft")
 async def return_workflow_to_draft(
     workflow_id: UUID,
     service=Depends(get_curator_service),
     auth: Annotated[AuthContext, Depends(require_scope("curator:publish"))] = None,
 ) -> dict:
-    """approved/review → draft (publisher). published → draft requires admin:org (unpublish)."""
+    """approved/review → draft (publisher).
+
+    published → draft requires admin:org (unpublish).
+    deprecated → draft requires admin:org (restore).
+    """
     try:
         current = await service.get_workflow(workflow_id)
         allow_published = False
+        allow_deprecated = False
         if current.state == "published":
             if not auth.has_scope("admin:org"):
                 raise HTTPException(
@@ -581,10 +702,18 @@ async def return_workflow_to_draft(
                     detail="Unpublishing a published workflow requires admin:org",
                 )
             allow_published = True
+        elif current.state == "deprecated":
+            if not auth.has_scope("admin:org"):
+                raise HTTPException(
+                    status_code=403,
+                    detail="Restoring a deprecated workflow requires admin:org",
+                )
+            allow_deprecated = True
         workflow = await service.return_to_draft(
             workflow_id,
             actor_id=auth.user_id,
             allow_published=allow_published,
+            allow_deprecated=allow_deprecated,
         )
         return {
             "data": WorkflowResponse.from_model(workflow).model_dump(),

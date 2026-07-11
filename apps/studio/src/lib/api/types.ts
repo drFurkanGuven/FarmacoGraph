@@ -317,6 +317,9 @@ export interface WorkflowItem {
   entity_slug?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
+  unpublish_requested_at?: string | null;
+  unpublish_requested_by?: string | null;
+  unpublish_request_notes?: string | null;
 }
 
 export interface GraphWriteResult {
@@ -392,6 +395,9 @@ export type WorkflowTimelineKind =
   | "submitted"
   | "approved"
   | "returned_to_draft"
+  | "unpublish_requested"
+  | "unpublish_request_cancelled"
+  | "unpublish_request_rejected"
   | "published"
   | "publish_failed"
   | "deprecated"
@@ -462,6 +468,7 @@ export interface DashboardData {
     pending_review: WorkflowItem[];
     drafts: WorkflowItem[];
     recently_published: WorkflowItem[];
+    unpublish_requests?: WorkflowItem[];
   };
   activity: AuditLogItem[];
   jobs: {

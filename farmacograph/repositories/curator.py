@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -66,6 +67,19 @@ class CuratorRepository:
             )
             return list(result.scalars().all())
 
+    async def list_unpublish_requests(self, limit: int = 50) -> list[CuratorWorkflow]:
+        async with self._session_factory() as session:
+            result = await session.execute(
+                select(CuratorWorkflow)
+                .where(
+                    CuratorWorkflow.state == "published",
+                    CuratorWorkflow.unpublish_requested_at.is_not(None),
+                )
+                .order_by(CuratorWorkflow.unpublish_requested_at.desc())
+                .limit(limit)
+            )
+            return list(result.scalars().all())
+
     async def count_by_state(self) -> dict[str, int]:
         async with self._session_factory() as session:
             result = await session.execute(
@@ -86,6 +100,45 @@ class CuratorRepository:
                 update(CuratorWorkflow)
                 .where(CuratorWorkflow.id == workflow_id)
                 .values(draft_package_json=package)
+            )
+            await session.commit()
+        updated = await self.get(workflow_id)
+        assert updated is not None
+        return updated
+
+    async def set_unpublish_request(
+        self,
+        workflow_id: uuid.UUID,
+        *,
+        requested_by: uuid.UUID,
+        notes: str,
+        requested_at: datetime,
+    ) -> CuratorWorkflow:
+        async with self._session_factory() as session:
+            await session.execute(
+                update(CuratorWorkflow)
+                .where(CuratorWorkflow.id == workflow_id)
+                .values(
+                    unpublish_requested_at=requested_at,
+                    unpublish_requested_by=requested_by,
+                    unpublish_request_notes=notes,
+                )
+            )
+            await session.commit()
+        updated = await self.get(workflow_id)
+        assert updated is not None
+        return updated
+
+    async def clear_unpublish_request(self, workflow_id: uuid.UUID) -> CuratorWorkflow:
+        async with self._session_factory() as session:
+            await session.execute(
+                update(CuratorWorkflow)
+                .where(CuratorWorkflow.id == workflow_id)
+                .values(
+                    unpublish_requested_at=None,
+                    unpublish_requested_by=None,
+                    unpublish_request_notes=None,
+                )
             )
             await session.commit()
         updated = await self.get(workflow_id)

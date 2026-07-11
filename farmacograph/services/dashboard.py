@@ -49,6 +49,17 @@ def _workflow_to_dict(workflow, entity: dict[str, Any] | None = None) -> dict[st
         "notes": workflow.notes,
         "created_at": workflow.created_at.isoformat() if workflow.created_at else None,
         "updated_at": workflow.updated_at.isoformat() if workflow.updated_at else None,
+        "unpublish_requested_at": (
+            workflow.unpublish_requested_at.isoformat()
+            if getattr(workflow, "unpublish_requested_at", None)
+            else None
+        ),
+        "unpublish_requested_by": (
+            str(workflow.unpublish_requested_by)
+            if getattr(workflow, "unpublish_requested_by", None)
+            else None
+        ),
+        "unpublish_request_notes": getattr(workflow, "unpublish_request_notes", None),
     }
     if entity:
         data["entity_label"] = entity.get("label") or entity.get("generic_name")
@@ -85,8 +96,10 @@ class DashboardService:
         review_queue = await self._curator.list_by_state("review", limit=10)
         draft_queue = await self._curator.list_by_state("draft", limit=10)
         published_recent = await self._curator.list_by_state("published", limit=10)
+        unpublish_requests = await self._curator.list_unpublish_requests(limit=10)
 
         published_enriched = await self._enrich_workflows(published_recent)
+        unpublish_enriched = await self._enrich_workflows(unpublish_requests)
         activity = await self._audit.list_recent(limit=15)
         jobs = await self._jobs.list_recent(limit=10)
         job_counts = await self._jobs.count_by_status()
@@ -126,6 +139,7 @@ class DashboardService:
                 "pending_review": [_workflow_to_dict(w) for w in review_queue],
                 "drafts": [_workflow_to_dict(w) for w in draft_queue],
                 "recently_published": published_enriched,
+                "unpublish_requests": unpublish_enriched,
             },
             "activity": [_audit_to_dict(a) for a in activity],
             "jobs": {
