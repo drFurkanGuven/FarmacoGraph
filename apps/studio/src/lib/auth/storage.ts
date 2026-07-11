@@ -18,7 +18,10 @@ export const GUEST_SESSION: AuthSession = {
 
 export const DEFAULT_WORKSPACES: Workspace[] = [
   { id: "ws-cv", name: "Cardiovascular", slug: "cardiovascular" },
-  { id: "ws-default", name: "Default Workspace", slug: "default" },
+  { id: "ws-endo", name: "Endocrinology", slug: "endocrinology" },
+  { id: "ws-id", name: "Infectious Diseases", slug: "infectious-diseases" },
+  { id: "ws-neuro", name: "Neurology", slug: "neurology" },
+  { id: "ws-psych", name: "Psychiatry", slug: "psychiatry" },
 ];
 
 function isBrowser(): boolean {
@@ -71,7 +74,9 @@ export function loadWorkspace(): Workspace {
   try {
     const raw = localStorage.getItem(WORKSPACE_STORAGE_KEY);
     if (!raw) return DEFAULT_WORKSPACES[0];
-    return JSON.parse(raw) as Workspace;
+    const parsed = JSON.parse(raw) as Workspace;
+    const known = DEFAULT_WORKSPACES.find((row) => row.slug === parsed.slug);
+    return known ?? DEFAULT_WORKSPACES[0];
   } catch {
     return DEFAULT_WORKSPACES[0];
   }

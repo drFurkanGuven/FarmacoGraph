@@ -83,11 +83,17 @@ async def list_curator_drugs(
 async def list_curator_drug_classes(
     service=Depends(get_curator_service),
     _auth: Annotated[AuthContext, Depends(require_scope("curator:write"))] = None,
+    module: str | None = Query(None, description="Filter by module / organ_system"),
 ) -> dict:
-    data = await service.list_drug_classes_browser()
+    data = await service.list_drug_classes_browser(module=module)
     return {
         "data": data,
-        "meta": {"api_version": "v1", "count": len(data), "total": len(data)},
+        "meta": {
+            "api_version": "v1",
+            "count": len(data),
+            "total": len(data),
+            "module": module,
+        },
     }
 
 
@@ -102,6 +108,7 @@ async def create_drug(
             slug=body.slug,
             label=body.label,
             drug_class_slug=body.drug_class_slug,
+            module=body.module,
             description=body.description,
             actor_id=auth.user_id,
         )
@@ -114,7 +121,7 @@ async def create_drug(
             "package": package,
             "validation": service.validate_draft_package(package),
         },
-        "meta": {"api_version": "v1", "slug": entity["slug"]},
+        "meta": {"api_version": "v1", "slug": entity["slug"], "module": entity.get("module")},
     }
 
 

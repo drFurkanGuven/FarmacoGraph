@@ -33,8 +33,9 @@ export function useDrugBrowser({
 
   const isSearching = filters.query.trim().length >= 2;
   const moduleForApi =
+    filters.module === "all" ? "all" : filters.module || workspaceModule;
+  const curriculumModule =
     filters.module === "all" ? workspaceModule : filters.module || workspaceModule;
-  const curriculumModule = filters.module === "all" ? workspaceModule : filters.module;
 
   const listQuery = useCuratorDrugs({
     module: moduleForApi,

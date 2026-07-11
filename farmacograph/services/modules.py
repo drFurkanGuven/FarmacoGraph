@@ -12,10 +12,28 @@ from farmacograph.repositories.snapshots import SnapshotRepository
 MODULE_REGISTRY: list[dict[str, Any]] = [
     {"slug": "cardiovascular", "name": "Cardiovascular", "status": "planned", "drug_count": 0},
     {"slug": "endocrinology", "name": "Endocrinology", "status": "planned", "drug_count": 0},
-    {"slug": "infectious-diseases", "name": "Infectious Diseases", "status": "planned", "drug_count": 0},
+    {
+        "slug": "infectious-diseases",
+        "name": "Infectious Diseases",
+        "status": "planned",
+        "drug_count": 0,
+    },
     {"slug": "neurology", "name": "Neurology", "status": "planned", "drug_count": 0},
     {"slug": "psychiatry", "name": "Psychiatry", "status": "planned", "drug_count": 0},
 ]
+
+
+def known_module_slugs() -> set[str]:
+    return {entry["slug"] for entry in MODULE_REGISTRY}
+
+
+def validate_module_slug(module: str) -> str:
+    slug = (module or "").strip().lower()
+    if slug not in known_module_slugs():
+        raise ValueError(
+            f"Unknown module: {module}. Expected one of: {', '.join(sorted(known_module_slugs()))}."
+        )
+    return slug
 
 
 class ModuleService:

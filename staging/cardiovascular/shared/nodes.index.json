@@ -97,6 +97,70 @@
       "organ_system": "cardiovascular"
     },
     {
+      "id": "b1000001-0000-4000-8010-000000000013",
+      "entity_type": "DrugClass",
+      "slug": "antidiabetics",
+      "label": "Antidiabetics",
+      "description": "FILL_BY_CURATOR",
+      "organ_system": "endocrinology"
+    },
+    {
+      "id": "b1000001-0000-4000-8010-000000000014",
+      "entity_type": "DrugClass",
+      "slug": "thyroid-agents",
+      "label": "Thyroid agents",
+      "description": "FILL_BY_CURATOR",
+      "organ_system": "endocrinology"
+    },
+    {
+      "id": "b1000001-0000-4000-8010-000000000015",
+      "entity_type": "DrugClass",
+      "slug": "antibacterials",
+      "label": "Antibacterials",
+      "description": "FILL_BY_CURATOR",
+      "organ_system": "infectious-diseases"
+    },
+    {
+      "id": "b1000001-0000-4000-8010-000000000016",
+      "entity_type": "DrugClass",
+      "slug": "antivirals",
+      "label": "Antivirals",
+      "description": "FILL_BY_CURATOR",
+      "organ_system": "infectious-diseases"
+    },
+    {
+      "id": "b1000001-0000-4000-8010-000000000017",
+      "entity_type": "DrugClass",
+      "slug": "antiepileptics",
+      "label": "Antiepileptics",
+      "description": "FILL_BY_CURATOR",
+      "organ_system": "neurology"
+    },
+    {
+      "id": "b1000001-0000-4000-8010-000000000018",
+      "entity_type": "DrugClass",
+      "slug": "antiparkinsonian-agents",
+      "label": "Antiparkinsonian agents",
+      "description": "FILL_BY_CURATOR",
+      "organ_system": "neurology"
+    },
+    {
+      "id": "b1000001-0000-4000-8010-000000000019",
+      "entity_type": "DrugClass",
+      "slug": "antidepressants",
+      "label": "Antidepressants",
+      "description": "FILL_BY_CURATOR",
+      "organ_system": "psychiatry"
+    },
+    {
+      "id": "b1000001-0000-4000-8010-000000000020",
+      "entity_type": "DrugClass",
+      "slug": "antipsychotics",
+      "label": "Antipsychotics",
+      "description": "FILL_BY_CURATOR",
+      "organ_system": "psychiatry"
+    },
+    {
       "id": "d1000001-0000-4000-8010-000000000001",
       "entity_type": "Disease",
       "slug": "hypertension",

@@ -51,6 +51,19 @@ async def test_list_drug_classes(client: AsyncClient):
 
 
 @pytest.mark.asyncio
+async def test_list_drug_classes_by_module(client: AsyncClient):
+    response = await client.get(
+        "/api/v1/curator/drug-classes",
+        params={"module": "psychiatry"},
+    )
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data
+    assert all(row["module"] == "psychiatry" for row in data)
+    assert any(row["slug"] == "antidepressants" for row in data)
+
+
+@pytest.mark.asyncio
 async def test_create_drug_with_class(client: AsyncClient):
     response = await client.post(
         "/api/v1/curator/drugs",
@@ -58,15 +71,42 @@ async def test_create_drug_with_class(client: AsyncClient):
             "slug": "trandolapril",
             "label": "Trandolapril",
             "drug_class_slug": "ace-inhibitors",
+            "module": "cardiovascular",
             "description": "ACE inhibitor",
         },
     )
     assert response.status_code == 201, response.text
     body = response.json()["data"]
     assert body["entity"]["slug"] == "trandolapril"
+    assert body["entity"]["module"] == "cardiovascular"
     assert body["workflow"]["state"] == "draft"
     assert body["package"]["entity_payload"]["relationships"]["BELONGS_TO"]
+    assert body["package"]["module"] == "cardiovascular"
 
     listed = await client.get("/api/v1/curator/drugs", params={"search": "trandolapril"})
     assert listed.status_code == 200
     assert any(row["slug"] == "trandolapril" for row in listed.json()["data"])
+
+
+@pytest.mark.asyncio
+async def test_create_drug_other_module(client: AsyncClient):
+    response = await client.post(
+        "/api/v1/curator/drugs",
+        json={
+            "slug": "sertraline",
+            "label": "Sertraline",
+            "drug_class_slug": "antidepressants",
+            "module": "psychiatry",
+        },
+    )
+    assert response.status_code == 201, response.text
+    body = response.json()["data"]
+    assert body["entity"]["module"] == "psychiatry"
+    assert body["package"]["module"] == "psychiatry"
+
+    listed = await client.get(
+        "/api/v1/curator/drugs",
+        params={"module": "psychiatry", "search": "sertraline"},
+    )
+    assert listed.status_code == 200
+    assert any(row["slug"] == "sertraline" for row in listed.json()["data"])

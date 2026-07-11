@@ -291,7 +291,7 @@ export class FarmacoGraphClient {
     });
   }
 
-  curatorDrugClasses() {
+  curatorDrugClasses(options?: { module?: string }) {
     return this.request<
       Array<{
         id: string;
@@ -299,14 +299,18 @@ export class FarmacoGraphClient {
         label: string;
         entity_type: string;
         organ_system?: string;
+        module?: string;
       }>
-    >("/curator/drug-classes");
+    >("/curator/drug-classes", {
+      params: { module: options?.module },
+    });
   }
 
   createDrug(input: {
     slug: string;
     label: string;
     drug_class_slug: string;
+    module: string;
     description?: string;
   }) {
     return this.request<{
@@ -316,6 +320,7 @@ export class FarmacoGraphClient {
         label: string;
         entity_type: string;
         drug_class_slug?: string;
+        module?: string;
         description?: string | null;
         status?: string;
       };

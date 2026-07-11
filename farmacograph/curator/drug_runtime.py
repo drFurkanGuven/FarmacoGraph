@@ -18,6 +18,7 @@ from farmacograph.curator.drug_package import (
     load_curriculum,
     load_nodes_index,
 )
+from farmacograph.services.modules import validate_module_slug
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_DRUG_RUNTIME_PATH = (
@@ -88,8 +89,9 @@ def find_runtime_drug(slug: str) -> dict[str, Any] | None:
     return None
 
 
-def list_drug_classes() -> list[dict[str, Any]]:
-    """DrugClass rows from nodes index + curriculum category names."""
+def list_drug_classes(*, module: str | None = None) -> list[dict[str, Any]]:
+    """DrugClass rows from nodes index, optionally filtered by organ_system/module."""
+    module_filter = validate_module_slug(module) if module else None
     curriculum = load_curriculum()
     category_names = {
         cat.get("slug"): cat.get("name")
@@ -101,6 +103,9 @@ def list_drug_classes() -> list[dict[str, Any]]:
     for entity in index.get("entities", []):
         if entity.get("entity_type") != "DrugClass":
             continue
+        organ = entity.get("organ_system") or "cardiovascular"
+        if module_filter and organ != module_filter:
+            continue
         slug = entity["slug"]
         rows.append(
             {
@@ -108,7 +113,8 @@ def list_drug_classes() -> list[dict[str, Any]]:
                 "slug": slug,
                 "label": entity.get("label") or category_names.get(slug) or slug,
                 "entity_type": "DrugClass",
-                "organ_system": entity.get("organ_system", "cardiovascular"),
+                "organ_system": organ,
+                "module": organ,
             }
         )
     rows.sort(key=lambda row: row["label"].lower())
@@ -119,7 +125,6 @@ def _category_slug_for_class(drug_class_slug: str) -> str:
     """Map DrugClass slug to curriculum category key used by CATEGORY_SHARED_NODE_SLUGS."""
     if drug_class_slug in CATEGORY_SHARED_NODE_SLUGS:
         return drug_class_slug
-    # nodes index uses loop-diuretics; curriculum category is diuretics
     if drug_class_slug == "loop-diuretics":
         return "diuretics"
     return drug_class_slug
@@ -130,8 +135,10 @@ def build_drug_package_for_class(
     slug: str,
     label: str,
     drug_class_slug: str,
+    module: str = "cardiovascular",
 ) -> dict[str, Any]:
     """Build a draft publish package with BELONGS_TO the selected DrugClass (+ optional seeds)."""
+    module_slug = validate_module_slug(module)
     normalized = validate_drug_slug(slug)
     clean_label = label.strip()
     if not clean_label:
@@ -142,8 +149,19 @@ def build_drug_package_for_class(
     if class_node is None or class_node.get("entity_type") != "DrugClass":
         raise ValueError(f"Unknown drug class slug: {drug_class_slug}")
 
+    class_module = class_node.get("organ_system") or "cardiovascular"
+    if class_module != module_slug:
+        raise ValueError(
+            f"Drug class '{drug_class_slug}' belongs to module '{class_module}', "
+            f"not '{module_slug}'."
+        )
+
     category_slug = _category_slug_for_class(drug_class_slug)
-    shared_slugs = list(CATEGORY_SHARED_NODE_SLUGS.get(category_slug, [drug_class_slug]))
+    # CV curriculum templates only — other modules start with the class node alone.
+    if module_slug == "cardiovascular":
+        shared_slugs = list(CATEGORY_SHARED_NODE_SLUGS.get(category_slug, [drug_class_slug]))
+    else:
+        shared_slugs = [drug_class_slug]
     if drug_class_slug not in shared_slugs:
         shared_slugs.insert(0, drug_class_slug)
 
@@ -183,7 +201,7 @@ def build_drug_package_for_class(
             },
         }
         if node["entity_type"] == "DrugClass":
-            entity["organ_system"] = node.get("organ_system", "cardiovascular")
+            entity["organ_system"] = node.get("organ_system", module_slug)
             rel_map["BELONGS_TO"].append(node["id"])
             relationships.append(
                 {
@@ -229,7 +247,7 @@ def build_drug_package_for_class(
         related_entities.append(entity)
 
     return {
-        "module": "cardiovascular",
+        "module": module_slug,
         "dataset_version": "2026.1.0",
         "create_snapshot": False,
         "entity_payload": {
@@ -238,7 +256,7 @@ def build_drug_package_for_class(
             "slug": normalized,
             "label": clean_label,
             "generic_name": clean_label,
-            "module": "cardiovascular",
+            "module": module_slug,
             "routes": [],
             "half_life": None,
             "protein_binding": None,
@@ -276,9 +294,11 @@ def register_drug(
     slug: str,
     label: str,
     drug_class_slug: str,
+    module: str = "cardiovascular",
     description: str | None = None,
 ) -> dict[str, Any]:
     """Register a Drug in the runtime catalog and return entity + starter package fields."""
+    module_slug = validate_module_slug(module)
     normalized = validate_drug_slug(slug)
     clean_label = label.strip()
     if not clean_label:
@@ -289,9 +309,9 @@ def register_drug(
     if find_runtime_drug(normalized) is not None:
         raise ValueError(f"Drug slug already exists: {normalized}")
 
-    classes = {row["slug"]: row for row in list_drug_classes()}
+    classes = {row["slug"]: row for row in list_drug_classes(module=module_slug)}
     if drug_class_slug not in classes:
-        raise ValueError(f"Unknown drug class slug: {drug_class_slug}")
+        raise ValueError(f"Unknown drug class '{drug_class_slug}' for module '{module_slug}'.")
 
     entity = {
         "id": drug_entity_id(normalized),
@@ -303,7 +323,7 @@ def register_drug(
         "category_slug": _category_slug_for_class(drug_class_slug),
         "status": "draft",
         "source": "curator_runtime",
-        "module": "cardiovascular",
+        "module": module_slug,
     }
     runtime = _load_runtime_drugs()
     runtime.append(entity)
@@ -314,9 +334,12 @@ def register_drug(
     return entity
 
 
-def list_runtime_drug_entries() -> list[dict[str, Any]]:
-    return _load_runtime_drugs()
+def list_runtime_drug_entries(*, module: str | None = None) -> list[dict[str, Any]]:
+    rows = _load_runtime_drugs()
+    if not module or module == "all":
+        return rows
+    module_slug = validate_module_slug(module)
+    return [row for row in rows if (row.get("module") or "cardiovascular") == module_slug]
 
 
-# Keep uuid import used for namespace clarity in callers
 assert isinstance(DRUG_ENTITY_NAMESPACE, uuid.UUID)

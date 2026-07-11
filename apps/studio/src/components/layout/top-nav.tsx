@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Moon, Sun, Laptop } from "lucide-react";
+import { ChevronDown, Moon, Sun, Laptop } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,22 +13,35 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useModules } from "@/lib/api/react-query/hooks";
 import { useAuth } from "@/lib/auth/context";
+import { DEFAULT_WORKSPACES } from "@/lib/auth/storage";
+import type { Workspace } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 
 interface TopNavProps {
   onOpenCommand: () => void;
 }
 
+function workspaceFromModule(slug: string, name: string): Workspace {
+  const known = DEFAULT_WORKSPACES.find((row) => row.slug === slug);
+  return known ?? { id: `ws-${slug}`, name, slug };
+}
+
 export function TopNav({ onOpenCommand }: TopNavProps) {
-  const { session } = useAuth();
+  const { session, activeWorkspace, setActiveWorkspace } = useAuth();
   const { setTheme, theme } = useTheme();
   const pathname = usePathname();
+  const modulesQuery = useModules();
 
   const title =
     pathname === "/"
       ? "Dashboard"
       : pathname.split("/").filter(Boolean).slice(-1)[0]?.replace(/-/g, " ") ?? "Studio";
+
+  const modules =
+    modulesQuery.data?.data?.map((row) => workspaceFromModule(row.slug, row.name)) ??
+    DEFAULT_WORKSPACES;
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b bg-background/80 px-4 backdrop-blur md:px-6">
@@ -42,9 +55,28 @@ export function TopNav({ onOpenCommand }: TopNavProps) {
         <kbd className="ml-2 rounded border bg-muted px-1.5 py-0.5 text-[10px] font-medium">⌘K</kbd>
       </Button>
 
-      <span className="hidden rounded-md border px-2.5 py-1 text-xs font-medium text-muted-foreground sm:inline-flex">
-        Cardiovascular
-      </span>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="sm" className="hidden sm:inline-flex gap-1.5">
+            <span className="text-muted-foreground">Module</span>
+            <span className="font-medium">{activeWorkspace.name}</span>
+            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuLabel>Active module</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {modules.map((module) => (
+            <DropdownMenuItem
+              key={module.slug}
+              onClick={() => setActiveWorkspace(module)}
+              className={cn(module.slug === activeWorkspace.slug && "bg-accent")}
+            >
+              {module.name}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>

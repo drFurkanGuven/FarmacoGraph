@@ -555,56 +555,67 @@ class CuratorService:
         items: list[dict[str, Any]] = []
         needle = search.strip().lower()
         seen_slugs: set[str] = set()
+        include_curriculum = module in ("cardiovascular", "all", "")
 
-        for category in curriculum.get("categories", []):
-            for drug in category.get("drugs", []):
-                slug = drug["slug"]
-                seen_slugs.add(slug)
-                if (
-                    needle
-                    and needle not in slug.lower()
-                    and needle not in slug.replace("-", " ").lower()
-                ):
-                    continue
+        if include_curriculum:
+            for category in curriculum.get("categories", []):
+                for drug in category.get("drugs", []):
+                    slug = drug["slug"]
+                    seen_slugs.add(slug)
+                    if (
+                        needle
+                        and needle not in slug.lower()
+                        and needle not in slug.replace("-", " ").lower()
+                    ):
+                        continue
 
-                entity_id = drug_entity_id(slug)
-                workflow = workflow_by_entity.get(entity_id)
-                graph_drug = (
-                    await self._graph.get_drug_by_slug(slug) if self._graph.is_available else None
-                )
-                curriculum_status = drug.get("status", "pending")
-                publication_status = "published" if graph_drug else curriculum_status
+                    entity_id = drug_entity_id(slug)
+                    workflow = workflow_by_entity.get(entity_id)
+                    graph_drug = (
+                        await self._graph.get_drug_by_slug(slug)
+                        if self._graph.is_available
+                        else None
+                    )
+                    curriculum_status = drug.get("status", "pending")
+                    publication_status = "published" if graph_drug else curriculum_status
 
-                if status and publication_status != status:
-                    continue
-                if workflow_state and (workflow is None or workflow.state != workflow_state):
-                    continue
+                    if status and publication_status != status:
+                        continue
+                    if workflow_state and (workflow is None or workflow.state != workflow_state):
+                        continue
 
-                validation = self._validate_package_dict(
-                    workflow.draft_package_json if workflow else None
-                )
-                items.append(
-                    {
-                        "slug": slug,
-                        "label": slug.replace("-", " ").title(),
-                        "entity_id": entity_id,
-                        "module": module,
-                        "category_slug": category.get("slug"),
-                        "category_name": category.get("name"),
-                        "curriculum_status": curriculum_status,
-                        "publication_status": publication_status,
-                        "workflow_id": str(workflow.id) if workflow else None,
-                        "workflow_state": workflow.state if workflow else None,
-                        "validation_valid": validation["valid"],
-                        "validation_errors": validation["error_count"],
-                        "confidence_score": graph_drug.get("confidence_score")
-                        if graph_drug
-                        else None,
-                    }
-                )
+                    validation = self._validate_package_dict(
+                        workflow.draft_package_json if workflow else None
+                    )
+                    items.append(
+                        {
+                            "slug": slug,
+                            "label": slug.replace("-", " ").title(),
+                            "entity_id": entity_id,
+                            "module": "cardiovascular",
+                            "category_slug": category.get("slug"),
+                            "category_name": category.get("name"),
+                            "curriculum_status": curriculum_status,
+                            "publication_status": publication_status,
+                            "workflow_id": str(workflow.id) if workflow else None,
+                            "workflow_state": workflow.state if workflow else None,
+                            "validation_valid": validation["valid"],
+                            "validation_errors": validation["error_count"],
+                            "confidence_score": graph_drug.get("confidence_score")
+                            if graph_drug
+                            else None,
+                        }
+                    )
 
-        class_labels = {row["slug"]: row["label"] for row in list_drug_classes()}
-        for drug in list_runtime_drug_entries():
+        runtime_module = None if module in ("all", "") else module
+        class_labels = {
+            row["slug"]: row["label"] for row in list_drug_classes(module=runtime_module)
+        }
+        # When filtering one module, class_labels is scoped; for "all" load every class label.
+        if runtime_module is None:
+            class_labels = {row["slug"]: row["label"] for row in list_drug_classes()}
+
+        for drug in list_runtime_drug_entries(module=runtime_module):
             slug = drug["slug"]
             if slug in seen_slugs:
                 continue
@@ -632,7 +643,7 @@ class CuratorService:
                     "slug": slug,
                     "label": label,
                     "entity_id": entity_id,
-                    "module": module,
+                    "module": drug.get("module") or "cardiovascular",
                     "category_slug": drug.get("category_slug") or class_slug,
                     "category_name": class_labels.get(class_slug, class_slug),
                     "curriculum_status": drug.get("status", "draft"),
@@ -655,8 +666,8 @@ class CuratorService:
         total = len(items)
         return items[offset : offset + limit], total
 
-    async def list_drug_classes_browser(self) -> list[dict[str, Any]]:
-        return list_drug_classes()
+    async def list_drug_classes_browser(self, *, module: str | None = None) -> list[dict[str, Any]]:
+        return list_drug_classes(module=module or None)
 
     async def create_drug(
         self,
@@ -664,6 +675,7 @@ class CuratorService:
         slug: str,
         label: str,
         drug_class_slug: str,
+        module: str = "cardiovascular",
         description: str | None = None,
         actor_id: uuid.UUID | None = None,
     ) -> tuple[dict[str, Any], CuratorWorkflow, dict[str, Any]]:
@@ -672,12 +684,14 @@ class CuratorService:
                 slug=slug,
                 label=label,
                 drug_class_slug=drug_class_slug,
+                module=module,
                 description=description,
             )
             package = build_drug_package_for_class(
                 slug=entity["slug"],
                 label=entity["label"],
                 drug_class_slug=drug_class_slug,
+                module=entity["module"],
             )
         except ValueError as exc:
             raise ValidationError(str(exc)) from exc
@@ -1050,6 +1064,7 @@ class CuratorService:
                 slug=runtime["slug"],
                 label=runtime.get("label") or runtime["slug"],
                 drug_class_slug=runtime["drug_class_slug"],
+                module=runtime.get("module") or "cardiovascular",
             )
 
         try:

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { Pill, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,6 +33,10 @@ export function DrugBrowser() {
     setPageSize,
     resetFilters,
   } = useDrugBrowserState(initialModule);
+
+  useEffect(() => {
+    updateFilters({ module: resolveModuleSlug(activeWorkspace.slug) });
+  }, [activeWorkspace.slug, updateFilters]);
 
   const browser = useDrugBrowser({
     filters,

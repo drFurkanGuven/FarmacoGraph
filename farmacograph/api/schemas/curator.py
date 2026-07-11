@@ -42,6 +42,10 @@ class CreateDrugRequest(BaseModel):
     slug: str = Field(description="Lowercase kebab-case drug slug, e.g. ramipril")
     label: str = Field(description="Display label / generic name")
     drug_class_slug: str = Field(description="DrugClass slug from nodes index, e.g. ace-inhibitors")
+    module: str = Field(
+        default="cardiovascular",
+        description="Module registry slug, e.g. cardiovascular, endocrinology",
+    )
     description: str | None = None
 
 
