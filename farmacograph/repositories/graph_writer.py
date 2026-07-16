@@ -98,7 +98,12 @@ class GraphWriter:
                 },
             },
         )
-        return bool(results[0]["created"]) if results else False
+        if not results:
+            raise ValueError(
+                f"Cannot MERGE {rel_type}: missing endpoint "
+                f"{source_label}({source_id}) or {target_label}({target_id})"
+            )
+        return bool(results[0]["created"])
 
     async def delete_relationship(
         self,

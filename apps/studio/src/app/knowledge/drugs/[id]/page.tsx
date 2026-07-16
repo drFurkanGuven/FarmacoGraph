@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { DrugEditorWorkspace } from "@/components/drug-editor";
 
 interface DrugEditorPageProps {
@@ -6,5 +7,9 @@ interface DrugEditorPageProps {
 
 export default async function DrugEditorPage({ params }: DrugEditorPageProps) {
   const { id } = await params;
-  return <DrugEditorWorkspace drugId={id} />;
+  return (
+    <Suspense fallback={null}>
+      <DrugEditorWorkspace drugId={id} />
+    </Suspense>
+  );
 }

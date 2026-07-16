@@ -168,7 +168,14 @@ class GraphRepository:
         dataset_version: str | None = None,
     ) -> dict[str, Any]:
         if not self.is_available:
-            return {"nodes": [], "edges": [], "layout_hint": "dagre", "depth": depth}
+            return {
+                "nodes": [],
+                "edges": [],
+                "layout_hint": "dagre",
+                "depth": depth,
+                "neo4j_available": False,
+                "drug_in_graph": False,
+            }
         bounded_depth = max(1, min(depth, 3))
         results = await self._driver.run_query(
             f"""
@@ -204,14 +211,24 @@ class GraphRepository:
             {"id": str(drug_id), "dv": dataset_version},
         )
         if not results:
-            return {"nodes": [], "edges": [], "layout_hint": "dagre", "depth": bounded_depth}
+            return {
+                "nodes": [],
+                "edges": [],
+                "layout_hint": "dagre",
+                "depth": bounded_depth,
+                "neo4j_available": True,
+                "drug_in_graph": False,
+            }
         row = results[0]
         edges = [edge for edge in row.get("edges", []) if edge.get("id")]
+        nodes = row.get("nodes", [])
         return {
-            "nodes": row.get("nodes", []),
+            "nodes": nodes,
             "edges": edges,
             "layout_hint": "dagre",
             "depth": bounded_depth,
+            "neo4j_available": True,
+            "drug_in_graph": len(nodes) > 0,
         }
 
     async def get_drug_mechanism_dag(

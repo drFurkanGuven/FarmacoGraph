@@ -39,6 +39,7 @@ from farmacograph.curator.publish_validator import (
     require_valid_publish_package,
     validate_publish_package,
 )
+from farmacograph.curator.relationship_graph import normalize_drug_relationship_graph
 from farmacograph.curator.workflow import InvalidTransitionError, allowed_transitions
 from farmacograph.db.postgres.models import CuratorWorkflow
 from farmacograph.events.bus import EventBus
@@ -365,6 +366,7 @@ class CuratorService:
                 "create_snapshot": create_snapshot,
             }
         )
+        package = normalize_drug_relationship_graph(package)
         entity_payload = package["entity_payload"]
         related_entities = package["related_entities"]
         relationships = package["relationships"]
@@ -1083,6 +1085,7 @@ class CuratorService:
         if workflow.state not in ("draft", "review"):
             raise ValidationError(f"Cannot edit package in state: {workflow.state}")
         package = normalize_education_graph(package)
+        package = normalize_drug_relationship_graph(package)
         updated = await self._curator.save_draft_package(workflow_id, package)
         await self._audit.log(
             "curator.draft_saved",
@@ -1113,6 +1116,7 @@ class CuratorService:
         if not package:
             return {"valid": False, "error_count": 0, "warning_count": 0, "issues": []}
         package = normalize_education_graph(package)
+        package = normalize_drug_relationship_graph(package)
         entity = package.get("entity_payload") or {}
         result = validate_publish_package(
             entity,

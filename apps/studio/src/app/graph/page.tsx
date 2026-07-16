@@ -10,6 +10,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { KnowledgeSurface, commonKnowledgeLinks } from "@/components/knowledge/knowledge-surface";
 import { DrugFocusPicker } from "@/components/knowledge/drug-focus-picker";
 import { InteractiveGraphCanvas, relationshipLabel } from "@/components/graph";
+import {
+  GraphNeighborhoodEmptyState,
+  resolveGraphEmptyReason,
+} from "@/components/graph/graph-neighborhood-empty-state";
 import { useDrugGraph, useDrugWorkflowState } from "@/lib/api/react-query/hooks";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i;
@@ -24,6 +28,8 @@ function FocusedGraphPanel({ drug }: { drug: string }) {
   const slugMode = !isUuid(drug);
   const workflowState = useDrugWorkflowState(slugMode ? drug : "");
   const resolvedDrugId = isUuid(drug) ? drug : (workflowState.data?.data.entity_id ?? "");
+  const identityResolved = Boolean(resolvedDrugId);
+  const workflowStatus = workflowState.data?.data.status ?? null;
   const graphQuery = useDrugGraph(resolvedDrugId, depth);
   const graph = graphQuery.data?.data;
   const nodes = graph?.nodes ?? [];
@@ -31,6 +37,25 @@ function FocusedGraphPanel({ drug }: { drug: string }) {
   const visibleEdges = selectedNodeId
     ? edges.filter((edge) => edge.source_id === selectedNodeId || edge.target_id === selectedNodeId)
     : edges;
+
+  const editorHref = `/knowledge/drugs/${encodeURIComponent(drug)}`;
+  const publishHref = `${editorHref}?publish=1`;
+  const browserHref = "/knowledge/drugs";
+
+  const waitingIdentity = slugMode && workflowState.isLoading;
+  const emptyReason =
+    waitingIdentity || graphQuery.isLoading
+      ? null
+      : resolveGraphEmptyReason({
+          identityResolved: slugMode
+            ? !workflowState.isError && identityResolved
+            : identityResolved,
+          workflowStatus,
+          graph,
+          graphError: graphQuery.error,
+          nodeCount: nodes.length,
+          edgeCount: edges.length,
+        });
 
   return (
     <div className="space-y-4">
@@ -63,19 +88,25 @@ function FocusedGraphPanel({ drug }: { drug: string }) {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            {slugMode && workflowState.isLoading ? (
+            {waitingIdentity ? (
               <p className="text-sm text-muted-foreground">Resolving draft drug identity...</p>
             ) : graphQuery.isLoading ? (
               <p className="text-sm text-muted-foreground">Loading graph projection...</p>
-            ) : graphQuery.error ? (
-              <p className="text-sm text-destructive">Unable to load graph projection.</p>
-            ) : nodes.length === 0 ? (
-              <p className="rounded-md border bg-muted/30 p-3 text-sm text-muted-foreground">
-                Empty neighborhood. Publish this drug to Neo4j (with relationships) to see nodes here.
-                Draft-only packages do not appear in the live graph projection.
-              </p>
+            ) : emptyReason && emptyReason !== "no_relationships" ? (
+              <GraphNeighborhoodEmptyState
+                reason={emptyReason}
+                editorHref={emptyReason === "invalid_identity" ? browserHref : editorHref}
+                publishHref={publishHref}
+              />
             ) : (
               <>
+                {emptyReason === "no_relationships" ? (
+                  <GraphNeighborhoodEmptyState
+                    reason="no_relationships"
+                    editorHref={editorHref}
+                    publishHref={publishHref}
+                  />
+                ) : null}
                 <InteractiveGraphCanvas
                   nodes={nodes}
                   edges={edges}
@@ -118,18 +149,46 @@ function FocusedGraphPanel({ drug }: { drug: string }) {
               <p className="text-xs text-muted-foreground">Opened as</p>
               <p className="mt-1 break-all text-sm">{drug}</p>
             </div>
-            {resolvedDrugId && (
+            {resolvedDrugId ? (
               <div className="rounded-md border bg-muted/30 p-3">
                 <p className="text-xs text-muted-foreground">Resolved UUID</p>
                 <p className="mt-1 break-all text-xs">{resolvedDrugId}</p>
               </div>
-            )}
+            ) : null}
+            {workflowStatus ? (
+              <div className="rounded-md border bg-muted/30 p-3">
+                <p className="text-xs text-muted-foreground">Workflow</p>
+                <p className="mt-1 text-sm font-medium capitalize">{workflowStatus}</p>
+              </div>
+            ) : null}
+            {graph && graph.neo4j_available !== undefined ? (
+              <div className="rounded-md border bg-muted/30 p-3">
+                <p className="text-xs text-muted-foreground">Neo4j</p>
+                <p className="mt-1 text-sm font-medium">
+                  {graph.neo4j_available
+                    ? graph.drug_in_graph
+                      ? "Connected · drug in graph"
+                      : "Connected · drug not in graph"
+                    : "Unavailable"}
+                </p>
+              </div>
+            ) : null}
             <Button asChild className="w-full" variant="outline">
-              <Link href={`/knowledge/drugs/${encodeURIComponent(drug)}`}>
+              <Link href={editorHref}>
                 <Pencil className="h-4 w-4" />
                 Open editor
               </Link>
             </Button>
+            {workflowStatus === "draft" ||
+            workflowStatus === "review" ||
+            workflowStatus === "approved" ||
+            (graph?.neo4j_available && graph.drug_in_graph === false) ? (
+              <Button asChild className="w-full">
+                <Link href={publishHref}>
+                  {workflowStatus === "approved" ? "Publish to graph" : "Open Publish Wizard"}
+                </Link>
+              </Button>
+            ) : null}
           </CardContent>
         </Card>
       </div>

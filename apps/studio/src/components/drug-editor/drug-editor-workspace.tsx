@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Archive, ArrowLeft, Loader2, Lock, PanelRight, Rocket, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { ApiError } from "@/lib/api";
@@ -46,12 +47,19 @@ function EditorSkeleton() {
 
 export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
   const client = useApiClient();
+  const searchParams = useSearchParams();
   const { hasPermission } = usePermissions();
   const isAdmin = hasPermission("admin:org");
   const [contextOpen, setContextOpen] = useState(false);
   const [publishOpen, setPublishOpen] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
   const [deprecating, setDeprecating] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("publish") === "1") {
+      setPublishOpen(true);
+    }
+  }, [searchParams]);
   const {
     loading,
     loadError,

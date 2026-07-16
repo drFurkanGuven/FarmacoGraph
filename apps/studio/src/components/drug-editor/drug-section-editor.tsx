@@ -5,6 +5,7 @@ import { PropertyEditor, type PropertyEditorField } from "@/components/ui";
 import type { ValidationResult } from "@/lib/api";
 import { DrugEvidenceSection } from "./drug-evidence-section";
 import { EducationSection } from "./education-section";
+import { ClassificationSection } from "./classification-section";
 import { IndicationsSection } from "./indications-section";
 import { MechanismSection } from "./mechanism-section";
 import { sectionFieldValues } from "./package";
@@ -46,6 +47,23 @@ export function DrugSectionEditor({
         disabled={disabled}
         className={className}
       />
+    );
+  }
+
+  if (section.id === "classification") {
+    return (
+      <div className={cn("space-y-4", className)}>
+        <div>
+          <h2 className="text-lg font-semibold tracking-tight">{section.title}</h2>
+          {section.description && <p className="mt-1 text-sm text-muted-foreground">{section.description}</p>}
+        </div>
+        <ClassificationSection
+          pkg={pkg}
+          drugId={drugId}
+          disabled={disabled}
+          onPackageChange={(next) => onPackageChange?.(next)}
+        />
+      </div>
     );
   }
 

@@ -219,6 +219,16 @@ export function useCuratorDiseases(options?: {
   );
 }
 
+export function useCuratorDrugClasses(options?: { module?: string }) {
+  const client = useApiClient();
+  const filters = options ?? {};
+  return useApiQuery(
+    apiQueryKeys.curatorDrugClasses(filters),
+    () => client.curatorDrugClasses(options),
+    defaultQueryOptions,
+  );
+}
+
 export function useCuratorMechanismFragments(options?: {
   search?: string;
   sort?: string;

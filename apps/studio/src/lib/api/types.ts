@@ -211,6 +211,10 @@ export interface GraphProjectionData {
   edges: GraphEdgeData[];
   layout_hint?: string;
   depth?: number;
+  /** False when Neo4j is disabled or disconnected; empty nodes are not "unpublished". */
+  neo4j_available?: boolean;
+  /** True when the Drug UUID matched a Neo4j node (even with zero relationships). */
+  drug_in_graph?: boolean;
 }
 
 export interface MechanismDAGData {

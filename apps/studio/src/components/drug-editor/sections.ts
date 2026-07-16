@@ -53,7 +53,7 @@ export const DRUG_EDITOR_SECTIONS: DrugEditorSection[] = [
         label: "Drug classes",
         type: "uuid-list",
         path: "entity_payload.relationships.BELONGS_TO",
-        description: "One UUID per line — DrugClass entity IDs.",
+        description: "Select DrugClass nodes from the curator catalog (canonical entity IDs).",
       },
     ],
   },
