@@ -1,47 +1,37 @@
 # FarmacoGraph Licensing Strategy
 
-> **Version:** 1.0.0-draft
-
----
+**Version:** 1.0.1-draft (Revised for GPLv3)
 
 ## 1. Overview
 
-FarmacoGraph uses a tiered licensing approach that keeps the **platform open** while respecting **third-party data restrictions**.
+FarmacoGraph uses a tiered licensing approach that keeps the platform open while respecting third-party data restrictions.
 
 | Artifact | License | Rationale |
-|----------|---------|-----------|
-| Source code | **Apache 2.0** | Permissive; compatible with commercial and academic use |
-| Documentation | **CC BY 4.0** | Attribution-based sharing of docs and architecture |
-| Curated original content | **CC BY 4.0** | FarmacoGraph-authored educational content |
-| Generated datasets | **Per-source** | Depends on upstream source compatibility |
+| :--- | :--- | :--- |
+| **Source code** | GNU GPLv3 | Copyleft; requires derivative works to be open source under the same license |
+| **Documentation** | CC BY 4.0 | Attribution-based sharing of docs and architecture |
+| **Curated original content** | CC BY 4.0 | FarmacoGraph-authored educational content |
+| **Generated datasets** | Per-source | Depends on upstream source compatibility |
 
----
-
-## 2. Code — Apache 2.0
+## 2. Code — GNU GPLv3
 
 All FarmacoGraph application code, ontology definitions, validators, API, and CLI:
+* Commercial use allowed (but derivative works must be open source)
+* Modification allowed (must be released under GPLv3)
+* Distribution allowed (source code must be provided)
+* Patent grant included
+* Requires attribution, state changes, and disclose source
 
-- Commercial use allowed
-- Modification allowed
-- Distribution allowed
-- Patent grant included
-- Requires attribution and change notice
-
-**File:** `LICENSE` (Apache 2.0) at repository root.
-
----
+File: `LICENSE` (GNU GPLv3) at repository root.
 
 ## 3. Documentation — CC BY 4.0
 
 All files in `docs/`, architecture diagrams, and README:
+* Share and adapt with attribution
+* No additional restrictions
+* Suitable for academic citation
 
-- Share and adapt with attribution
-- No additional restrictions
-- Suitable for academic citation
-
-**File:** `docs/LICENSE` (CC BY 4.0)
-
----
+File: `docs/LICENSE` (CC BY 4.0)
 
 ## 4. Dataset Licensing
 
@@ -50,7 +40,7 @@ Generated datasets are **not uniformly licensed** because they aggregate from so
 ### 4.1 Dataset composition tiers
 
 | Tier | Contents | License approach |
-|------|----------|-----------------|
+| :--- | :--- | :--- |
 | **Tier A — Open** | Entities with open IDs only (RxNorm, PubChem, ICD-10, LOINC, MeSH) | CC BY 4.0 |
 | **Tier B — Attribution** | Data derived from sources requiring attribution (FDA labels, PubMed abstracts, WHO) | CC BY 4.0 + source attribution file |
 | **Tier C — Restricted** | Data from licensed sources (DrugBank commercial, SNOMED CT, MedDRA) | Separate distribution; not in default open release |
@@ -58,15 +48,14 @@ Generated datasets are **not uniformly licensed** because they aggregate from so
 ### 4.2 Default open release
 
 The default `farmacograph-open` dataset export includes:
-
-- Tier A and Tier B content only
-- Full attribution manifest (`ATTRIBUTION.md`)
-- External IDs as references (not proprietary text dumps)
+* Tier A and Tier B content only
+* Full attribution manifest (`ATTRIBUTION.md`)
+* External IDs as references (not proprietary text dumps)
 
 ### 4.3 Restricted source handling
 
 | Source | Strategy |
-|--------|----------|
+| :--- | :--- |
 | **DrugBank** | Store `drugbank:DB00xxx` IDs; do not redistribute DrugBank text; users with own license can enrich |
 | **SNOMED CT** | Optional plugin; requires user's SNOMED license |
 | **MedDRA** | Optional plugin; store generic side effect names; MedDRA codes behind plugin |
@@ -92,61 +81,47 @@ attribution:
       entities_sourced: 120
 ```
 
----
-
 ## 5. Integration Compatibility
 
 License choices are designed to avoid blocking future integrations:
 
 | Integration | Compatible? |
-|------------|-------------|
-| Commercial medical education apps | Yes (Apache 2.0 code) |
-| Academic research | Yes |
-| Anki deck generators | Yes (with attribution) |
-| Clinical decision support (future) | Yes — separate liability disclaimer required |
-| DrugBank enrichment | Yes — via ID linking, not redistribution |
-| SNOMED CT plugin | Yes — user brings license |
-
----
+| :--- | :--- |
+| **Commercial medical education apps** | Yes, but only if they are fully open-sourced under GPLv3 |
+| **Academic research** | Yes |
+| **Anki deck generators** | Yes (with attribution) |
+| **Clinical decision support (future)** | Yes — separate liability disclaimer required |
+| **DrugBank enrichment** | Yes — via ID linking, not redistribution |
+| **SNOMED CT plugin** | Yes — user brings license |
 
 ## 6. Contributor Agreement
 
 Contributors retain copyright; contributions accepted under:
-
-- Code: Apache 2.0
-- Documentation and curated content: CC BY 4.0
+* **Code:** GNU GPLv3
+* **Documentation and curated content:** CC BY 4.0
 
 Contributors must not submit proprietary or licensed third-party content without explicit permission.
 
----
-
 ## 7. AI-Generated Content
 
-AI-assisted drafts:
-
-- Licensed as CC BY 4.0 only after human curator attestation
-- Must not reproduce copyrighted source text verbatim
-- Evidence extracts must comply with source fair use / licensing
-
----
+* **AI-assisted drafts:** Licensed as CC BY 4.0 only after human curator attestation
+* Must not reproduce copyrighted source text verbatim
+* Evidence extracts must comply with source fair use / licensing
 
 ## 8. Ecosystem Modules
 
 Future *Graph modules (AnatoGraph, PhysioGraph, etc.) share the same licensing framework:
-
-- Module code: Apache 2.0
-- Module docs: CC BY 4.0
-- Module datasets: Per-source tiered strategy
-
----
+* **Module code:** GNU GPLv3
+* **Module docs:** CC BY 4.0
+* **Module datasets:** Per-source tiered strategy
 
 ## 9. Recommended NOTICES File
 
-```
+```text
 FarmacoGraph
 Copyright 2026 FarmacoGraph Contributors
 
-Licensed under the Apache License, Version 2.0.
+Licensed under the GNU General Public License, Version 3.0.
 
 This product includes data from:
 - RxNorm (NLM, public domain)
