@@ -177,5 +177,5 @@ Runtime diagrams: [docs/architecture-diagrams.md](docs/architecture-diagrams.md)
 
 ## License
 
-- Code: Apache 2.0
+- Code: GNU GPLv3
 - Documentation: CC BY 4.0
