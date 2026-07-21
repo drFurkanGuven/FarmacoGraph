@@ -33,7 +33,6 @@ from farmacograph.core.exceptions import FarmacoGraphError
 from farmacograph.core.logging import configure_logging, get_logger
 
 logger = get_logger(__name__)
-SEARCH_PAGE = Path(__file__).resolve().parent / "static" / "search.html"
 DEMO_REQUEST_PAGE = Path(__file__).resolve().parent / "static" / "demo-request.html"
 
 
@@ -61,7 +60,7 @@ def create_app() -> FastAPI:
             "- [**Swagger API Explorer**](/api/v1/docs) — live `/api/v1` operations\n"
             "- [**Curation Studio**](/studio/) — primary curator interface (knowledge authoring)\n"
             "- [**Request a Studio demo account**](/demo-request) — administrator-approved, read-only access\n"
-            "- [Search UI](/search) — public drug search\n"
+            "- [Studio Search](/studio/search/) — authenticated drug search\n"
             "- [Getting Started / API Access](https://github.com/drFurkanGuven/FarmacoGraph/blob/main/docs/getting-started.md)\n"
             "- [API Roadmap (phased)](https://github.com/drFurkanGuven/FarmacoGraph/blob/main/docs/api-roadmap.md)\n"
             "- [OpenAPI spec](https://github.com/drFurkanGuven/FarmacoGraph/blob/main/openapi/openapi.yaml)\n\n"
@@ -86,8 +85,8 @@ def create_app() -> FastAPI:
         return RedirectResponse(url="/docs")
 
     @app.get("/search", include_in_schema=False)
-    async def search_page() -> HTMLResponse:
-        return HTMLResponse(SEARCH_PAGE.read_text(encoding="utf-8"))
+    async def search_page() -> RedirectResponse:
+        return RedirectResponse(url="/studio/search/")
 
     @app.get("/demo-request", include_in_schema=False)
     async def demo_request_page() -> HTMLResponse:

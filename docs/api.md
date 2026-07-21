@@ -88,7 +88,7 @@ The OpenAPI file at `openapi/openapi.yaml` describes the **full contract** (impl
 | Method | Path | Notes |
 |--------|------|-------|
 | GET | `/` | Redirect to `/docs` |
-| GET | `/search` | Public HTML search page |
+| GET | `/search` | Redirect to authenticated Studio Search (`/studio/search/`) |
 | GET | `/demo-request` | Public Studio demo request form |
 | GET | `/docs` | API landing/links (root schema has no `/api/v1` operations) |
 | GET | `/api/v1/docs` | Swagger API Explorer for routed operations |

@@ -46,12 +46,10 @@ async def test_root_redirects_to_docs(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_search_page_html(client: AsyncClient):
+async def test_search_page_redirects_to_authenticated_studio_search(client: AsyncClient):
     r = await client.get("/search")
-    assert r.status_code == 200
-    assert "text/html" in r.headers["content-type"]
-    assert "FarmacoGraph" in r.text
-    assert "/api/v1/search" in r.text
+    assert r.status_code == 307
+    assert r.headers["location"] == "/studio/search/"
 
 
 @pytest.mark.asyncio

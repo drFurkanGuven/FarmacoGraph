@@ -45,7 +45,7 @@ No client — including first-party apps — accesses Neo4j or PostgreSQL direct
 | **Getting started** | [docs/getting-started.md](docs/getting-started.md) |
 | **API reference** | [docs/api.md](docs/api.md) |
 | **API roadmap** | [docs/api-roadmap.md](docs/api-roadmap.md) |
-| **Search UI** | https://farmacograph.furkanguven.space/search |
+| **Studio Search** | https://farmacograph.furkanguven.space/studio/search/ (login required) |
 | **Curation Studio** | https://farmacograph.furkanguven.space/studio/ |
 | **Curation Studio** (local) | `cd apps/studio && npm run dev` → http://localhost:3000 |
 
