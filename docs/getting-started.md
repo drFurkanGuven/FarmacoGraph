@@ -1,206 +1,165 @@
 # FarmacoGraph API — Başlangıç Rehberi
 
-> **Canlı API:** https://farmacograph.furkanguven.space  
-> **Swagger UI:** https://farmacograph.furkanguven.space/docs  
-> **OpenAPI JSON:** https://farmacograph.furkanguven.space/openapi.json
+> **Canlı API:** https://farmacograph.furkanguven.space
+>
+> **API landing:** https://farmacograph.furkanguven.space/docs
+>
+> **Swagger API Explorer:** https://farmacograph.furkanguven.space/api/v1/docs
+>
+> **Canlı OpenAPI JSON:** https://farmacograph.furkanguven.space/api/v1/openapi.json
 
-Bu rehber, `/docs` sayfasına gelen geliştiriciler ve entegratörler içindir: API’ye nasıl erişilir, hangi endpoint’ler açık, kimlik doğrulama nasıl çalışır.
+Bu rehber canlı FarmacoGraph API’sine ve Curation Studio’ya erişmek isteyen kullanıcılar içindir. Production ortamında yalnızca sağlık ve keşif uçları anonimdir; bilgi, arama ve kürasyon uçları uygun scope’a sahip kimlik bilgisi ister.
 
----
-
-## 1. Hızlı deneme (API key olmadan)
-
-**Early access** döneminde aşağıdaki **okuma** endpoint’leri anonim çalışır (geliştirme ortamı politikası):
+## 1. Kimlik doğrulamasız kontrol
 
 ```bash
-# Sağlık kontrolü
 curl -s https://farmacograph.furkanguven.space/api/v1/health | jq
-
-# Modüller
-curl -s https://farmacograph.furkanguven.space/api/v1/modules | jq
-
-# İlaç listesi (modül filtresi)
-curl -s 'https://farmacograph.furkanguven.space/api/v1/drugs?module=cardiovascular' | jq
-
-# Arama
-curl -s 'https://farmacograph.furkanguven.space/api/v1/search?q=metoprolol' | jq
+curl -s https://farmacograph.furkanguven.space/api/v1/info | jq
 ```
 
-Swagger UI’da (**Try it out**) aynı endpoint’leri doğrudan deneyebilirsin; çoğu GET isteği için **Authorize** gerekmez.
-
----
-
-## 2. API hizmeti nasıl alınır?
-
-FarmacoGraph şu an **self-hosted / erken erişim** aşamasında. Resmi self-service kayıt portalı henüz yok.
-
-| Kullanım tipi | Nasıl erişim | Durum |
-|---------------|--------------|--------|
-| **Okuma** (drugs, modules, search, health) | Anonim veya API key | Early access: anonim açık |
-| **Explain / Compare** | API key önerilir | `knowledge:explain` scope |
-| **Curator** (içerik yayınlama) | Davet + API key / JWT | `curator:write`, `curator:publish` |
-| **Kurumsal / yüksek kota** | İletişim | Planlanıyor |
-
-### API key talep etmek
-
-1. GitHub repo sahibi veya platform yöneticisi ile iletişime geç:  
-   [github.com/drFurkanGuven/FarmacoGraph](https://github.com/drFurkanGuven/FarmacoGraph)
-2. Kullanım amacını belirt (eğitim uygulaması, araştırma, entegrasyon).
-3. Size verilecek **scope** seti ve **API key** ile istek atarsın.
-
-> Self-service key üretimi (`POST /auth/api-keys`) roadmap’te; şu an manuel provisioning.
-
----
-
-## 3. Kimlik doğrulama
-
-### Bearer token (JWT veya API key)
-
-```http
-GET /api/v1/drugs HTTP/1.1
-Host: farmacograph.furkanguven.space
-Authorization: Bearer fg_xxxxxxxx_yyyyyyyy
-Accept: application/json
-```
-
-`curl` örneği:
+Production’da aşağıdaki gibi korumalı bir istek kimlik bilgisi olmadan `401 Unauthorized` döndürür:
 
 ```bash
-export FG_API_KEY="fg_xxxxxxxx_yyyyyyyy"
-curl -s -H "Authorization: Bearer $FG_API_KEY" \
-  https://farmacograph.furkanguven.space/api/v1/drugs
+curl -i https://farmacograph.furkanguven.space/api/v1/modules
 ```
 
-Swagger UI’da: sağ üst **Authorize** → `Bearer <token>` yapıştır.
+Geliştirme ve test ortamlarında `FG_ALLOW_ANONYMOUS_READ=true` ise bazı read/search/explain uçları anonim çalışabilir. Production ayar doğrulaması bu seçeneği zorunlu olarak kapatır.
 
-### Scope’lar (izinler)
+## 2. Studio demo erişimi
 
-| Scope | Ne yapar |
-|-------|----------|
-| `knowledge:read` | İlaçlar, modüller, istatistik |
+Salt-okunur Studio değerlendirme hesabı için:
+
+1. https://farmacograph.furkanguven.space/demo-request sayfasını aç.
+2. Ad, e-posta, kurum ve kullanım amacını gönder.
+3. Yönetici onayından sonra oluşturulan geçici kullanıcı bilgilerini yöneticiden al.
+4. https://farmacograph.furkanguven.space/studio/login/ adresinden giriş yap.
+
+Onaylanan demo hesapları `viewer` rolüyle oluşturulur. `knowledge:read`, `knowledge:search` ve `education:read` scope’larına sahiptir; entity ID’lerini, taslakları, kullanıcıları veya API key’leri değiştiremez ve yayın yapamaz.
+
+## 3. API ve küratör erişimi
+
+FarmacoGraph self-hosted/erken erişim aşamasındadır. Genel kullanıma açık self-service hesap veya API key kayıt portalı yoktur.
+
+| Kullanım | Erişim yöntemi | Gerekli izin |
+|----------|----------------|--------------|
+| Health ve discovery | Anonim | Yok |
+| Bilgi okuma | Yönetici tarafından oluşturulan hesap/API key | `knowledge:read` |
+| Arama | Hesap/API key | `knowledge:search` |
+| Explain | Hesap/API key | `knowledge:explain` |
+| Eğitim içeriği | Hesap/API key | `education:read` |
+| Draft düzenleme | Küratör daveti | `curator:write` |
+| Onay ve yayınlama | Reviewer/yönetici daveti | `curator:publish` |
+| Kullanıcı ve key yönetimi | Yönetici hesabı | `admin:org` |
+
+API erişimi için repository yöneticisiyle iletişime geçip kullanım amacını ve gereken scope’ları belirt. Yöneticiler Studio’daki **Users** ekranından kullanıcı ve API key oluşturabilir. Tam API key yalnızca oluşturulduğu anda bir kez gösterilir.
+
+## 4. Token alma
+
+### E-posta ve parola
+
+```bash
+curl -s -X POST https://farmacograph.furkanguven.space/api/v1/auth/token \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "grant_type": "password",
+    "username": "user@example.org",
+    "password": "your-password"
+  }' | jq
+```
+
+### API key’i JWT ile değiştirme
+
+```bash
+curl -s -X POST https://farmacograph.furkanguven.space/api/v1/auth/token \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "grant_type": "api_key",
+    "api_key": "fg_..."
+  }' | jq
+```
+
+Her iki akış da `access_token`, `refresh_token`, süre ve scope listesini doğrudan JSON nesnesi olarak döndürür.
+
+## 5. Yetkili istek gönderme
+
+JWT access token:
+
+```bash
+export FG_ACCESS_TOKEN='eyJ...'
+curl -s \
+  -H "Authorization: Bearer ${FG_ACCESS_TOKEN}" \
+  https://farmacograph.furkanguven.space/api/v1/modules | jq
+```
+
+Ham API key iki şekilde kullanılabilir:
+
+```bash
+export FG_API_KEY='fg_...'
+
+curl -s -H "Authorization: Bearer ${FG_API_KEY}" \
+  https://farmacograph.furkanguven.space/api/v1/drugs | jq
+
+curl -s -H "X-API-Key: ${FG_API_KEY}" \
+  https://farmacograph.furkanguven.space/api/v1/drugs | jq
+```
+
+`/api/v1/docs` Swagger UI’daki **Authorize** alanına JWT veya API key girerken `Bearer ` önekini arayüz kendisi ekler; alana yalnızca token/key değerini yapıştır. Kök `/docs` landing sayfasıdır ve API operasyonlarını listelemez.
+
+Refresh token korumalı API çağrılarında Bearer olarak kullanılamaz. Yeni token çifti almak için:
+
+```bash
+curl -s -X POST https://farmacograph.furkanguven.space/api/v1/auth/refresh \
+  -H 'Content-Type: application/json' \
+  -d '{"refresh_token":"eyJ..."}' | jq
+```
+
+## 6. Scope’lar
+
+| Scope | Yetki |
+|-------|-------|
+| `knowledge:read` | Dashboard, drugs, diseases, modules ve statistics |
 | `knowledge:search` | `/search` |
-| `knowledge:explain` | `/explain`, `/compare` |
-| `education:read` | Öğrenme grafiği endpoint’leri |
-| `curator:write` | Curator workflow (draft, submit) |
-| `curator:publish` | Onay ve publish |
-| `admin:org` | Tüm scope’lar (yönetici) |
+| `knowledge:explain` | `/explain` |
+| `education:read` | Eğitim/öğrenme içeriği |
+| `graph:query` | İzin verilen graph sorguları |
+| `curator:write` | Draft oluşturma, düzenleme, doğrulama ve submit |
+| `curator:publish` | Review, approve ve publish |
+| `admin:org` | Kullanıcı yönetimi ve tüm scope’lar |
+| `admin:api_keys` | API key yönetimi için ek yönetim yetkisi |
 
----
+Yetersiz scope ile yapılan kimliği doğrulanmış istek `403 Forbidden`; kimlik bilgisi olmayan korumalı istek `401 Unauthorized` döndürür.
 
-## 4. Base URL ve sürümleme
+## 7. Base URL ve yanıtlar
 
 | Öğe | Değer |
-|-----|--------|
+|-----|-------|
 | Base URL | `https://farmacograph.furkanguven.space/api/v1` |
-| API sürümü | `v1` (URL prefix) |
-| Dataset sürümü | Response `meta.dataset_version` (ör. `2026.1.0`) |
-| Ontology | `meta.ontology_version` (ör. `1.0.0`) |
+| API sürümü | `v1` |
+| Dataset sürümü | Uygun yanıtlardaki `meta.dataset_version` |
+| Ontology sürümü | Uygun yanıtlardaki `meta.ontology_version` |
 
-Dataset sürümü snapshot yayınlarıyla güncellenir; client’lar `meta.dataset_version` ile hangi bilgi kümesini okuduklarını bilir.
+Çoğu domain endpoint’i `{ "data": ..., "meta": ... }` zarfı kullanır. Auth endpoint’leri (`/auth/token`, `/auth/refresh`, `/auth/introspect`) response modelini doğrudan döndürür. FastAPI doğrulama ve yetki hataları `{ "detail": ... }`; bazı domain hataları `{ "error": ... }` şeklinde olabilir.
 
----
+## 8. Rate limiting durumu
 
-## 5. Yanıt formatı
+Rate-limit ayarları tanımlıdır ancak uygulama middleware’i henüz devrede değildir. Belgelerdeki istek/dakika değerleri hedef kapasitedir; production garantisi veya aktif kota olarak değerlendirilmemelidir. Şu anda `429`/`Retry-After` davranışına güvenen client mantığı kurma.
 
-Tüm endpoint’ler JSON envelope kullanır:
-
-```json
-{
-  "data": { },
-  "meta": {
-    "api_version": "v1",
-    "dataset_version": "2026.1.0"
-  }
-}
-```
-
-Hata:
-
-```json
-{
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "..."
-  }
-}
-```
-
----
-
-## 6. Rate limit (planlanan / varsayılan)
-
-| Kimlik | Limit |
-|--------|--------|
-| Anonim | ~30 istek/dk |
-| JWT / API key | ~300–1000 istek/dk |
-| Kurumsal | Özel kota |
-
-`429 Too Many Requests` dönerse `Retry-After` header’ına bak veya key tier yükselt.
-
----
-
-## 7. Entegrasyon yolları
-
-### curl / HTTP
-
-Yukarıdaki örnekler yeterli.
-
-### Python (gelecek SDK)
-
-```python
-# Planlanan — openapi-generator ile
-from farmacograph import Client
-
-client = Client(
-    base_url="https://farmacograph.furkanguven.space",
-    api_key="fg_...",
-)
-drugs = client.drugs.list(module="cardiovascular")
-```
-
-Şimdilik: `httpx` + OpenAPI spec veya Swagger’dan üretilen client.
-
-### OpenAPI ile client üretme
+## 9. Client üretme
 
 ```bash
-curl -o openapi.yaml https://farmacograph.furkanguven.space/openapi.json
-# openapi-generator-cli generate -i openapi.yaml -g python -o ./client
+curl -o openapi.json https://farmacograph.furkanguven.space/api/v1/openapi.json
+# openapi-generator-cli generate -i openapi.json -g python -o ./client
 ```
 
----
+Resmi Python/TypeScript SDK henüz yayınlanmadı. Şimdilik `httpx`, `fetch` veya OpenAPI tabanlı üretilen client kullanılabilir.
 
-## 8. Swagger UI kullanımı
+## 10. Lisans ve destek
 
-1. https://farmacograph.furkanguven.space/docs adresine git
-2. Endpoint seç → **Try it out**
-3. Parametreleri doldur → **Execute**
-4. Key gerekiyorsa **Authorize** (sağ üst kilit ikonu)
+| Öğe | Lisans/durum |
+|-----|---------------|
+| Kaynak kod | [GNU GPLv3](../LICENSE) |
+| Dokümantasyon ve özgün kürasyon içeriği | CC BY 4.0 |
+| Üretilen dataset’ler | Kaynak bazlı; bkz. [licensing.md](licensing.md) |
+| Sorular | GitHub Issues veya repository yöneticisi |
 
-**Curator** endpoint’leri (`/api/v1/curator/*`) içerik yayınlama içindir; genel entegratörler için değil.
-
----
-
-## 9. Destek ve lisans
-
-| | |
-|---|---|
-| Kod | Apache 2.0 |
-| Dokümantasyon | CC BY 4.0 |
-| Tıbbi içerik | Eğitim amaçlı; klinik karar için resmi kaynaklara başvur |
-| Sorular | GitHub Issues (private deployment için repo sahibi) |
-
----
-
-## 10. Sık sorulan sorular
-
-**API key olmadan ne kullanabilirim?**  
-Early access: `health`, `modules`, `drugs`, `search`, `statistics` (GET).
-
-**Veri ne zaman dolacak?**  
-Cardiovascular modülü kürasyon aşamasında; `dataset_version: unpublished` → `2026.1.0` snapshot ile güncellenir.
-
-**Neo4j’ye doğrudan bağlanabilir miyim?**  
-Hayır. API-first mimari — tüm erişim REST üzerinden.
-
-**Production’da anonim erişim kapanacak mı?**  
-Evet, planlanan: read için ücretsiz tier API key veya kayıt.
+FarmacoGraph eğitim amaçlıdır; klinik karar desteği yerine kullanılmamalıdır.

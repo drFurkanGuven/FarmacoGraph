@@ -37,9 +37,10 @@ class InfoService:
             "published_drugs": published_drugs,
             "neo4j": "connected" if self._graph.is_available else "disabled",
             "documentation": {
-                "swagger": "/docs",
-                "redoc": "/redoc",
-                "openapi": "/openapi.json",
+                "landing": "/docs",
+                "swagger": "/api/v1/docs",
+                "redoc": "/api/v1/redoc",
+                "openapi": "/api/v1/openapi.json",
                 "getting_started": (
                     "https://github.com/drFurkanGuven/FarmacoGraph/blob/main/docs/getting-started.md"
                 ),

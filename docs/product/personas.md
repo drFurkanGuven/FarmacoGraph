@@ -1,12 +1,12 @@
 # FarmacoGraph User Personas
 
-> Product-facing view of platform users. Infrastructure implements permission scopes per persona.
+> Product-facing view of platform users. Infrastructure implements permission scopes per persona. Rate-limit tiers below are product targets; enforcement middleware is not yet live.
 
 ## Persona Summary
 
-| Persona | Primary APIs | Auth | Rate limit |
+| Persona | Primary APIs | Auth | Target rate limit (future) |
 |---------|-------------|------|------------|
-| Medical Student | Core, Education, Search, Explain | Optional / workspace | 300/min |
+| Medical Student | Core, Education, Search, Explain | Viewer/workspace account | 300/min |
 | Medical Educator | Core, Education, Analytics | Curator role | 1000/min |
 | Researcher | Core, Graph, Search, Snapshots | API key | 1000/min |
 | Developer | All public APIs | API key | 1000–10000/min |

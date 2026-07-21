@@ -19,8 +19,8 @@ info:
     - `full` — all properties
     - `graph` — subgraph projection
   license:
-    name: Apache 2.0
-    url: https://www.apache.org/licenses/LICENSE-2.0
+    name: GNU General Public License v3.0
+    identifier: GPL-3.0-only
   contact:
     name: FarmacoGraph
     url: https://farmacograph.org

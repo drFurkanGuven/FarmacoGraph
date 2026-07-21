@@ -32,7 +32,7 @@ It is ontology-first infrastructure that stores biomedical knowledge as **normal
 | Ontology | **Defined before database implementation** |
 | Dataset rollout | **Organ-system modules**, complete before advancing |
 | Terminology | **Open standards first** (ATC, RxNorm, ICD-10, LOINC, MeSH) |
-| Code license | Apache 2.0 |
+| Code license | GNU GPLv3 |
 | Documentation license | CC BY 4.0 |
 | **Platform model** | **API-first; database is implementation detail** |
 | **Multi-tenant** | **Ready (organizations, workspaces, API keys)** |

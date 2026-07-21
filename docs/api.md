@@ -3,23 +3,30 @@
 > **Version:** 1.1.0  
 > REST API for graph queries, explainability, and curation
 
-**Live docs:** https://farmacograph.furkanguven.space/docs  
-**Getting started:** [getting-started.md](getting-started.md)  
+**API landing:** https://farmacograph.furkanguven.space/docs
+
+**Swagger API Explorer:** https://farmacograph.furkanguven.space/api/v1/docs
+
+**Getting started:** [getting-started.md](getting-started.md)
 **API roadmap:** [api-roadmap.md](api-roadmap.md)
 
 ---
 
 ## Implementation status
 
-The OpenAPI file at `openapi/openapi.yaml` describes the **full contract** (implemented + planned). FastAPI serves the live spec at `/openapi.json`.
+The OpenAPI file at `openapi/openapi.yaml` describes the **full contract** (implemented + planned). FastAPI serves the routed live spec at `/api/v1/openapi.json`.
 
-### Implemented endpoints (32 routes)
+### Implemented endpoints
 
 | Method | Path | Auth scope | Notes |
 |--------|------|------------|-------|
 | POST | `/api/v1/auth/token` | Public | Issue JWT (`password` or `api_key` grant) |
 | POST | `/api/v1/auth/refresh` | Public | Refresh access token |
 | POST | `/api/v1/auth/introspect` | Public | Introspect JWT or API key (scopes, roles, identity) |
+| POST | `/api/v1/demo-requests` | Public | Submit Studio demo access request |
+| GET | `/api/v1/demo-requests` | `admin:org` | List demo requests |
+| POST | `/api/v1/demo-requests/{id}/approve` | `admin:org` | Create read-only viewer account; temporary password once |
+| POST | `/api/v1/demo-requests/{id}/reject` | `admin:org` | Reject pending demo request |
 | GET | `/api/v1/info` | Public | API discovery |
 | GET | `/api/v1/health` | Public | Health check |
 | GET | `/api/v1/dashboard` | `knowledge:read` | Studio ops dashboard |
@@ -82,12 +89,14 @@ The OpenAPI file at `openapi/openapi.yaml` describes the **full contract** (impl
 |--------|------|-------|
 | GET | `/` | Redirect to `/docs` |
 | GET | `/search` | Public HTML search page |
-| GET | `/docs` | Swagger UI |
+| GET | `/demo-request` | Public Studio demo request form |
+| GET | `/docs` | API landing/links (root schema has no `/api/v1` operations) |
+| GET | `/api/v1/docs` | Swagger API Explorer for routed operations |
 | GET | `/metrics` | Prometheus (if `FG_METRICS_ENABLED=true`) |
 
 ### Planned (in OpenAPI, not yet routed)
 
-Entity endpoints (`/drug-classes`, `/diseases`, `/pathways/{id}`, …), clinical queries (`/interactions`), education (`/flashcards`, `/cases`), graph projection (`/drugs/{id}/graph`, `POST /graph/query`), version management (`/version`), and AI endpoints (`POST /rag`, `POST /tutor`).
+Additional entity endpoints (`/drug-classes`, `/pathways/{id}`, …), clinical queries (`/interactions`), education (`/flashcards`, `/cases`), generic graph queries (`POST /graph/query`), version management (`/version`), and AI endpoints (`POST /rag`, `POST /tutor`). Disease endpoints and drug graph/mechanism projections are already routed.
 
 > **Note:** Core evidence CRUD, UUID drug evidence routes under `/drugs/{drug_id}/evidence`, curator slug routes under `/curator/drugs/{slug}/evidence`, and evidence-centric attach routes under `/evidence/{evidence_id}/drugs/{drug_id}` are **implemented** — see [§1.4](#14-evidence-workflow-status).
 
@@ -115,7 +124,7 @@ Entity endpoints (`/drug-classes`, `/diseases`, `/pathways/{id}`, …), clinical
 | Graph backend | Neo4j (read queries) |
 | Metadata backend | PostgreSQL (versions, audit) |
 
-OpenAPI documentation auto-generated via FastAPI at `/docs`.
+OpenAPI documentation for routed API operations is auto-generated via FastAPI at `/api/v1/docs`. Root `/docs` is the project/API landing page.
 
 **New to the API?** Read [Getting Started](getting-started.md) — how to access the service, authentication, scopes, and examples.
 
@@ -180,8 +189,8 @@ Alternatively, send `Authorization: Bearer …` or `X-API-Key` header.
   "email": "curator@example.org",
   "name": "Curator Name",
   "auth_method": "jwt",
-  "token_type": "access",
-  "expires_at": "2026-07-08T12:00:00Z"
+  "token_type": "bearer",
+  "expires_at": 1783502400
 }
 ```
 
@@ -866,7 +875,7 @@ Full RAG pipeline endpoint for LLM consumers.
 
 ## 13. Rate Limiting (Future)
 
-Tracked in PostgreSQL `api_statistics`. Default: 100 req/min anonymous, 1000 req/min authenticated.
+Configuration values exist, but the rate-limit middleware and usage accounting are not implemented. No active per-minute quota or `Retry-After` contract is currently guaranteed.
 
 ---
 

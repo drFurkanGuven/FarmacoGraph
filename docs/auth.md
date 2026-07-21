@@ -32,20 +32,18 @@ curl -s -X POST http://127.0.0.1:8001/api/v1/auth/introspect \
   -d '{}' | jq
 ```
 
-Response envelope:
+Response (auth endpoints return their response model directly, without a `data` envelope):
 
 ```json
 {
-  "data": {
-    "authenticated": true,
-    "user_id": "...",
-    "email": "curator@farmacograph.local",
-    "roles": ["curator"],
-    "scopes": ["curator:write", "curator:publish", "knowledge:read"],
-    "auth_method": "jwt",
-    "expires_at": "2026-07-08T12:00:00+00:00"
-  },
-  "meta": { "api_version": "v1" }
+  "active": true,
+  "user_id": "...",
+  "email": "curator@farmacograph.local",
+  "roles": ["curator"],
+  "scopes": ["curator:write", "curator:publish", "knowledge:read"],
+  "token_type": "bearer",
+  "auth_method": "jwt",
+  "expires_at": 1783502400
 }
 ```
 
@@ -55,10 +53,15 @@ Response envelope:
 |-------|----------|
 | `knowledge:read` | Dashboard, drugs, modules |
 | `knowledge:search` | Search |
+| `knowledge:explain` | Explain endpoint |
+| `education:read` | Education and learning endpoints |
 | `curator:write` | Drug browser, editor autosave, validate, submit |
 | `curator:publish` | Approve and publish workflows |
+| `admin:org` | User management and administrator override |
 
 Anonymous requests to curator mutation endpoints receive **401**.
+
+Production also disables anonymous knowledge reads. Only `/health`, `/info`, auth endpoints, the demo request form, and documentation surfaces are public. Development/test may allow anonymous read scopes when `FG_ALLOW_ANONYMOUS_READ=true`.
 
 ## Production
 
@@ -94,6 +97,10 @@ Administrators (`admin:org`) manage accounts in Studio at `/users`, backed by:
 | GET/PATCH | `/api/v1/users/{id}` | Detail / update role, password, active |
 | GET/POST | `/api/v1/users/{id}/api-keys` | List / create API keys (full `fg_…` secret once) |
 | POST | `/api/v1/users/{id}/api-keys/{key_id}/revoke` | Soft-revoke |
+
+## Demo access approval (live)
+
+Anyone may submit a request at `/demo-request` (`POST /api/v1/demo-requests`). Listing, approving, and rejecting requests require `admin:org`. Approval creates a `viewer` account with only `knowledge:read`, `knowledge:search`, and `education:read`; the temporary password is returned once to the administrator.
 
 If login succeeds but API calls still 401, the browser may hold a JWT signed with an old `FG_JWT_SECRET_KEY`. Clear site data for the origin or use a private window.
 

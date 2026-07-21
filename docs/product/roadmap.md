@@ -32,7 +32,7 @@ gantt
 | PostgreSQL ops schema | ✅ Complete |
 | Neo4j init + service layer | ✅ Complete |
 | FastAPI core endpoints (25 routes) | ✅ Complete |
-| Auth utilities (JWT scopes) | ✅ Partial — API key HTTP validation pending |
+| Auth (JWT, API key validation, refresh, introspect) | ✅ Complete |
 | Event bus + jobs | ✅ Complete |
 | CI/CD + Docker Compose | ✅ Complete |
 | Curation Studio 4.1 | ✅ Complete |

@@ -163,7 +163,7 @@ See [api.md §1.3](api.md#13-curator-publish-workflow) and [studio-roadmap.md](s
 
 - [x] Open Studio, navigate all sections
 - [x] Authenticate via `/login` or Settings (JWT/API key)
-- [x] Dashboard from public API
+- [x] Dashboard from the authenticated REST API
 - [x] Review queue visible
 - [x] Module progress visible
 - [x] Connected surfaces for future editors — education/mechanism/graph routes link back into Drug Editor, Evidence, and Validation

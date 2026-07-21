@@ -37,7 +37,8 @@ No client — including first-party apps — accesses Neo4j or PostgreSQL direct
 
 | | |
 |---|---|
-| **Docs (Swagger)** | https://farmacograph.furkanguven.space/docs |
+| **API landing** | https://farmacograph.furkanguven.space/docs |
+| **Swagger API Explorer** | https://farmacograph.furkanguven.space/api/v1/docs |
 | **Health** | https://farmacograph.furkanguven.space/api/v1/health |
 | **Discovery** | `GET /api/v1/info` |
 | **Auth** | `POST /api/v1/auth/token`, `POST /api/v1/auth/refresh`, `POST /api/v1/auth/introspect` |
@@ -48,7 +49,7 @@ No client — including first-party apps — accesses Neo4j or PostgreSQL direct
 | **Curation Studio** | https://farmacograph.furkanguven.space/studio/ |
 | **Curation Studio** (local) | `cd apps/studio && npm run dev` → http://localhost:3000 |
 
-Early access: read endpoints can be tried without an API key. Keys and institutional access → [getting-started guide](docs/getting-started.md).
+Production requires authentication for knowledge, search, explain, education, and curation endpoints. Health/discovery remain public; demo, API key, and institutional access → [getting-started guide](docs/getting-started.md).
 
 ## Quick Start
 
@@ -77,7 +78,7 @@ In another terminal:
 ```bash
 docker compose up -d
 # API:    http://localhost:8001/docs
-# Studio: http://localhost:3001
+# Studio: http://localhost:3001/studio/
 # Neo4j:  http://localhost:7474 (neo4j / farmacograph)
 ```
 

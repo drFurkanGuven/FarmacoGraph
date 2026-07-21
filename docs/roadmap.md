@@ -212,7 +212,7 @@ gantt
 | 2026-07 | ADR-005 | Education layer separation | Prevent mnemonic/fact confusion |
 | 2026-07 | ADR-006 | Open terminology first | SNOMED/MedDRA as plugins |
 | 2026-07 | ADR-007 | Module-based rollout | Quality over quantity |
-| 2026-07 | ADR-008 | Apache 2.0 + CC BY 4.0 | Open platform, attribution |
+| 2026-07 | ADR-008 | GNU GPLv3 code + CC BY 4.0 docs/content | Copyleft platform, attribution datasets |
 | 2026-07 | ADR-010 | API is the only public interface | Platform, not database |
 | 2026-07 | ADR-020 | Curation Studio as primary UI | JSON/scripts are bootstrap only |
 

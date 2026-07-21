@@ -156,7 +156,7 @@ flowchart LR
 
 Phase 4.1 wired endpoints: `/health`, `/info`, `/statistics`, `/modules/{slug}/curriculum`, `/curator/queue`, `/drugs`, `/search`, `/dashboard`.
 
-Phase 4.2+ (planned UI): drug list/editor, validation center, publish wizard — API client methods exist; feature pages are placeholders.
+Current Studio UI: drug and disease browsers/editors, validation center, Evidence Manager, publish wizard, snapshots, graph/mechanism previews, and administrator user management are live. Full mechanism pathway authoring, snapshot diff, and AI drafting remain planned.
 
 ---
 

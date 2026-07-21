@@ -7,7 +7,7 @@ name = "farmacograph"
 version = "0.1.0"
 description = "Explainable biomedical knowledge graph for medical education"
 readme = "README.md"
-license = "Apache-2.0"
+license = "GPL-3.0-only"
 requires-python = ">=3.9"
 authors = [{ name = "FarmacoGraph Contributors" }]
 keywords = ["pharmacology", "knowledge-graph", "medical-education", "neo4j", "ontology"]
@@ -15,7 +15,7 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Healthcare Industry",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: Apache Software License",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Medical Science Apps.",

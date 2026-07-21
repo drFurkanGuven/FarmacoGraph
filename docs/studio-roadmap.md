@@ -226,11 +226,11 @@ sequenceDiagram
 | Client guard | `AuthGate` — scope/role checks per route |
 | API headers | `Authorization: Bearer <token\|apiKey>`, optional `X-API-Key` |
 
-**Protected routes:** `/knowledge/*` and `/validation` require `curator:write`; `/snapshots` requires `curator:publish`; `/users` requires `administrator` role.
+**Protected routes:** `/knowledge/*`, `/validation`, and `/graph` require `curator:write`; `/snapshots` requires `curator:publish`; `/users` requires `administrator`; dashboard/search support limited viewer accounts with their respective read/search scopes.
 
-**Fallback:** If auth endpoints return 404/501 (older API builds), API key login stores a client-only session with default curator scopes; password login prompts for Settings/manual JWT.
+**Compatibility fallback:** Older API builds may fall back to a client-only API-key session. Current production exposes `/auth/token`, `/auth/refresh`, and `/auth/introspect`; normal deployments should use the server-issued session.
 
-**API keys:** Format `fg_{prefix}_{secret}`. Exchange via `grant_type: api_key` on `/auth/token`, or send directly as `Authorization: Bearer fg_…` or `X-API-Key` header. Keys are stored as prefix + SHA-256 hash in PostgreSQL — no self-service key management UI yet.
+**API keys:** Format `fg_{prefix}_{secret}`. Exchange via `grant_type: api_key` on `/auth/token`, or send directly as `Authorization: Bearer fg_…` or `X-API-Key` header. Keys are stored as prefix + SHA-256 hash in PostgreSQL. Administrators issue/revoke them in Studio `/users`; there is no public self-registration portal.
 
 Key files: `apps/studio/src/lib/auth/`, `apps/studio/src/middleware.ts`
 

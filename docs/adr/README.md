@@ -26,7 +26,7 @@ No per-decision markdown files exist yet. When a decision needs extended rationa
 | ADR-005 | Education layer separation | Prevent mnemonic/fact confusion | [roadmap.md](../roadmap.md) |
 | ADR-006 | Open terminology first | SNOMED/MedDRA as plugins | [roadmap.md](../roadmap.md) |
 | ADR-007 | Module-based rollout | Quality over quantity | [roadmap.md](../roadmap.md) |
-| ADR-008 | Apache 2.0 + CC BY 4.0 | Open platform, attribution datasets | [roadmap.md](../roadmap.md) |
+| ADR-008 | GNU GPLv3 code + CC BY 4.0 docs/content | Copyleft platform, attribution datasets | [roadmap.md](../roadmap.md) |
 | ADR-009 | Hybrid Neo4j + PostgreSQL | Knowledge vs operations split | [architecture.md](../architecture.md#3-hybrid-database-architecture) |
 
 ---

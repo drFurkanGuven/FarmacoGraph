@@ -58,6 +58,7 @@ def create_app() -> FastAPI:
             "Explainable biomedical knowledge platform for medical education. "
             "**The API is the product.**\n\n"
             "### Links\n"
+            "- [**Swagger API Explorer**](/api/v1/docs) — live `/api/v1` operations\n"
             "- [**Curation Studio**](/studio/) — primary curator interface (knowledge authoring)\n"
             "- [**Request a Studio demo account**](/demo-request) — administrator-approved, read-only access\n"
             "- [Search UI](/search) — public drug search\n"
@@ -67,9 +68,9 @@ def create_app() -> FastAPI:
             "### Base URL\n"
             "`/api/v1`\n\n"
             "### Authentication\n"
-            "Early access: read endpoints work without a key. "
-            "For API keys and higher rate limits, see **Getting Started**. "
-            "Use `Authorization: Bearer <token>` in Swagger **Authorize**."
+            "Production knowledge endpoints require a scoped account, JWT, or API key. "
+            "Health and API discovery remain public. For demo and API access, see **Getting Started**. "
+            "Use a scoped credential in the [Swagger API Explorer](/api/v1/docs) **Authorize** dialog."
         ),
         lifespan=lifespan,
         docs_url="/docs",

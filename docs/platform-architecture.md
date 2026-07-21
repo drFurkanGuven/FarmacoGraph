@@ -429,11 +429,11 @@ flowchart LR
 
 ### API endpoints
 
-- `GET /search?q=` — hybrid search (future)
+- `GET /search?q=` — live through the configured search provider (Neo4j provider when enabled)
 - `GET /search/autocomplete?q=` — prefix suggestions
 - `GET /search/suggest?q=` — did-you-mean + abbreviations
 
-Search provider is a **plugin** — core defines interface only.
+The search provider is plugin-oriented. Basic search is live; autocomplete, suggestions, and a dedicated full-text/vector provider remain future work.
 
 ---
 

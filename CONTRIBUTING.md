@@ -153,7 +153,7 @@ Breaking changes require discussion in an issue before implementation.
 
 By contributing, you agree that your contributions are licensed under:
 
-- **Code:** Apache License 2.0
+- **Code:** GNU General Public License v3.0 (GPLv3)
 - **Documentation:** Creative Commons Attribution 4.0 (CC BY 4.0)
 
 See [docs/licensing.md](docs/licensing.md).

@@ -17,8 +17,8 @@ FarmacoGraph uses a tiered licensing approach that keeps the platform open while
 
 All FarmacoGraph application code, ontology definitions, validators, API, and CLI:
 * Commercial use allowed (but derivative works must be open source)
-* Modification allowed (must be released under GPLv3)
-* Distribution allowed (source code must be provided)
+* Modification allowed; GPL obligations apply when a covered/derivative work is conveyed
+* Distribution allowed when the corresponding source and GPLv3 notices are provided
 * Patent grant included
 * Requires attribution, state changes, and disclose source
 
@@ -31,7 +31,7 @@ All files in `docs/`, architecture diagrams, and README:
 * No additional restrictions
 * Suitable for academic citation
 
-File: `docs/LICENSE` (CC BY 4.0)
+The documentation/content license declaration is maintained in this file; the canonical CC BY 4.0 terms are at https://creativecommons.org/licenses/by/4.0/.
 
 ## 4. Dataset Licensing
 
@@ -87,7 +87,7 @@ License choices are designed to avoid blocking future integrations:
 
 | Integration | Compatible? |
 | :--- | :--- |
-| **Commercial medical education apps** | Yes, but only if they are fully open-sourced under GPLv3 |
+| **Commercial medical education apps** | Yes. A separate client consuming the REST API is not automatically covered; distributed FarmacoGraph derivatives remain GPLv3 |
 | **Academic research** | Yes |
 | **Anki deck generators** | Yes (with attribution) |
 | **Clinical decision support (future)** | Yes — separate liability disclaimer required |
