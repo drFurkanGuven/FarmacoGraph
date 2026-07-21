@@ -56,6 +56,8 @@ def create_app() -> FastAPI:
         description=(
             "Explainable biomedical knowledge platform for medical education. "
             "**The API is the product.**\n\n"
+            "[![FarmacoGraph on Product Hunt](https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1202537&theme=light)]"
+            "(https://www.producthunt.com/products/farmacograph?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-farmacograph)\n\n"
             "### Links\n"
             "- [**Swagger API Explorer**](/api/v1/docs) — live `/api/v1` operations\n"
             "- [**Curation Studio**](/studio/) — primary curator interface (knowledge authoring)\n"
