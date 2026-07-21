@@ -10,7 +10,7 @@ services:
       POSTGRES_PASSWORD: farmacograph
       POSTGRES_DB: farmacograph
     ports:
-      - "${FG_HOST_PG_PORT:-5433}:5432"
+      - "127.0.0.1:${FG_HOST_PG_PORT:-5433}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -26,8 +26,8 @@ services:
       NEO4J_AUTH: neo4j/farmacograph
       NEO4J_PLUGINS: '[]'
     ports:
-      - "${FG_HOST_NEO4J_HTTP_PORT:-7474}:7474"
-      - "${FG_HOST_NEO4J_BOLT_PORT:-7687}:7687"
+      - "127.0.0.1:${FG_HOST_NEO4J_HTTP_PORT:-7474}:7474"
+      - "127.0.0.1:${FG_HOST_NEO4J_BOLT_PORT:-7687}:7687"
     volumes:
       - neo4jdata:/data
     healthcheck:
@@ -59,7 +59,7 @@ services:
       FG_MECHANISM_CATALOG_PATH: ${FG_MECHANISM_CATALOG_PATH:-/app/data/catalog/mechanisms.runtime.json}
       FG_DRUG_CATALOG_PATH: ${FG_DRUG_CATALOG_PATH:-/app/data/catalog/drugs.runtime.json}
     ports:
-      - "${FG_HOST_API_PORT:-8001}:8000"
+      - "127.0.0.1:${FG_HOST_API_PORT:-8001}:8000"
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health')\""]
       interval: 15s
@@ -95,7 +95,7 @@ services:
       api:
         condition: service_healthy
     ports:
-      - "${FG_HOST_STUDIO_PORT:-3001}:3000"
+      - "127.0.0.1:${FG_HOST_STUDIO_PORT:-3001}:3000"
     environment:
       NODE_ENV: production
       PORT: 3000
