@@ -31,7 +31,9 @@ async def client():
     container = get_container()
     await container.startup()
     transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test", follow_redirects=False) as ac:
+    async with AsyncClient(
+        transport=transport, base_url="http://test", follow_redirects=False
+    ) as ac:
         yield ac
     await container.shutdown()
 
@@ -50,3 +52,11 @@ async def test_search_page_html(client: AsyncClient):
     assert "text/html" in r.headers["content-type"]
     assert "FarmacoGraph" in r.text
     assert "/api/v1/search" in r.text
+
+
+@pytest.mark.asyncio
+async def test_demo_request_page_html(client: AsyncClient):
+    r = await client.get("/demo-request")
+    assert r.status_code == 200
+    assert "Request Curation Studio demo access" in r.text
+    assert "/api/v1/demo-requests" in r.text

@@ -31,6 +31,7 @@ echo "→ Checking required operational tables..."
 REQUIRED_TABLES=(
   users
   user_roles
+  demo_access_requests
   api_keys
   audit_logs
   jobs

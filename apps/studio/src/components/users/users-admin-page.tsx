@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { KeyRound, Plus, RefreshCw, Shield, UserPlus } from "lucide-react";
+import { Check, KeyRound, Plus, RefreshCw, Shield, UserPlus, X } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,16 +22,128 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TableSkeleton } from "@/components/ui/loading-skeleton";
 import { ApiError } from "@/lib/api";
-import type { AdminApiKey, AdminUser } from "@/lib/api";
+import type { AdminApiKey, AdminUser, DemoAccessRequest } from "@/lib/api";
 import { apiQueryKeys } from "@/lib/api/react-query/keys";
 import { useApiQuery } from "@/lib/api/react-query/optimistic";
 import { useApiClient } from "@/lib/hooks/use-api-client";
 
 const ROLE_OPTIONS = [
+  { value: "viewer", label: "Viewer (read only)" },
   { value: "curator", label: "Curator" },
   { value: "reviewer", label: "Reviewer" },
   { value: "administrator", label: "Administrator" },
 ] as const;
+
+function DemoRequestQueue({ onApproved }: { onApproved: (userId: string) => void }) {
+  const client = useApiClient();
+  const queryClient = useQueryClient();
+  const [processing, setProcessing] = useState<string | null>(null);
+  const [credentials, setCredentials] = useState<DemoAccessRequest | null>(null);
+  const requestsQuery = useApiQuery(apiQueryKeys.demoRequests("pending"), () =>
+    client.listDemoRequests("pending"),
+  );
+  const requests = requestsQuery.data?.data ?? [];
+
+  async function approve(request: DemoAccessRequest) {
+    setProcessing(request.id);
+    try {
+      const result = await client.approveDemoRequest(request.id);
+      setCredentials(result.data);
+      await requestsQuery.refetch();
+      await queryClient.invalidateQueries({ queryKey: [...apiQueryKeys.all, "users"] });
+      if (result.data.user_id) onApproved(result.data.user_id);
+      toast.success("Read-only demo account approved");
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : "Approval failed");
+    } finally {
+      setProcessing(null);
+    }
+  }
+
+  async function reject(request: DemoAccessRequest) {
+    setProcessing(request.id);
+    try {
+      await client.rejectDemoRequest(request.id);
+      await requestsQuery.refetch();
+      toast.success("Demo request rejected");
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : "Rejection failed");
+    } finally {
+      setProcessing(null);
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">Demo access requests</CardTitle>
+        <CardDescription>
+          Approval creates a viewer account with read-only scopes. Temporary passwords appear once.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {credentials?.temporary_password ? (
+          <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
+            <p className="font-medium">Copy credentials now — the password will not be shown again.</p>
+            <p className="mt-2 font-mono text-xs">{credentials.email}</p>
+            <code className="block break-all font-mono text-xs">{credentials.temporary_password}</code>
+            <Button
+              size="sm"
+              variant="outline"
+              className="mt-2"
+              onClick={() => {
+                void navigator.clipboard.writeText(
+                  `${credentials.email}\n${credentials.temporary_password}`,
+                );
+                toast.success("Credentials copied");
+              }}
+            >
+              Copy credentials
+            </Button>
+          </div>
+        ) : null}
+        {requestsQuery.isLoading ? (
+          <TableSkeleton rows={2} />
+        ) : requests.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No pending demo requests.</p>
+        ) : (
+          <ul className="divide-y rounded-md border">
+            {requests.map((request) => (
+              <li key={request.id} className="space-y-2 p-3 text-sm">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="font-medium">{request.full_name} · {request.email}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {request.organization || "No organization"} · {request.created_at?.slice(0, 10)}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => void approve(request)}
+                      disabled={processing === request.id}
+                    >
+                      <Check className="h-4 w-4" /> Approve
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => void reject(request)}
+                      disabled={processing === request.id}
+                    >
+                      <X className="h-4 w-4" /> Reject
+                    </Button>
+                  </div>
+                </div>
+                <p className="text-muted-foreground">{request.intended_use}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 function CreateUserDialog({ onCreated }: { onCreated: (user: AdminUser) => void }) {
   const client = useApiClient();
@@ -410,6 +522,8 @@ export function UsersAdminPage() {
           </Button>
         </div>
       </div>
+
+      <DemoRequestQueue onApproved={(userId) => setSelectedId(userId)} />
 
       <Card>
         <CardHeader className="pb-3">

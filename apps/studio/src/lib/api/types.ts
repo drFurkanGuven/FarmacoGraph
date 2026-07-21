@@ -552,4 +552,18 @@ export interface AdminApiKey {
   api_key?: string;
 }
 
+export interface DemoAccessRequest {
+  id: string;
+  email: string;
+  full_name: string;
+  organization: string | null;
+  intended_use: string;
+  status: "pending" | "approved" | "rejected";
+  created_at: string | null;
+  reviewed_at: string | null;
+  reviewed_by: string | null;
+  user_id: string | null;
+  temporary_password?: string;
+}
+
 export type { ApiError, ApiErrorBody } from "./errors";

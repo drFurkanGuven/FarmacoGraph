@@ -16,6 +16,7 @@ from farmacograph.api.routers import (
     auth,
     curator,
     dashboard,
+    demo_access,
     diseases,
     drugs,
     evidence,
@@ -33,6 +34,7 @@ from farmacograph.core.logging import configure_logging, get_logger
 
 logger = get_logger(__name__)
 SEARCH_PAGE = Path(__file__).resolve().parent / "static" / "search.html"
+DEMO_REQUEST_PAGE = Path(__file__).resolve().parent / "static" / "demo-request.html"
 
 
 @asynccontextmanager
@@ -57,6 +59,7 @@ def create_app() -> FastAPI:
             "**The API is the product.**\n\n"
             "### Links\n"
             "- [**Curation Studio**](/studio/) — primary curator interface (knowledge authoring)\n"
+            "- [**Request a Studio demo account**](/demo-request) — administrator-approved, read-only access\n"
             "- [Search UI](/search) — public drug search\n"
             "- [Getting Started / API Access](https://github.com/drFurkanGuven/FarmacoGraph/blob/main/docs/getting-started.md)\n"
             "- [API Roadmap (phased)](https://github.com/drFurkanGuven/FarmacoGraph/blob/main/docs/api-roadmap.md)\n"
@@ -85,6 +88,10 @@ def create_app() -> FastAPI:
     async def search_page() -> HTMLResponse:
         return HTMLResponse(SEARCH_PAGE.read_text(encoding="utf-8"))
 
+    @app.get("/demo-request", include_in_schema=False)
+    async def demo_request_page() -> HTMLResponse:
+        return HTMLResponse(DEMO_REQUEST_PAGE.read_text(encoding="utf-8"))
+
     @app.get("/favicon.ico", include_in_schema=False)
     async def favicon() -> Response:
         return Response(status_code=204)
@@ -106,6 +113,7 @@ def create_app() -> FastAPI:
     api_v1 = FastAPI(title="FarmacoGraph API v1")
     api_v1.include_router(health.router)
     api_v1.include_router(auth.router)
+    api_v1.include_router(demo_access.router)
     api_v1.include_router(dashboard.router)
     api_v1.include_router(curator.router)
     api_v1.include_router(drugs.router)

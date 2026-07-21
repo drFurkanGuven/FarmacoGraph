@@ -95,6 +95,22 @@ class User(Base, TimestampMixin):
     api_keys: Mapped[list[ApiKey]] = relationship(back_populates="user")
 
 
+class DemoAccessRequest(Base, TimestampMixin):
+    __tablename__ = "demo_access_requests"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    email: Mapped[str] = mapped_column(String(320), nullable=False, index=True)
+    full_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    organization: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    intended_use: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(String(20), default="pending", nullable=False, index=True)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    reviewed_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id"), nullable=True
+    )
+
+
 class UserRole(Base, TimestampMixin):
     __tablename__ = "user_roles"
 

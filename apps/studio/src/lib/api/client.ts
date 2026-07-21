@@ -33,6 +33,7 @@ import type {
   WorkflowTimelineEvent,
   AdminUser,
   AdminApiKey,
+  DemoAccessRequest,
 } from "./types";
 
 export interface ClientConfig {
@@ -469,6 +470,22 @@ export class FarmacoGraphClient {
     const { search, ...pagination } = options ?? {};
     return this.request<AdminUser[]>("/users", {
       params: { search, ...buildPaginationParams(pagination) },
+    });
+  }
+
+  listDemoRequests(status: "pending" | "approved" | "rejected" = "pending") {
+    return this.request<DemoAccessRequest[]>("/demo-requests", { params: { status } });
+  }
+
+  approveDemoRequest(requestId: string) {
+    return this.request<DemoAccessRequest>(`/demo-requests/${requestId}/approve`, {
+      method: "POST",
+    });
+  }
+
+  rejectDemoRequest(requestId: string) {
+    return this.request<DemoAccessRequest>(`/demo-requests/${requestId}/reject`, {
+      method: "POST",
     });
   }
 

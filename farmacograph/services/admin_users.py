@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import secrets
 import uuid
 from datetime import datetime
 from typing import Any
@@ -21,13 +22,29 @@ from farmacograph.auth.models import SCOPES, generate_api_key, hash_password
 from farmacograph.core.config import Settings
 from farmacograph.core.exceptions import NotFoundError, ValidationError
 from farmacograph.db.postgres.bootstrap_curator import ADMIN_SCOPES, CURATOR_SCOPES
-from farmacograph.db.postgres.models import ApiKey, User, UserRole
+from farmacograph.db.postgres.models import ApiKey, DemoAccessRequest, User, UserRole
 
 ROLE_PRESETS: dict[str, list[str]] = {
+    "viewer": ["knowledge:read", "knowledge:search", "education:read"],
     "curator": list(CURATOR_SCOPES),
     "reviewer": list(CURATOR_SCOPES),
     "administrator": list(ADMIN_SCOPES),
 }
+
+
+def _serialize_demo_request(request: DemoAccessRequest) -> dict[str, Any]:
+    return {
+        "id": str(request.id),
+        "email": request.email,
+        "full_name": request.full_name,
+        "organization": request.organization,
+        "intended_use": request.intended_use,
+        "status": request.status,
+        "created_at": request.created_at.isoformat() if request.created_at else None,
+        "reviewed_at": request.reviewed_at.isoformat() if request.reviewed_at else None,
+        "reviewed_by": str(request.reviewed_by) if request.reviewed_by else None,
+        "user_id": str(request.user_id) if request.user_id else None,
+    }
 
 
 def scopes_for_role(role: str, scopes: list[str] | None = None) -> list[str]:
@@ -106,6 +123,104 @@ class AdminUsersService:
             ]
         total = len(rows)
         return rows[offset : offset + limit], total
+
+    async def request_demo_access(
+        self, *, email: str, full_name: str, organization: str | None, intended_use: str
+    ) -> dict[str, Any]:
+        normalized = email.strip().lower()
+        clean_name = full_name.strip()
+        clean_use = intended_use.strip()
+        if not normalized or "@" not in normalized:
+            raise ValidationError("email must be a valid address")
+        if len(clean_name) < 2:
+            raise ValidationError("full_name is required")
+        if len(clean_use) < 10:
+            raise ValidationError("intended_use must be at least 10 characters")
+        async with self._session_factory() as session:
+            existing_user = (
+                await session.execute(select(User).where(User.email == normalized))
+            ).scalar_one_or_none()
+            if existing_user is not None:
+                raise ValidationError("An account already exists for this email")
+            pending = (
+                await session.execute(
+                    select(DemoAccessRequest).where(
+                        DemoAccessRequest.email == normalized,
+                        DemoAccessRequest.status == "pending",
+                    )
+                )
+            ).scalar_one_or_none()
+            if pending is not None:
+                return _serialize_demo_request(pending)
+            request = DemoAccessRequest(
+                email=normalized,
+                full_name=clean_name,
+                organization=(organization or "").strip() or None,
+                intended_use=clean_use,
+                status="pending",
+            )
+            session.add(request)
+            await session.commit()
+            await session.refresh(request)
+            return _serialize_demo_request(request)
+
+    async def list_demo_requests(self, *, status: str = "pending") -> list[dict[str, Any]]:
+        async with self._session_factory() as session:
+            stmt = select(DemoAccessRequest).order_by(DemoAccessRequest.created_at.desc())
+            if status:
+                stmt = stmt.where(DemoAccessRequest.status == status)
+            requests = list((await session.execute(stmt)).scalars().all())
+        return [_serialize_demo_request(request) for request in requests]
+
+    async def approve_demo_request(
+        self, request_id: uuid.UUID, *, reviewer_id: uuid.UUID
+    ) -> dict[str, Any]:
+        async with self._session_factory() as session:
+            request = await session.get(DemoAccessRequest, request_id)
+            if request is None:
+                raise NotFoundError(f"Demo access request not found: {request_id}")
+            if request.status != "pending":
+                raise ValidationError(f"Demo request is already {request.status}")
+            if (
+                await session.execute(select(User).where(User.email == request.email))
+            ).scalar_one_or_none() is not None:
+                raise ValidationError("An account already exists for this email")
+            temporary_password = secrets.token_urlsafe(16)
+            user = User(
+                email=request.email,
+                hashed_password=hash_password(temporary_password),
+                full_name=request.full_name,
+                is_active=True,
+                is_superuser=False,
+            )
+            session.add(user)
+            await session.flush()
+            session.add(UserRole(user=user, role="viewer", scopes=ROLE_PRESETS["viewer"]))
+            request.status = "approved"
+            request.reviewed_at = datetime.now(UTC)
+            request.reviewed_by = reviewer_id
+            request.user_id = user.id
+            await session.commit()
+            await session.refresh(request)
+            payload = _serialize_demo_request(request)
+            payload["temporary_password"] = temporary_password
+            return payload
+
+    async def reject_demo_request(
+        self, request_id: uuid.UUID, *, reviewer_id: uuid.UUID
+    ) -> dict[str, Any]:
+        async with self._session_factory() as session:
+            request = await session.get(DemoAccessRequest, request_id)
+            if request is None:
+                raise NotFoundError(f"Demo access request not found: {request_id}")
+            if request.status != "pending":
+                raise ValidationError(f"Demo request is already {request.status}")
+            request.status = "rejected"
+            request.reviewed_at = datetime.now(UTC)
+            request.reviewed_by = reviewer_id
+            await session.commit()
+            await session.refresh(request)
+            return _serialize_demo_request(request)
 
     async def get_user(self, user_id: uuid.UUID) -> dict[str, Any]:
         async with self._session_factory() as session:

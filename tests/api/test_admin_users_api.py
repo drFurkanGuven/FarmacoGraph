@@ -152,3 +152,57 @@ async def test_users_routes_in_openapi(admin_client: AsyncClient):
     assert "/users/{user_id}" in paths
     assert "/users/{user_id}/api-keys" in paths
     assert "/users/{user_id}/api-keys/{key_id}/revoke" in paths
+
+
+@pytest.mark.asyncio
+async def test_demo_request_approval_creates_read_only_viewer(admin_client: AsyncClient):
+    requested = await admin_client.post(
+        "/api/v1/demo-requests",
+        json={
+            "email": "demo.viewer@test.local",
+            "full_name": "Demo Viewer",
+            "organization": "Teaching Hospital",
+            "intended_use": "Evaluate the knowledge browsing workflow.",
+            "website": "",
+        },
+    )
+    assert requested.status_code == 202
+    request_id = requested.json()["data"]["id"]
+
+    pending = await admin_client.get("/api/v1/demo-requests")
+    assert pending.status_code == 200
+    assert any(row["id"] == request_id for row in pending.json()["data"])
+
+    approved = await admin_client.post(f"/api/v1/demo-requests/{request_id}/approve")
+    assert approved.status_code == 200
+    approval = approved.json()["data"]
+    assert approval["temporary_password"]
+    assert approval["user_id"]
+
+    login = await admin_client.post(
+        "/api/v1/auth/token",
+        json={
+            "grant_type": "password",
+            "username": "demo.viewer@test.local",
+            "password": approval["temporary_password"],
+        },
+    )
+    assert login.status_code == 200
+    token = login.json()["access_token"]
+    assert set(login.json()["scopes"]) == {
+        "knowledge:read",
+        "knowledge:search",
+        "education:read",
+    }
+
+    denied = await admin_client.post(
+        "/api/v1/curator/workflows",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"entity_id": "00000000-0000-4000-8000-000000000001"},
+    )
+    assert denied.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_non_admin_cannot_review_demo_requests(curator_client: AsyncClient):
+    assert (await curator_client.get("/api/v1/demo-requests")).status_code == 403
