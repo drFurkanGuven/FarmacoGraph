@@ -178,5 +178,5 @@ Runtime diagrams: [docs/architecture-diagrams.md](docs/architecture-diagrams.md)
 ## License
 
 - **Code:** [GNU GPLv3](LICENSE)
-- **Documentation:** [CC BY 4.0](docs/LICENSE)
-- **Strategy:** [FarmacoGraph Licensing Strategy](FarmacoGraph_Licensing_Strategy.md)
+- **Documentation:** [CC BY 4.0](docs/licensing.md)
+- **Strategy:** [FarmacoGraph Licensing Strategy](docs/licensing.md)
