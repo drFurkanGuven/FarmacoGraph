@@ -153,7 +153,7 @@ async def execute_import(
     package_id: str,
     auth: Annotated[AuthContext, Depends(require_scope("curator:write"))],
     container: Annotated[Container, Depends(get_app_container)],
-) -> ImportExecutionResponse:
+) -> dict[str, Any]:
     """Execute import - add interactions to curator queue."""
     package_file = IMPORT_DIR / f"{package_id}.json"
 
