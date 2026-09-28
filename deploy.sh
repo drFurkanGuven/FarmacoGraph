@@ -116,6 +116,7 @@ setup_environment_file() {
   fi
 
   set_env_val "FG_ENVIRONMENT" "production"
+  set_env_val "FG_DEBUG" "false"
   set_env_val "FG_LOG_JSON" "true"
   set_env_val "FG_PUBLIC_URL" "https://${DOMAIN}"
   set_env_val "FG_STUDIO_API_URL" "https://${DOMAIN}/api/v1"
@@ -131,24 +132,23 @@ setup_environment_file() {
     log_info "Yeni güvenli 64-karakterlik JWT secret üretildi."
   fi
 
-  # PostgreSQL
-  local current_pg_pass
-  current_pg_pass="$(get_env_val POSTGRES_PASSWORD "")"
-  if [[ -z "${current_pg_pass}" || "${current_pg_pass}" == "farmacograph" ]]; then
-    local new_pg_pass
-    new_pg_pass="$(openssl rand -hex 16)"
-    set_env_val "POSTGRES_PASSWORD" "${new_pg_pass}"
-  fi
+  # PostgreSQL (Internal Docker network)
+  set_env_val "POSTGRES_USER" "farmacograph"
+  set_env_val "POSTGRES_PASSWORD" "farmacograph"
+  set_env_val "POSTGRES_DB" "farmacograph"
+  set_env_val "FG_DATABASE_URL" "postgresql+asyncpg://farmacograph:farmacograph@postgres:5432/farmacograph"
 
-  # Neo4j
-  local current_neo4j_pass
-  current_neo4j_pass="$(get_env_val FG_NEO4J_PASSWORD "")"
-  if [[ -z "${current_neo4j_pass}" || "${current_neo4j_pass}" == "farmacograph" ]]; then
-    local new_neo4j_pass
-    new_neo4j_pass="$(openssl rand -hex 16)"
-    set_env_val "NEO4J_AUTH" "neo4j/${new_neo4j_pass}"
-    set_env_val "FG_NEO4J_PASSWORD" "${new_neo4j_pass}"
-  fi
+  # Neo4j (Internal Docker network hostname is 'neo4j', port 7687)
+  set_env_val "FG_NEO4J_ENABLED" "true"
+  set_env_val "FG_NEO4J_URI" "bolt://neo4j:7687"
+  set_env_val "FG_NEO4J_USER" "neo4j"
+  set_env_val "FG_NEO4J_PASSWORD" "farmacograph"
+  set_env_val "NEO4J_AUTH" "neo4j/farmacograph"
+
+  # Catalogs
+  set_env_val "FG_DISEASE_CATALOG_PATH" "/app/data/catalog/diseases.runtime.json"
+  set_env_val "FG_MECHANISM_CATALOG_PATH" "/app/data/catalog/mechanisms.runtime.json"
+  set_env_val "FG_DRUG_CATALOG_PATH" "/app/data/catalog/drugs.runtime.json"
 }
 
 # Safe Nginx Configuration that NEVER touches other domains on the VPS
@@ -273,6 +273,14 @@ wait_for_service() {
   log_info "Konteynerin hazır olması bekleniyor: ${service}..."
   local elapsed=0
   while [[ $elapsed -lt $max_wait ]]; do
+    local state
+    state="$(docker compose ps "${service}" --format '{{.State}}' 2>/dev/null || echo "")"
+    if [[ "${state}" == "exited" || "${state}" == "dead" ]]; then
+      log_error "${service} konteyneri çöktü / durdu! Konteyner hata logları:"
+      docker compose logs --tail 30 "${service}"
+      return 1
+    fi
+
     local health
     health="$(docker compose ps "${service}" --format '{{.Health}}' 2>/dev/null || echo "")"
     if [[ "${health}" == "healthy" ]]; then
@@ -282,7 +290,8 @@ wait_for_service() {
     sleep 2
     elapsed=$((elapsed + 2))
   done
-  log_warn "${service} ${max_wait}s içinde 'healthy' bildirmedi, işleme devam ediliyor..."
+  log_warn "${service} ${max_wait}s içinde 'healthy' bildirmedi. Son loglar:"
+  docker compose logs --tail 20 "${service}" || true
 }
 
 # Action: Full Installation

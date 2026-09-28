@@ -6,9 +6,9 @@ services:
     image: postgres:16-alpine
     container_name: farmacograph-postgres
     environment:
-      POSTGRES_USER: farmacograph
-      POSTGRES_PASSWORD: farmacograph
-      POSTGRES_DB: farmacograph
+      POSTGRES_USER: ${POSTGRES_USER:-farmacograph}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-farmacograph}
+      POSTGRES_DB: ${POSTGRES_DB:-farmacograph}
     ports:
       - "127.0.0.1:${FG_HOST_PG_PORT:-5433}:5432"
     volumes:
@@ -23,7 +23,7 @@ services:
     image: neo4j:5-community
     container_name: farmacograph-neo4j
     environment:
-      NEO4J_AUTH: neo4j/farmacograph
+      NEO4J_AUTH: ${NEO4J_AUTH:-neo4j/farmacograph}
       NEO4J_PLUGINS: '[]'
     ports:
       - "127.0.0.1:${FG_HOST_NEO4J_HTTP_PORT:-7474}:7474"
