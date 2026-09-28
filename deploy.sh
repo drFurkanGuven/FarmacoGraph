@@ -32,6 +32,7 @@ log_error()   { echo -e "${RED}✗ [ERROR]${RESET} $*" >&2; }
 # Work in current project directory
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "${ROOT_DIR}"
+git config --global --add safe.directory "${ROOT_DIR}" >/dev/null 2>&1 || true
 
 DOMAIN="${FG_DOMAIN:-furkanguven.wiki}"
 EMAIL="${FG_ADMIN_EMAIL:-furkanguven96@gmail.com}"
