@@ -17,7 +17,7 @@ COPY alembic.ini ./
 COPY alembic ./alembic
 COPY scripts ./scripts
 
-RUN pip install --no-cache-dir -e ".[api,graph,db,auth,observability]"
+RUN pip install --no-cache-dir -e ".[api,graph,db,auth,observability,ingestion]"
 
 ENV FG_ENVIRONMENT=production
 ENV FG_HOST=0.0.0.0

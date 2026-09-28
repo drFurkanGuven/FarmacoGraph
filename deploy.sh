@@ -453,12 +453,31 @@ cmd_logs() {
 # Action: PrimeKG Ingestion
 cmd_ingest() {
   log_info "PrimeKG (~128K düğüm, ~2M ilişki) veri aktarımı başlatılıyor..."
-  if [[ -f "${ROOT_DIR}/scripts/ingestion/run_full_ingestion.sh" ]]; then
+  if docker compose ps 2>/dev/null | grep -q "farmacograph-api.*running"; then
+    log_info "farmacograph-api konteyneri içinde çalıştırılıyor..."
+    docker compose exec -T api bash scripts/ingestion/run_full_ingestion.sh "$@"
+  elif [[ -f "${ROOT_DIR}/scripts/ingestion/run_full_ingestion.sh" ]]; then
     bash "${ROOT_DIR}/scripts/ingestion/run_full_ingestion.sh" "$@"
   else
     log_error "scripts/ingestion/run_full_ingestion.sh bulunamadı!"
     exit 1
   fi
+}
+
+# Action: Sync FDA DDI Dataset
+cmd_sync_ddi() {
+  log_info "FDA DDI (Zenodo) veri senkronizasyonu çalıştırılıyor..."
+  if docker compose ps 2>/dev/null | grep -q "farmacograph-api.*running"; then
+    docker compose exec api python scripts/sync_fda_ddi.py "$@"
+  else
+    log_warn "Konteyner çalışmıyor, yerel python ile deneniyor..."
+    python3 scripts/sync_fda_ddi.py "$@"
+  fi
+}
+
+# Action: Execute command inside API container
+cmd_exec() {
+  docker compose exec api "$@"
 }
 
 # Action: Create Admin
@@ -488,7 +507,16 @@ case "${COMMAND}" in
     cmd_logs "$@"
     ;;
   ingest|primekg)
+    shift || true
     cmd_ingest "$@"
+    ;;
+  sync-ddi|ddi)
+    shift || true
+    cmd_sync_ddi "$@"
+    ;;
+  run|exec)
+    shift || true
+    cmd_exec "$@"
     ;;
   admin|curator)
     cmd_admin "$@"
@@ -496,12 +524,14 @@ case "${COMMAND}" in
   -h|--help)
     echo "FarmacoGraph Deploy Manager"
     echo "Kullanım:"
-    echo "  sudo ./deploy.sh           # İlk kurulum ve canlıya alma"
-    echo "  sudo ./deploy.sh update    # GitHub'dan güncellemeleri çek ve yeniden derle"
-    echo "  sudo ./deploy.sh status    # Durum ve sağlık kontrolü"
-    echo "  sudo ./deploy.sh logs      # Canlı logları izle"
-    echo "  sudo ./deploy.sh ingest    # PrimeKG verisini Neo4j'e aktar"
-    echo "  sudo ./deploy.sh admin     # Yeni admin/küratör hesabı aç"
+    echo "  sudo ./deploy.sh              # İlk kurulum ve canlıya alma"
+    echo "  sudo ./deploy.sh update       # GitHub'dan güncellemeleri çek ve yeniden derle"
+    echo "  sudo ./deploy.sh status       # Durum ve sağlık kontrolü"
+    echo "  sudo ./deploy.sh logs         # Canlı logları izle"
+    echo "  sudo ./deploy.sh ingest       # PrimeKG verisini Neo4j'e aktar"
+    echo "  sudo ./deploy.sh sync-ddi     # FDA DDI Zenodo senkronizasyonunu çalıştır"
+    echo "  sudo ./deploy.sh exec <cmd>   # API konteyneri içinde komut çalıştır (örn: ./deploy.sh exec python ...)"
+    echo "  sudo ./deploy.sh admin        # Yeni admin/küratör hesabı aç"
     ;;
   *)
     log_error "Bilinmeyen komut: ${COMMAND} (Yardım için: ./deploy.sh --help)"
