@@ -149,6 +149,15 @@ setup_environment_file() {
   set_env_val "FG_DISEASE_CATALOG_PATH" "/app/data/catalog/diseases.runtime.json"
   set_env_val "FG_MECHANISM_CATALOG_PATH" "/app/data/catalog/mechanisms.runtime.json"
   set_env_val "FG_DRUG_CATALOG_PATH" "/app/data/catalog/drugs.runtime.json"
+
+  # Initial Admin Password
+  local current_admin_pass
+  current_admin_pass="$(get_env_val FG_INITIAL_ADMIN_PASSWORD "")"
+  if [[ -z "${current_admin_pass}" || ${#current_admin_pass} -lt 12 ]]; then
+    local new_admin_pass
+    new_admin_pass="FarmacoGraphAdmin2026!"
+    set_env_val "FG_INITIAL_ADMIN_PASSWORD" "${new_admin_pass}"
+  fi
 }
 
 # Safe Nginx Configuration that NEVER touches other domains on the VPS
@@ -355,6 +364,14 @@ cmd_install() {
   # 8. Configure isolated Nginx and SSL
   setup_isolated_nginx
 
+  # 9. Create Administrator Curator Account
+  local admin_pass
+  admin_pass="$(get_env_val FG_INITIAL_ADMIN_PASSWORD "FarmacoGraphAdmin2026!")"
+  if [[ -f "${ROOT_DIR}/scripts/create-curator.sh" ]]; then
+    log_info "Yönetici (Admin/Curator) hesabı oluşturuluyor..."
+    bash "${ROOT_DIR}/scripts/create-curator.sh" --email "${EMAIL}" --password "${admin_pass}" --admin >/dev/null 2>&1 || true
+  fi
+
   echo ""
   echo -e "${BOLD}${GREEN}"
   echo "=================================================================="
@@ -364,6 +381,11 @@ cmd_install() {
   echo -e "  🌐 Curation Studio: ${BOLD}https://${DOMAIN}/studio${RESET}"
   echo -e "  📖 Swagger API:     ${BOLD}https://${DOMAIN}/docs${RESET}"
   echo -e "  🩺 Sistem Sağlığı:  ${BOLD}https://${DOMAIN}/api/v1/health${RESET}"
+  echo ""
+  echo -e "  🔐 Giriş Bilgileri (Curation Studio):"
+  echo -e "     - Giriş Adresi:  ${BOLD}https://${DOMAIN}/studio/login${RESET}"
+  echo -e "     - E-Posta:       ${BOLD}${EMAIL}${RESET}"
+  echo -e "     - Şifre:         ${BOLD}${admin_pass}${RESET}"
   echo ""
   echo -e "Sonraki Adımlar:"
   echo -e "  - Güncelleme yapmak için:   ${CYAN}sudo ./deploy.sh update${RESET}"
