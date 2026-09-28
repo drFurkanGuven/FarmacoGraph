@@ -18,7 +18,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useUIMode } from "@/lib/ui-mode/context";
-import { apiClient } from "@/lib/api";
+import { apiClient, ApiError } from "@/lib/api";
 
 interface ImportPackage {
   id: string;
@@ -149,7 +149,12 @@ export default function ImportCenterPage() {
       setSelectedPackage(null);
     } catch (error) {
       console.error("Import failed:", error);
-      alert("Import başarısız oldu.");
+      if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+        alert("Yetkilendirme hatası (401/403): Veri aktarımı için Admin/Küratör olarak giriş yapmanız gerekir.");
+      } else {
+        const msg = error instanceof Error ? error.message : "Bilinmeyen hata.";
+        alert(`Import başarısız oldu: ${msg}`);
+      }
     } finally {
       setImporting(false);
     }

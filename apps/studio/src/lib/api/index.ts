@@ -5,9 +5,11 @@ export type { ClientConfig, RequestOptions } from "./client";
 
 import { createApiClient } from "./client";
 import { resolveStudioApiUrl } from "./base-url";
+import { loadSession } from "../auth/storage";
 
 export const apiClient = createApiClient({
   baseUrl: resolveStudioApiUrl(),
+  getSession: () => loadSession(),
 });
 
 export { ApiTransport, createTransport } from "./transport";
