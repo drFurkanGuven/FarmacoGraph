@@ -345,7 +345,10 @@ cmd_install() {
   # 4. Setup .env
   setup_environment_file
 
-  # 5. Start databases
+  # 5. Clean up any stale conflicting containers from previous runs
+  docker rm -f farmacograph-neo4j farmacograph-postgres farmacograph-api farmacograph-studio >/dev/null 2>&1 || true
+
+  # Start databases
   log_info "Veritabanları (PostgreSQL & Neo4j) başlatılıyor..."
   docker compose up -d postgres neo4j
   wait_for_service "postgres" 45
