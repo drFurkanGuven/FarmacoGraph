@@ -64,7 +64,7 @@ function validationFromJobs(jobs: JobItem[]): DashboardData["validation"] {
 
 export async function composeDashboardFallback(
   client: FarmacoGraphClient,
-  module: string,
+  module: string
 ): Promise<ApiEnvelope<DashboardData>> {
   const [
     healthResult,
@@ -161,7 +161,8 @@ export async function composeDashboardFallback(
     curriculum: curriculum
       ? {
           stats: curriculum.stats,
-          published_in_graph: curriculum.published_in_graph ?? curriculum.stats.published_in_graph ?? 0,
+          published_in_graph:
+            curriculum.published_in_graph ?? curriculum.stats.published_in_graph ?? 0,
           completion_pct: curriculum.completion_pct ?? 0,
         }
       : null,
@@ -177,7 +178,7 @@ export async function composeDashboardFallback(
 
 export async function fetchDashboard(
   client: FarmacoGraphClient,
-  module: string,
+  module: string
 ): Promise<ApiEnvelope<DashboardData>> {
   try {
     return await client.request<DashboardData>("/dashboard", { params: { module } });

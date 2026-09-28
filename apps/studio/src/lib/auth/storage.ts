@@ -37,12 +37,23 @@ function normalizeStoredSession(raw: Partial<AuthSession>): AuthSession {
   };
 }
 
-function setAuthCookie(authenticated: boolean): void {
+export const AUTH_SCOPES_COOKIE_NAME = "farmacograph.studio.scopes";
+export const AUTH_ROLES_COOKIE_NAME = "farmacograph.studio.roles";
+
+function setAuthCookie(authenticated: boolean, scopes: string[] = [], roles: string[] = []): void {
   if (!isBrowser()) return;
   if (authenticated) {
     document.cookie = `${AUTH_COOKIE_NAME}=1; path=/; max-age=${AUTH_COOKIE_MAX_AGE}; SameSite=Lax`;
+    if (scopes.length) {
+      document.cookie = `${AUTH_SCOPES_COOKIE_NAME}=${scopes.join(",")}; path=/; max-age=${AUTH_COOKIE_MAX_AGE}; SameSite=Lax`;
+    }
+    if (roles.length) {
+      document.cookie = `${AUTH_ROLES_COOKIE_NAME}=${roles.join(",")}; path=/; max-age=${AUTH_COOKIE_MAX_AGE}; SameSite=Lax`;
+    }
   } else {
     document.cookie = `${AUTH_COOKIE_NAME}=; path=/; max-age=0; SameSite=Lax`;
+    document.cookie = `${AUTH_SCOPES_COOKIE_NAME}=; path=/; max-age=0; SameSite=Lax`;
+    document.cookie = `${AUTH_ROLES_COOKIE_NAME}=; path=/; max-age=0; SameSite=Lax`;
   }
 }
 
@@ -60,7 +71,7 @@ export function loadSession(): AuthSession {
 export function saveSession(session: AuthSession): void {
   if (!isBrowser()) return;
   localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
-  setAuthCookie(Boolean(session.accessToken || session.apiKey));
+  setAuthCookie(Boolean(session.accessToken || session.apiKey), session.scopes, session.roles);
 }
 
 export function clearSession(): void {

@@ -29,7 +29,7 @@ export function useDrugBrowserState(initialModule = "all") {
       }
       setPage(1);
     },
-    [sortField],
+    [sortField]
   );
 
   const resetFilters = useCallback(() => {

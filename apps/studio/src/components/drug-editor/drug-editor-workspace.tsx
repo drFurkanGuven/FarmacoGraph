@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { ApiError } from "@/lib/api";
 import { useApiClient } from "@/lib/hooks/use-api-client";
 import { usePermissions } from "@/lib/auth/hooks";
+import { useLanguage } from "@/lib/i18n/context";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -47,6 +48,7 @@ function EditorSkeleton() {
 
 export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
   const client = useApiClient();
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const { hasPermission } = usePermissions();
   const isAdmin = hasPermission("admin:org");
@@ -75,6 +77,9 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
 
   const workflow = snapshot.workflow;
   const workflowState = workflow?.state ?? null;
+  const blockingIssueCount = (snapshot.validation?.issues ?? []).filter(
+    (issue) => (issue as Record<string, unknown>).severity === "error"
+  ).length;
   const packageFieldsLocked =
     workflowState === "approved" || workflowState === "published" || workflowState === "deprecated";
   /** Graph-backed evidence attach is allowed after publish; package JSON stays locked. */
@@ -95,7 +100,7 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
           ? "Unpublished — editing unlocked (admin)."
           : workflowState === "deprecated"
             ? "Restored from deprecated — editing unlocked (admin)."
-            : "Returned to draft — editing unlocked.",
+            : "Returned to draft — editing unlocked."
       );
     } catch (error) {
       const message =
@@ -109,7 +114,7 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
   async function handleDeprecate() {
     if (!workflow?.id || deprecating) return;
     const ok = window.confirm(
-      "Deprecate this published record? It will be soft-deleted from public graph reads.",
+      "Deprecate this published record? It will be soft-deleted from public graph reads."
     );
     if (!ok) return;
     setDeprecating(true);
@@ -184,8 +189,17 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
           {workflowState === "approved" ||
           (workflowState === "published" && isAdmin) ||
           (workflowState === "deprecated" && isAdmin) ? (
-            <Button size="sm" variant="secondary" disabled={unlocking} onClick={handleReturnToDraft}>
-              {unlocking ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={unlocking}
+              onClick={handleReturnToDraft}
+            >
+              {unlocking ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RotateCcw className="h-4 w-4" />
+              )}
               {workflowState === "published"
                 ? "Unpublish to edit"
                 : workflowState === "deprecated"
@@ -195,7 +209,11 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
           ) : null}
           {workflowState === "published" && isAdmin ? (
             <Button size="sm" variant="outline" disabled={deprecating} onClick={handleDeprecate}>
-              {deprecating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Archive className="h-4 w-4" />}
+              {deprecating ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Archive className="h-4 w-4" />
+              )}
               Deprecate
             </Button>
           ) : null}
@@ -216,6 +234,17 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
             strategy={snapshot.lastSaveStrategy}
             onRetry={packageFieldsLocked ? undefined : retrySave}
           />
+          {snapshot.validation && !snapshot.validationPending && (
+            <Badge
+              variant={blockingIssueCount > 0 ? "danger" : "success"}
+              className="shrink-0 tabular-nums"
+              title={t("validation.blockingErrors", "Blocking errors")}
+            >
+              {blockingIssueCount > 0
+                ? `${t("evidence.missing", "Missing")}: ${blockingIssueCount}`
+                : t("wizard.ready", "Ready")}
+            </Badge>
+          )}
           <Button
             variant="outline"
             size="sm"
@@ -252,16 +281,24 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
               {isAdmin ? (
                 <>
                   Published package is read-only until you{" "}
-                  <button type="button" className="underline underline-offset-2" onClick={() => void handleReturnToDraft()}>
+                  <button
+                    type="button"
+                    className="underline underline-offset-2"
+                    onClick={() => void handleReturnToDraft()}
+                  >
                     Unpublish to edit
                   </button>
                   . Deprecate soft-deletes from public graph reads.
                 </>
               ) : (
                 <>
-                  Published package fields are read-only. Request unpublish from an administrator to edit
-                  the package, or use{" "}
-                  <button type="button" className="underline underline-offset-2" onClick={() => setActiveSection("evidence")}>
+                  Published package fields are read-only. Request unpublish from an administrator to
+                  edit the package, or use{" "}
+                  <button
+                    type="button"
+                    className="underline underline-offset-2"
+                    onClick={() => setActiveSection("evidence")}
+                  >
                     Evidence
                   </button>{" "}
                   to attach graph-backed citations.
@@ -271,7 +308,9 @@ export function DrugEditorWorkspace({ drugId }: DrugEditorWorkspaceProps) {
           ) : null}
           {workflowState === "approved" ? (
             <p className="mb-4 text-xs text-muted-foreground">
-              Approved — package locked. Use <span className="font-medium text-foreground">Return to draft</span> to edit, or Publish to write Neo4j.
+              Approved — package locked. Use{" "}
+              <span className="font-medium text-foreground">Return to draft</span> to edit, or
+              Publish to write Neo4j.
             </p>
           ) : null}
           {workflowState === "deprecated" ? (

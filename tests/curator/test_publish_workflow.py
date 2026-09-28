@@ -116,7 +116,14 @@ async def test_approve_transitions_review_to_approved(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_publish_transitions_approved_to_published(client: AsyncClient):
+async def test_publish_without_graph_keeps_approved(client: AsyncClient):
+    """New publish contract (was: test_publish_transitions_approved_to_published).
+
+    Without a connected graph the endpoint answers 503 and the workflow stays
+    approved for retry — it must NOT transition to published with a skipped
+    graph write. The success path is covered by the full-stack E2E
+    (e2e/full-stack) against real Neo4j.
+    """
     package = build_cardiovascular_publish_package()
     workflow_id = await _create_workflow(client)
     await _advance_to_approved(client, workflow_id)
@@ -126,12 +133,9 @@ async def test_publish_transitions_approved_to_published(client: AsyncClient):
         json=package,
     )
 
-    assert response.status_code == 200
-    body = response.json()["data"]
-    assert body["workflow"]["state"] == "published"
-    assert body["published_slug"] == package["entity_payload"]["slug"]
-    assert body["graph_write"]["status"] in {"success", "skipped"}
-    assert body["validation_summary"]["valid"] is True
+    assert response.status_code == 503
+    state = await client.get(f"/api/v1/curator/workflows/{workflow_id}")
+    assert state.json()["data"]["state"] == "approved"
 
 
 @pytest.mark.asyncio

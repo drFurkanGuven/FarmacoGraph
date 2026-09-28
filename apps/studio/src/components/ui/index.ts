@@ -8,14 +8,7 @@
 // Primitives
 export { Button, buttonVariants, type ButtonProps } from "./button";
 export { Badge, badgeVariants, type BadgeProps } from "./badge";
-export {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
-} from "./card";
+export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "./card";
 export { Input } from "./input";
 export { Textarea } from "./textarea";
 export { Label } from "./label";
@@ -81,12 +74,17 @@ export {
   FormField,
   useFormField,
 } from "./form";
-export { PropertyEditor, type PropertyEditorField, type PropertyEditorProps } from "./property-editor";
+export {
+  PropertyEditor,
+  type PropertyEditorField,
+  type PropertyEditorProps,
+} from "./property-editor";
 export { SearchInput, type SearchInputProps } from "./search-input";
 
 // Feedback
 export { EmptyState, type EmptyStateProps } from "./empty-state";
 export { ErrorState, type ErrorStateProps } from "./error-state";
+export { ApiErrorPanel, type ApiErrorPanelProps } from "./api-error-panel";
 export {
   TextSkeleton,
   CardSkeleton,
@@ -97,8 +95,16 @@ export {
 } from "./loading-skeleton";
 
 // Semantic badges
-export { ValidationBadge, type ValidationBadgeProps, type ValidationStatus } from "./validation-badge";
-export { ConfidenceBadge, type ConfidenceBadgeProps, type ConfidenceLevel } from "./confidence-badge";
+export {
+  ValidationBadge,
+  type ValidationBadgeProps,
+  type ValidationStatus,
+} from "./validation-badge";
+export {
+  ConfidenceBadge,
+  type ConfidenceBadgeProps,
+  type ConfidenceLevel,
+} from "./confidence-badge";
 export { EvidenceBadge, type EvidenceBadgeProps, type EvidenceType } from "./evidence-badge";
 export { StatusBadge, type StatusBadgeProps, type StatusValue } from "./status-badge";
 

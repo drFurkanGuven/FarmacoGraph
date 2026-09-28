@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from farmacograph.core.config import get_settings
 from farmacograph.db.postgres.base import Base
+import farmacograph.db.postgres.models  # noqa: F401
 
 config = context.config
 if config.config_file_name is not None:

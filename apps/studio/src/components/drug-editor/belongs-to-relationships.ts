@@ -55,14 +55,12 @@ export function listBelongsToClassIds(pkg: DrugPublishPackage): string[] {
 
 function normalizeClassEntity(
   drugClass: DrugClassRef,
-  existing?: Record<string, unknown>,
+  existing?: Record<string, unknown>
 ): Record<string, unknown> {
   const slug =
-    drugClass.slug?.trim() ||
-    (typeof existing?.slug === "string" ? existing.slug : drugClass.id);
+    drugClass.slug?.trim() || (typeof existing?.slug === "string" ? existing.slug : drugClass.id);
   const label =
-    drugClass.label?.trim() ||
-    (typeof existing?.label === "string" ? existing.label : slug);
+    drugClass.label?.trim() || (typeof existing?.label === "string" ? existing.label : slug);
   return {
     ...(existing ?? {}),
     id: drugClass.id,
@@ -110,7 +108,7 @@ export function syncBelongsToSelection(
   pkg: DrugPublishPackage,
   drugEntityId: string,
   selectedIds: string[],
-  catalog?: DrugClassRef[],
+  catalog?: DrugClassRef[]
 ): DrugPublishPackage {
   const next = clonePackage(pkg);
   const uniqueIds = [...new Set(selectedIds.map((id) => id.trim()).filter(Boolean))];
@@ -132,9 +130,9 @@ export function syncBelongsToSelection(
   const existingTargets = new Set(
     preserved
       .filter(
-        (row) => row.relationship_type === "BELONGS_TO" && String(row.source_id) === drugEntityId,
+        (row) => row.relationship_type === "BELONGS_TO" && String(row.source_id) === drugEntityId
       )
-      .map((row) => String(row.target_id)),
+      .map((row) => String(row.target_id))
   );
 
   for (const classId of uniqueIds) {
@@ -153,7 +151,7 @@ export function syncBelongsToSelection(
   const catalogById = new Map((catalog ?? []).map((row) => [row.id, row]));
   ensureDrugClasses(
     next,
-    uniqueIds.map((id) => catalogById.get(id) ?? { id }),
+    uniqueIds.map((id) => catalogById.get(id) ?? { id })
   );
 
   if (Array.isArray(next.related_entities)) {

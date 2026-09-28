@@ -32,8 +32,7 @@ export function useDrugBrowser({
   const workspaceModule = resolveModuleSlug(activeWorkspace.slug);
 
   const isSearching = filters.query.trim().length >= 2;
-  const moduleForApi =
-    filters.module === "all" ? "all" : filters.module || workspaceModule;
+  const moduleForApi = filters.module === "all" ? "all" : filters.module || workspaceModule;
   const curriculumModule =
     filters.module === "all" ? workspaceModule : filters.module || workspaceModule;
 
@@ -53,10 +52,13 @@ export function useDrugBrowser({
     return items.map(browseItemToRow);
   }, [listQuery.data]);
 
-  const filteredRows = useMemo(() => filterDrugRows(enrichedRows, filters), [enrichedRows, filters]);
+  const filteredRows = useMemo(
+    () => filterDrugRows(enrichedRows, filters),
+    [enrichedRows, filters]
+  );
   const sortedRows = useMemo(
     () => sortDrugRows(filteredRows, sortField, sortDirection),
-    [filteredRows, sortField, sortDirection],
+    [filteredRows, sortField, sortDirection]
   );
 
   const rows: DrugBrowserRow[] = paginateDrugRows(sortedRows, page, pageSize);
@@ -65,8 +67,7 @@ export function useDrugBrowser({
   const hasMore = page < pageCount;
 
   const isLoading = listQuery.isLoading || modulesQuery.isLoading || curriculumQuery.isLoading;
-  const isFetching =
-    listQuery.isFetching || modulesQuery.isFetching || curriculumQuery.isFetching;
+  const isFetching = listQuery.isFetching || modulesQuery.isFetching || curriculumQuery.isFetching;
 
   return {
     rows,

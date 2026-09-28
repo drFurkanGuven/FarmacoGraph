@@ -84,11 +84,11 @@ describe("saveDrugPackage", () => {
     const client = {} as never;
 
     await expect(
-      saveDrugPackage(
-        client,
-        null,
-        { entity_payload: { id: "drug-1" }, related_entities: [], relationships: [] },
-      ),
+      saveDrugPackage(client, null, {
+        entity_payload: { id: "drug-1" },
+        related_entities: [],
+        relationships: [],
+      })
     ).rejects.toBeInstanceOf(ApiError);
   });
 });

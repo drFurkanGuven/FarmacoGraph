@@ -18,8 +18,15 @@ export function isRetryableError(error: unknown): boolean {
   return error instanceof TypeError;
 }
 
-export function getRetryDelay(attempt: number, baseMs = DEFAULT_RETRY_BASE_MS): number {
-  return baseMs * (attempt + 1);
+export function getRetryDelay(
+  attempt: number,
+  baseMs = DEFAULT_RETRY_BASE_MS,
+  error?: unknown
+): number {
+  if (error instanceof ApiError && error.retryAfterMs !== null && error.retryAfterMs > 0) {
+    return error.retryAfterMs;
+  }
+  return baseMs * Math.pow(2, attempt);
 }
 
 export function defaultShouldRetry(error: unknown, attempt: number, maxRetries: number): boolean {
@@ -29,11 +36,12 @@ export function defaultShouldRetry(error: unknown, attempt: number, maxRetries: 
 
 export async function withRetry<T>(
   fn: (attempt: number) => Promise<T>,
-  options: RetryOptions = {},
+  options: RetryOptions = {}
 ): Promise<T> {
   const retries = options.retries ?? DEFAULT_RETRIES;
   const baseDelayMs = options.baseDelayMs ?? DEFAULT_RETRY_BASE_MS;
-  const shouldRetry = options.shouldRetry ?? ((error, attempt) => defaultShouldRetry(error, attempt, retries));
+  const shouldRetry =
+    options.shouldRetry ?? ((error, attempt) => defaultShouldRetry(error, attempt, retries));
 
   let lastError: unknown;
   for (let attempt = 0; attempt <= retries; attempt++) {
@@ -43,7 +51,9 @@ export async function withRetry<T>(
       lastError = error;
       if (!shouldRetry(error, attempt)) throw error;
       if (attempt < retries) {
-        await new Promise((resolve) => setTimeout(resolve, getRetryDelay(attempt, baseDelayMs)));
+        await new Promise((resolve) =>
+          setTimeout(resolve, getRetryDelay(attempt, baseDelayMs, error))
+        );
       }
     }
   }

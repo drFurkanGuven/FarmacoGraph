@@ -17,7 +17,9 @@ export function EntityEditorShell({
           <h2 className="text-2xl font-semibold tracking-tight">{title}</h2>
           {subtitle ? <p className="text-sm text-muted-foreground">{subtitle}</p> : null}
         </div>
-        {headerActions ? <div className="flex flex-wrap items-center gap-2">{headerActions}</div> : null}
+        {headerActions ? (
+          <div className="flex flex-wrap items-center gap-2">{headerActions}</div>
+        ) : null}
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[14rem_minmax(0,1fr)] xl:grid-cols-[14rem_minmax(0,1fr)_18rem]">
@@ -29,4 +31,9 @@ export function EntityEditorShell({
   );
 }
 
-export type { EntityEditorField, EntityEditorSection, EntityEditorSnapshot, EntityPublishPackage } from "./types";
+export type {
+  EntityEditorField,
+  EntityEditorSection,
+  EntityEditorSnapshot,
+  EntityPublishPackage,
+} from "./types";

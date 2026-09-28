@@ -98,12 +98,12 @@ describe("FarmacoGraphClient", () => {
     expect(transport.request).toHaveBeenNthCalledWith(
       1,
       "/drugs/00000000-0000-4000-8000-000000000001/graph",
-      { params: { depth: 3 }, datasetVersion: undefined },
+      { params: { depth: 3 }, datasetVersion: undefined }
     );
     expect(transport.request).toHaveBeenNthCalledWith(
       2,
       "/drugs/00000000-0000-4000-8000-000000000001/mechanism",
-      { params: {}, datasetVersion: undefined },
+      { params: {}, datasetVersion: undefined }
     );
   });
 

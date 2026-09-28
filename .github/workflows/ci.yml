@@ -36,6 +36,9 @@ jobs:
       - name: Validate OpenAPI spec
         run: python -c "import yaml; yaml.safe_load(open('openapi/openapi.yaml'))"
 
+      - name: Check OpenAPI contract sync
+        run: python scripts/check-openapi-diff.py
+
       - name: Validate ontology JSON
         run: |
           python -c "import json; json.load(open('ontology/relationships.json'))"
@@ -97,6 +100,33 @@ jobs:
     name: Python integration tests
     runs-on: ubuntu-latest
     needs: python-test
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: farmacograph
+          POSTGRES_PASSWORD: testpassword
+          POSTGRES_DB: farmacograph_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      neo4j:
+        image: neo4j:5.20.0
+        env:
+          NEO4J_AUTH: neo4j/testpassword
+        ports:
+          - 7687:7687
+        options: >-
+          --health-cmd "cypher-shell -u neo4j -p testpassword 'RETURN 1'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
     steps:
       - uses: actions/checkout@v4
 
@@ -113,8 +143,11 @@ jobs:
       - name: Run integration tests
         env:
           FG_ENVIRONMENT: test
-          FG_DATABASE_URL: "sqlite+aiosqlite:///:memory:"
-          FG_NEO4J_ENABLED: "false"
+          FG_DATABASE_URL: "postgresql+asyncpg://farmacograph:testpassword@localhost:5432/farmacograph_test"
+          FG_NEO4J_URI: "bolt://localhost:7687"
+          FG_NEO4J_USER: "neo4j"
+          FG_NEO4J_PASSWORD: "testpassword"
+          FG_NEO4J_ENABLED: "true"
           FG_LOG_JSON: "false"
         run: pytest -m integration -v
 

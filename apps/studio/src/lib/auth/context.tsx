@@ -1,6 +1,14 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import type { AuthSession, UserRole, Workspace } from "@/lib/api/types";
 import { authApi, AuthApiError, isAuthEndpointUnavailable } from "./api";
 import { hasPermission, hasRole, resolveSessionScopes, rolesFromScopes } from "./roles";
@@ -37,7 +45,10 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function buildSession(patch: Partial<AuthSession>, previous: AuthSession = GUEST_SESSION): AuthSession {
+function buildSession(
+  patch: Partial<AuthSession>,
+  previous: AuthSession = GUEST_SESSION
+): AuthSession {
   const next: AuthSession = {
     ...previous,
     ...patch,
@@ -46,7 +57,10 @@ function buildSession(patch: Partial<AuthSession>, previous: AuthSession = GUEST
   };
 
   if (patch.accessToken) {
-    const fromJwt = sessionFromAccessToken(patch.accessToken, patch.refreshToken ?? next.refreshToken);
+    const fromJwt = sessionFromAccessToken(
+      patch.accessToken,
+      patch.refreshToken ?? next.refreshToken
+    );
     next.accessToken = fromJwt.accessToken;
     next.refreshToken = fromJwt.refreshToken;
     next.scopes = fromJwt.scopes;
@@ -72,7 +86,7 @@ function buildSession(patch: Partial<AuthSession>, previous: AuthSession = GUEST
 
 function applyTokenResponse(
   response: Awaited<ReturnType<typeof authApi.loginWithPassword>>,
-  fallback: Partial<AuthSession> = {},
+  fallback: Partial<AuthSession> = {}
 ): AuthSession {
   const scopes = normalizeScopes(response.scopes);
   const session = buildSession({
@@ -122,7 +136,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     (accessToken: string, refreshToken?: string | null) => {
       persistSession(buildSession({ accessToken, refreshToken: refreshToken ?? null }));
     },
-    [persistSession],
+    [persistSession]
   );
 
   const loginWithPassword = useCallback(
@@ -135,7 +149,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (isAuthEndpointUnavailable(error)) {
           throw new AuthApiError(
             "Password login is not available yet. Use API key or paste a JWT in Settings.",
-            501,
+            501
           );
         }
         throw error;
@@ -143,7 +157,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
       }
     },
-    [persistSession],
+    [persistSession]
   );
 
   const loginWithApiKey = useCallback(
@@ -159,7 +173,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               apiKey,
               roles: ["curator", "reviewer"],
               displayName: "API key user",
-            }),
+            })
           );
           return;
         }
@@ -168,7 +182,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
       }
     },
-    [persistSession],
+    [persistSession]
   );
 
   const refreshSession = useCallback(async (): Promise<boolean> => {
@@ -205,12 +219,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkRole = useCallback(
     (role: UserRole | UserRole[]) => hasRole(session.roles, role),
-    [session.roles],
+    [session.roles]
   );
 
   const checkScope = useCallback(
     (scope: Parameters<typeof hasPermission>[1]) => hasPermission(session.scopes, scope),
-    [session.scopes],
+    [session.scopes]
   );
 
   const value = useMemo<AuthContextValue>(
@@ -244,7 +258,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       refreshSession,
       checkRole,
       checkScope,
-    ],
+    ]
   );
 
   // Never return null — an empty document/tree looks like a white screen before

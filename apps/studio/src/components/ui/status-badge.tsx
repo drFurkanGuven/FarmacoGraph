@@ -3,7 +3,10 @@ import { cn } from "@/lib/utils";
 
 export type StatusValue = "active" | "inactive" | "draft" | "archived" | "error" | "processing";
 
-const STATUS_MAP: Record<StatusValue, { label: string; variant: NonNullable<BadgeProps["variant"]> }> = {
+const STATUS_MAP: Record<
+  StatusValue,
+  { label: string; variant: NonNullable<BadgeProps["variant"]> }
+> = {
   active: { label: "Active", variant: "success" },
   inactive: { label: "Inactive", variant: "muted" },
   draft: { label: "Draft", variant: "warning" },

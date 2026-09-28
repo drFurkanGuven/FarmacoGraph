@@ -9,7 +9,9 @@
     "label": "Ramipril",
     "generic_name": "Ramipril",
     "module": "cardiovascular",
-    "routes": ["oral"],
+    "routes": [
+      "oral"
+    ],
     "half_life": "2–4 hours (prodrug); ramiprilat ~11 hours",
     "protein_binding": "~73%",
     "bioavailability": "~28% after oral administration",
@@ -21,7 +23,9 @@
     "dataset_version": "2026.1.0",
     "external_ids": {
       "rxnorm": "3520",
-      "atc": ["C09AA05"]
+      "atc": [
+        "C09AA05"
+      ]
     },
     "provenance": {
       "created_at": "2026-07-08T00:00:00+00:00",
@@ -38,9 +42,18 @@
       "validation_state": "passed"
     },
     "relationships": {
-      "BELONGS_TO": ["b1000001-0000-4000-8010-000000000002"],
-      "TREATS": ["d1000001-0000-4000-8010-000000000001"],
-      "HAS_MECHANISM_ROOT": ["m1000001-0000-4000-8010-000000000002"]
+      "BELONGS_TO": [
+        "b1000001-0000-4000-8010-000000000002"
+      ],
+      "TREATS": [
+        "d1000001-0000-4000-8010-000000000001"
+      ],
+      "HAS_MECHANISM_ROOT": [
+        "m1000001-0000-4000-8010-000000000002"
+      ],
+      "TARGETS": [
+        "00000000-0000-4000-8000-000000000052"
+      ]
     }
   },
   "related_entities": [
@@ -89,8 +102,128 @@
       "id": "m1000001-0000-4000-8010-000000000002",
       "entity_type": "MechanismFragment",
       "slug": "ace-inhibition",
-      "label": "ACE inhibition",
-      "description": "Inhibition of angiotensin-converting enzyme decreases angiotensin II and aldosterone-mediated vasoconstriction and sodium retention.",
+      "label": "ACE Inhibition",
+      "fragment_type": "molecular",
+      "description": "Competitive binding to zinc catalytic site of angiotensin-converting enzyme.",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "provenance": {
+        "created_at": "2026-07-08T00:00:00+00:00",
+        "updated_at": "2026-07-08T00:00:00+00:00",
+        "created_by": "curator@farmacograph.local",
+        "source": "manual"
+      },
+      "versioning": {
+        "dataset_version": "2026.1.0",
+        "valid_from": "2026-07-08",
+        "status": "published"
+      }
+    },
+    {
+      "id": "m1000001-0000-4000-8010-000000000021",
+      "entity_type": "MechanismFragment",
+      "slug": "decreased-angiotensin-ii",
+      "label": "Decreased Angiotensin II",
+      "fragment_type": "cellular",
+      "description": "Suppressed AT1 receptor stimulation and diminished systemic vasoconstriction.",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "provenance": {
+        "created_at": "2026-07-08T00:00:00+00:00",
+        "updated_at": "2026-07-08T00:00:00+00:00",
+        "created_by": "curator@farmacograph.local",
+        "source": "manual"
+      },
+      "versioning": {
+        "dataset_version": "2026.1.0",
+        "valid_from": "2026-07-08",
+        "status": "published"
+      }
+    },
+    {
+      "id": "m1000001-0000-4000-8010-000000000022",
+      "entity_type": "MechanismFragment",
+      "slug": "reduced-aldosterone-secretion",
+      "label": "Reduced Aldosterone Secretion",
+      "fragment_type": "organ",
+      "description": "Adrenal cortex secretes less aldosterone -> decreased sodium and water reabsorption in collecting ducts.",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "provenance": {
+        "created_at": "2026-07-08T00:00:00+00:00",
+        "updated_at": "2026-07-08T00:00:00+00:00",
+        "created_by": "curator@farmacograph.local",
+        "source": "manual"
+      },
+      "versioning": {
+        "dataset_version": "2026.1.0",
+        "valid_from": "2026-07-08",
+        "status": "published"
+      }
+    },
+    {
+      "id": "m1000001-0000-4000-8010-000000000023",
+      "entity_type": "MechanismFragment",
+      "slug": "decreased-svr-afterload",
+      "label": "Decreased SVR & Afterload",
+      "fragment_type": "clinical",
+      "description": "Reduced systemic vascular resistance lowers blood pressure and cardiac workload without reflex tachycardia.",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "provenance": {
+        "created_at": "2026-07-08T00:00:00+00:00",
+        "updated_at": "2026-07-08T00:00:00+00:00",
+        "created_by": "curator@farmacograph.local",
+        "source": "manual"
+      },
+      "versioning": {
+        "dataset_version": "2026.1.0",
+        "valid_from": "2026-07-08",
+        "status": "published"
+      }
+    },
+    {
+      "id": "e1000001-0000-4000-8010-000000000031",
+      "entity_type": "Evidence",
+      "evidence_type": "rct",
+      "slug": "hope-study-investigators-2000",
+      "label": "HOPE Trial: Ramipril in High-Risk Patients",
+      "title": "Effects of an angiotensin-converting-enzyme inhibitor, ramipril, on cardiovascular events in high-risk patients. The Heart Outcomes Prevention Evaluation Study Investigators",
+      "authors": [
+        "Yusuf S",
+        "Sleight P",
+        "Pogue J",
+        "Bosch J",
+        "Davies R",
+        "Dagenais G"
+      ],
+      "year": 2000,
+      "quality_score": 0.98,
+      "journal": "N Engl J Med",
+      "supports_claim": "Ramipril significantly reduces rates of death, myocardial infarction, and stroke in a broad range of high-risk patients.",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "provenance": {
+        "created_at": "2026-07-08T00:00:00+00:00",
+        "updated_at": "2026-07-08T00:00:00+00:00",
+        "created_by": "curator@farmacograph.local",
+        "source": "manual"
+      },
+      "versioning": {
+        "dataset_version": "2026.1.0",
+        "valid_from": "2026-07-08",
+        "status": "published"
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000052",
+      "entity_type": "TargetProtein",
+      "slug": "ace",
+      "label": "Angiotensin-Converting Enzyme",
+      "gene_symbol": "ACE",
+      "protein_type": "Enzyme",
+      "function": "Dipeptidyl carboxypeptidase converting angiotensin I to angiotensin II and inactivating bradykinin.",
+      "description": "Zinc metallopeptidase converting angiotensin I to vasoconstrictor angiotensin II.",
       "status": "published",
       "dataset_version": "2026.1.0",
       "provenance": {
@@ -119,14 +252,198 @@
       "source_type": "Drug",
       "target_type": "Disease",
       "source_id": "2c31ee65-5805-5693-bdeb-01bb4829b1b9",
-      "target_id": "d1000001-0000-4000-8010-000000000001"
+      "target_id": "d1000001-0000-4000-8010-000000000001",
+      "properties": {
+        "confidence_score": 0.98,
+        "evidence_level": "A",
+        "explanation": "Ramipril reduces systemic vascular resistance and blood pressure in hypertensive patients.",
+        "evidence_ids": [
+          "e1000001-0000-4000-8010-000000000031"
+        ]
+      }
+    },
+    {
+      "relationship_type": "SUPPORTED_BY",
+      "source_type": "Drug",
+      "target_type": "Evidence",
+      "source_id": "2c31ee65-5805-5693-bdeb-01bb4829b1b9",
+      "target_id": "e1000001-0000-4000-8010-000000000031",
+      "properties": {
+        "assertion_relationship": "TREATS",
+        "assertion_target_id": "d1000001-0000-4000-8010-000000000001",
+        "assertion_target_type": "Disease"
+      }
     },
     {
       "relationship_type": "HAS_MECHANISM_ROOT",
       "source_type": "Drug",
       "target_type": "MechanismFragment",
       "source_id": "2c31ee65-5805-5693-bdeb-01bb4829b1b9",
-      "target_id": "m1000001-0000-4000-8010-000000000002"
+      "target_id": "m1000001-0000-4000-8010-000000000002",
+      "properties": {
+        "confidence_score": 0.99,
+        "evidence_level": "expert_consensus",
+        "explanation": "Ramiprilat binds competitively to the active zinc site of ACE."
+      }
+    },
+    {
+      "relationship_type": "PRECEDES",
+      "source_type": "MechanismFragment",
+      "target_type": "MechanismFragment",
+      "source_id": "m1000001-0000-4000-8010-000000000002",
+      "target_id": "m1000001-0000-4000-8010-000000000021",
+      "properties": {
+        "confidence_score": 0.98,
+        "evidence_level": "expert_consensus",
+        "explanation": "Inhibition of ACE blocks conversion of angiotensin I to active angiotensin II."
+      }
+    },
+    {
+      "relationship_type": "PRECEDES",
+      "source_type": "MechanismFragment",
+      "target_type": "MechanismFragment",
+      "source_id": "m1000001-0000-4000-8010-000000000021",
+      "target_id": "m1000001-0000-4000-8010-000000000022",
+      "properties": {
+        "confidence_score": 0.97,
+        "evidence_level": "expert_consensus",
+        "explanation": "Lower circulating angiotensin II reduces stimulation of zona glomerulosa cells in the adrenal cortex, blunting aldosterone release."
+      }
+    },
+    {
+      "relationship_type": "PRECEDES",
+      "source_type": "MechanismFragment",
+      "target_type": "MechanismFragment",
+      "source_id": "m1000001-0000-4000-8010-000000000022",
+      "target_id": "m1000001-0000-4000-8010-000000000023",
+      "properties": {
+        "confidence_score": 0.96,
+        "evidence_level": "expert_consensus",
+        "explanation": "Reduced aldosterone promotes natriuresis and suppresses afterload, diminishing systemic vascular resistance."
+      }
+    },
+    {
+      "relationship_type": "TARGETS",
+      "source_type": "Drug",
+      "target_type": "TargetProtein",
+      "source_id": "2c31ee65-5805-5693-bdeb-01bb4829b1b9",
+      "target_id": "00000000-0000-4000-8000-000000000052",
+      "properties": {
+        "confidence_score": 0.99,
+        "evidence_level": "expert_consensus",
+        "explanation": "Ramiprilat, the active metabolite of ramipril, competitively inhibits angiotensin-converting enzyme (ACE)."
+      }
+    }
+  ],
+  "education": [
+    {
+      "id": "2c31ee65-5805-5693-bdeb-01bb4829b1b9:education:Flashcard:target",
+      "entity_type": "EducationResource",
+      "kind": "Flashcard",
+      "slug": "target",
+      "label": "target",
+      "content_layer": "education",
+      "audience": [
+        "medical_student"
+      ],
+      "difficulty_level": "core",
+      "language": "en",
+      "module": "cardiovascular",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "linked_entity_ids": [
+        "2c31ee65-5805-5693-bdeb-01bb4829b1b9"
+      ],
+      "front": "Which enzyme does ramiprilat inhibit?",
+      "back": "Angiotensin-converting enzyme (ACE): blocks angiotensin II synthesis.",
+      "hint": "Zinc catalytic site"
+    },
+    {
+      "id": "2c31ee65-5805-5693-bdeb-01bb4829b1b9:education:Flashcard:pk",
+      "entity_type": "EducationResource",
+      "kind": "Flashcard",
+      "slug": "pk",
+      "label": "pk",
+      "content_layer": "education",
+      "audience": [
+        "medical_student"
+      ],
+      "difficulty_level": "core",
+      "language": "en",
+      "module": "cardiovascular",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "linked_entity_ids": [
+        "2c31ee65-5805-5693-bdeb-01bb4829b1b9"
+      ],
+      "front": "Ramipril bioavailability and dosing?",
+      "back": "~28% oral bioavailability; 24-hour duration allows once-daily dosing.",
+      "hint": "Prodrug, ~11h ramiprilat"
+    },
+    {
+      "id": "2c31ee65-5805-5693-bdeb-01bb4829b1b9:education:BoardExamPearl:hope",
+      "entity_type": "EducationResource",
+      "kind": "BoardExamPearl",
+      "slug": "hope",
+      "label": "hope",
+      "content_layer": "education",
+      "audience": [
+        "medical_student"
+      ],
+      "difficulty_level": "core",
+      "language": "en",
+      "module": "cardiovascular",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "linked_entity_ids": [
+        "2c31ee65-5805-5693-bdeb-01bb4829b1b9"
+      ],
+      "text": "HOPE (2000): ramipril reduces death, MI and stroke in high-risk patients.",
+      "exam_tags": [
+        "TUS"
+      ]
+    },
+    {
+      "id": "2c31ee65-5805-5693-bdeb-01bb4829b1b9:education:CommonMistake:prodrug",
+      "entity_type": "EducationResource",
+      "kind": "CommonMistake",
+      "slug": "prodrug",
+      "label": "prodrug",
+      "content_layer": "education",
+      "audience": [
+        "medical_student"
+      ],
+      "difficulty_level": "core",
+      "language": "en",
+      "module": "cardiovascular",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "linked_entity_ids": [
+        "2c31ee65-5805-5693-bdeb-01bb4829b1b9"
+      ],
+      "mistake": "Ramipril acts directly without conversion.",
+      "correction": "Ramipril is a prodrug hydrolyzed to active ramiprilat (~11h half-life)."
+    },
+    {
+      "id": "2c31ee65-5805-5693-bdeb-01bb4829b1b9:education:Mnemonic:pril",
+      "entity_type": "EducationResource",
+      "kind": "Mnemonic",
+      "slug": "pril",
+      "label": "pril",
+      "content_layer": "education",
+      "audience": [
+        "medical_student"
+      ],
+      "difficulty_level": "core",
+      "language": "en",
+      "module": "cardiovascular",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "linked_entity_ids": [
+        "2c31ee65-5805-5693-bdeb-01bb4829b1b9"
+      ],
+      "mnemonic": "PRILs block ACE",
+      "expansion": "Ramipril (-pril suffix) inhibits ACE, lowering angiotensin II."
     }
   ]
 }

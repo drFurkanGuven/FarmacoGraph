@@ -18,7 +18,6 @@ interface State {
 /** Avoid secondary failures when console is overridden or unavailable. */
 function safeConsoleError(...args: unknown[]): void {
   try {
-     
     console.error(...args);
   } catch {
     // ignore

@@ -9,7 +9,7 @@ describe("PlaceholderPage", () => {
         title="Drugs"
         phase="Studio 4.2"
         description="Structural placeholder for the drug editor route."
-      />,
+      />
     );
 
     expect(screen.getByRole("heading", { name: "Drugs" })).toBeInTheDocument();

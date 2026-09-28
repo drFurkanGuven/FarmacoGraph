@@ -7,7 +7,11 @@ import {
   parseValidationIssue,
   parseValidationIssues,
 } from "../validation-utils";
-import type { QueueValidationItem, ValidationIssue, ValidationSummaryData } from "../validation-types";
+import type {
+  QueueValidationItem,
+  ValidationIssue,
+  ValidationSummaryData,
+} from "../validation-types";
 
 const baseIssue = (overrides: Partial<ValidationIssue> = {}): ValidationIssue => ({
   constraint_id: null,
@@ -63,7 +67,9 @@ describe("isMissingEvidenceIssue", () => {
   });
 
   it("detects evidence keywords in messages", () => {
-    expect(isMissingEvidenceIssue(baseIssue({ message: "Provenance metadata is required" }))).toBe(true);
+    expect(isMissingEvidenceIssue(baseIssue({ message: "Provenance metadata is required" }))).toBe(
+      true
+    );
     expect(isMissingEvidenceIssue(baseIssue({ message: "Missing drug class" }))).toBe(false);
   });
 });
@@ -150,7 +156,7 @@ describe("computePublishReadiness", () => {
     const readiness = computePublishReadiness(
       summary,
       [validQueueItem("draft"), validQueueItem("review")],
-      categorizeIssues([]),
+      categorizeIssues([])
     );
 
     expect(readiness.status).toBe("ready");
@@ -162,7 +168,7 @@ describe("computePublishReadiness", () => {
     const readiness = computePublishReadiness(
       { ...summary, failed_count: 2 },
       [],
-      categorizeIssues([baseIssue()]),
+      categorizeIssues([baseIssue()])
     );
 
     expect(readiness.status).toBe("blocked");
@@ -174,7 +180,7 @@ describe("computePublishReadiness", () => {
     const readiness = computePublishReadiness(
       { ...summary, pending_count: 3 },
       [],
-      categorizeIssues([]),
+      categorizeIssues([])
     );
 
     expect(readiness.status).toBe("pending");

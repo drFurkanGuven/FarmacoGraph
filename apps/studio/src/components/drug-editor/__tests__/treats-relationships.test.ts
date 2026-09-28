@@ -51,7 +51,7 @@ describe("treats relationships", () => {
     expect(props.evidence_ids).toEqual([EVIDENCE_ID]);
 
     const supportedBy = (next.relationships ?? []).filter(
-      (row) => (row as { relationship_type?: string }).relationship_type === "SUPPORTED_BY",
+      (row) => (row as { relationship_type?: string }).relationship_type === "SUPPORTED_BY"
     );
     expect(supportedBy).toHaveLength(1);
     expect(supportedBy[0]).toMatchObject({
@@ -73,15 +73,15 @@ describe("treats relationships", () => {
       syncTreatsSelection(createEmptyDrugPackage(DRUG_ID), DRUG_ID, [HYPERTENSION_ID]),
       DRUG_ID,
       HYPERTENSION_ID,
-      [EVIDENCE_ID],
+      [EVIDENCE_ID]
     );
     const next = syncTreatsSelection(withEvidence, DRUG_ID, []);
 
     expect(listTreatsDiseaseIds(next)).toEqual([]);
     expect(
       (next.relationships ?? []).filter(
-        (row) => (row as { relationship_type?: string }).relationship_type === "SUPPORTED_BY",
-      ),
+        (row) => (row as { relationship_type?: string }).relationship_type === "SUPPORTED_BY"
+      )
     ).toHaveLength(0);
   });
 
@@ -96,7 +96,9 @@ describe("treats relationships", () => {
 
     const next = ensureTreatsRelationshipEdges(legacy);
     expect(next.relationships).toHaveLength(1);
-    expect(readTreatsIndication(next, DRUG_ID, HYPERTENSION_ID).evidence_level).toBe("expert_consensus");
+    expect(readTreatsIndication(next, DRUG_ID, HYPERTENSION_ID).evidence_level).toBe(
+      "expert_consensus"
+    );
   });
 
   it("removes relationship rows when disease is deselected", () => {

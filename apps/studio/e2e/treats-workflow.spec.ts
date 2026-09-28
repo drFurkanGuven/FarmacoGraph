@@ -28,7 +28,9 @@ test.describe("TREATS indication workflow", () => {
     await mockEvidenceWorkflowApi(page);
   });
 
-  test("indications metadata incomplete until explanation and attestation are set", async ({ page }) => {
+  test("indications metadata incomplete until explanation and attestation are set", async ({
+    page,
+  }) => {
     await page.goto("/knowledge/drugs/ramipril");
     await expect(page.getByLabel("Slug")).toHaveValue("ramipril", { timeout: 15_000 });
 
@@ -72,7 +74,9 @@ test.describe("TREATS indication workflow", () => {
     });
   });
 
-  test("indications can link attached evidence for non-expert evidence levels", async ({ page }) => {
+  test("indications can link attached evidence for non-expert evidence levels", async ({
+    page,
+  }) => {
     await page.goto("/knowledge/drugs/ramipril");
     await expect(page.getByLabel("Slug")).toHaveValue("ramipril", { timeout: 15_000 });
 

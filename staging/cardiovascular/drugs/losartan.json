@@ -1,0 +1,565 @@
+{
+  "module": "cardiovascular",
+  "dataset_version": "2026.1.0",
+  "create_snapshot": true,
+  "entity_payload": {
+    "id": "04fe6ccc-c02e-5256-b362-af0fd4adff98",
+    "entity_type": "Drug",
+    "slug": "losartan",
+    "label": "Losartan",
+    "generic_name": "Losartan",
+    "module": "cardiovascular",
+    "routes": [
+      "oral"
+    ],
+    "half_life": "2 hours (losartan); 6–9 hours (active carboxylic acid metabolite E-3174)",
+    "protein_binding": "~98.7%",
+    "bioavailability": "~33% (first-pass hepatic metabolism by CYP2C9 and CYP3A4 to active E-3174 metabolite)",
+    "onset": "1 hour (peak antihypertensive effect 3–6 hours)",
+    "duration": "24 hours (once-daily dosing)",
+    "has_black_box_warning": true,
+    "black_box_text": "Drugs that act directly on the renin-angiotensin system can cause injury and death to the developing fetus when administered during pregnancy. Discontinue immediately when pregnancy is detected.",
+    "is_high_alert": false,
+    "status": "published",
+    "dataset_version": "2026.1.0",
+    "external_ids": {
+      "rxnorm": "52175",
+      "atc": [
+        "C09CA01"
+      ]
+    },
+    "provenance": {
+      "created_at": "2026-07-08T00:00:00+00:00",
+      "updated_at": "2026-07-08T00:00:00+00:00",
+      "created_by": "curator@farmacograph.local",
+      "source": "manual",
+      "imported_from": "FDA label (Cozaar); BNF 2026; DailyMed",
+      "curator_attestation": true
+    },
+    "versioning": {
+      "dataset_version": "2026.1.0",
+      "ontology_version": "1.0.0",
+      "valid_from": "2026-07-08",
+      "status": "published",
+      "validation_state": "passed"
+    },
+    "relationships": {
+      "BELONGS_TO": [
+        "b1000001-0000-4000-8010-000000000003"
+      ],
+      "TREATS": [
+        "d1000001-0000-4000-8010-000000000001",
+        "d1000001-0000-4000-8010-000000000004"
+      ],
+      "HAS_MECHANISM_ROOT": [
+        "m1000001-0000-4000-8010-000000000004"
+      ],
+      "TARGETS": [
+        "00000000-0000-4000-8000-000000000053"
+      ],
+      "METABOLIZED_BY": [
+        "00000000-0000-4000-8000-000000000056"
+      ]
+    }
+  },
+  "related_entities": [
+    {
+      "id": "b1000001-0000-4000-8010-000000000003",
+      "entity_type": "DrugClass",
+      "slug": "arbs",
+      "label": "Angiotensin receptor blockers",
+      "description": "Agents that selectively block the binding of angiotensin II to AT1 receptors, preventing vasoconstriction and aldosterone release.",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "organ_system": "cardiovascular",
+      "provenance": {
+        "created_at": "2026-07-08T00:00:00+00:00",
+        "updated_at": "2026-07-08T00:00:00+00:00",
+        "created_by": "curator@farmacograph.local",
+        "source": "manual"
+      },
+      "versioning": {
+        "dataset_version": "2026.1.0",
+        "valid_from": "2026-07-08",
+        "status": "published"
+      }
+    },
+    {
+      "id": "d1000001-0000-4000-8010-000000000001",
+      "entity_type": "Disease",
+      "slug": "hypertension",
+      "label": "Hypertension",
+      "description": "Persistently elevated systemic arterial blood pressure.",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "provenance": {
+        "created_at": "2026-07-08T00:00:00+00:00",
+        "updated_at": "2026-07-08T00:00:00+00:00",
+        "created_by": "curator@farmacograph.local",
+        "source": "manual"
+      },
+      "versioning": {
+        "dataset_version": "2026.1.0",
+        "valid_from": "2026-07-08",
+        "status": "published"
+      }
+    },
+    {
+      "id": "d1000001-0000-4000-8010-000000000004",
+      "entity_type": "Disease",
+      "slug": "diabetic-nephropathy",
+      "label": "Diabetic nephropathy",
+      "description": "Progressive kidney disease caused by microvascular damage to renal glomeruli in patients with diabetes mellitus.",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "provenance": {
+        "created_at": "2026-07-08T00:00:00+00:00",
+        "updated_at": "2026-07-08T00:00:00+00:00",
+        "created_by": "curator@farmacograph.local",
+        "source": "manual"
+      },
+      "versioning": {
+        "dataset_version": "2026.1.0",
+        "valid_from": "2026-07-08",
+        "status": "published"
+      }
+    },
+    {
+      "id": "m1000001-0000-4000-8010-000000000004",
+      "entity_type": "MechanismFragment",
+      "slug": "angiotensin-receptor-blockade",
+      "label": "Angiotensin receptor blockade",
+      "fragment_type": "molecular",
+      "description": "Selective competitive antagonism of the angiotensin II type 1 (AT1) receptor prevents vasoconstriction and aldosterone synthesis.",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "provenance": {
+        "created_at": "2026-07-08T00:00:00+00:00",
+        "updated_at": "2026-07-08T00:00:00+00:00",
+        "created_by": "curator@farmacograph.local",
+        "source": "manual"
+      },
+      "versioning": {
+        "dataset_version": "2026.1.0",
+        "valid_from": "2026-07-08",
+        "status": "published"
+      }
+    },
+    {
+      "id": "m1000001-0000-4000-8010-000000000014",
+      "entity_type": "MechanismFragment",
+      "slug": "vascular-smooth-muscle-relaxation",
+      "label": "Vascular smooth muscle relaxation",
+      "fragment_type": "cellular",
+      "description": "Inhibition of AT1-coupled Gq-protein signaling decreases IP3 and intracellular calcium release in vascular smooth muscle, reducing systemic vascular resistance.",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "provenance": {
+        "created_at": "2026-07-08T00:00:00+00:00",
+        "updated_at": "2026-07-08T00:00:00+00:00",
+        "created_by": "curator@farmacograph.local",
+        "source": "manual"
+      },
+      "versioning": {
+        "dataset_version": "2026.1.0",
+        "valid_from": "2026-07-08",
+        "status": "published"
+      }
+    },
+    {
+      "id": "m1000001-0000-4000-8010-000000000015",
+      "entity_type": "MechanismFragment",
+      "slug": "suppression-of-aldosterone-secretion",
+      "label": "Suppression of aldosterone secretion",
+      "fragment_type": "organ",
+      "description": "Blockade of AT1 receptors in the adrenal zona glomerulosa attenuates aldosterone release, enhancing renal sodium and water excretion.",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "provenance": {
+        "created_at": "2026-07-08T00:00:00+00:00",
+        "updated_at": "2026-07-08T00:00:00+00:00",
+        "created_by": "curator@farmacograph.local",
+        "source": "manual"
+      },
+      "versioning": {
+        "dataset_version": "2026.1.0",
+        "valid_from": "2026-07-08",
+        "status": "published"
+      }
+    },
+    {
+      "id": "m1000001-0000-4000-8010-000000000016",
+      "entity_type": "MechanismFragment",
+      "slug": "reduction-of-intraglomerular-pressure",
+      "label": "Reduction of intraglomerular pressure",
+      "fragment_type": "tissue",
+      "description": "Preferential dilation of the renal efferent arteriole reduces intraglomerular capillary hydrostatic pressure and proteinuria, slowing diabetic renal disease progression.",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "provenance": {
+        "created_at": "2026-07-08T00:00:00+00:00",
+        "updated_at": "2026-07-08T00:00:00+00:00",
+        "created_by": "curator@farmacograph.local",
+        "source": "manual"
+      },
+      "versioning": {
+        "dataset_version": "2026.1.0",
+        "valid_from": "2026-07-08",
+        "status": "published"
+      }
+    },
+    {
+      "id": "e1000001-0000-4000-8010-000000000004",
+      "entity_type": "Evidence",
+      "evidence_type": "rct",
+      "slug": "renaal-study-investigators-2001",
+      "label": "RENAAL Trial: Losartan in Diabetic Nephropathy",
+      "title": "Effects of Losartan on Renal and Cardiovascular Outcomes in Patients with Type 2 Diabetes and Nephropathy",
+      "authors": [
+        "Brenner BM",
+        "Cooper ME",
+        "de Zeeuw D",
+        "RENAAL Study Investigators"
+      ],
+      "year": 2001,
+      "quality_score": 0.96,
+      "journal": "The New England Journal of Medicine",
+      "supports_claim": "Losartan confers significant renal protection in type 2 diabetic patients with nephropathy, reducing doubling of serum creatinine and ESRD.",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "provenance": {
+        "created_at": "2026-07-08T00:00:00+00:00",
+        "updated_at": "2026-07-08T00:00:00+00:00",
+        "created_by": "curator@farmacograph.local",
+        "source": "manual"
+      },
+      "versioning": {
+        "dataset_version": "2026.1.0",
+        "valid_from": "2026-07-08",
+        "status": "published"
+      }
+    },
+    {
+      "id": "e1000001-0000-4000-8010-000000000005",
+      "entity_type": "Evidence",
+      "evidence_type": "rct",
+      "slug": "life-study-group-2002",
+      "label": "LIFE Study: Losartan in Hypertension",
+      "title": "Cardiovascular morbidity and mortality in the Losartan Intervention For Endpoint reduction in hypertension study (LIFE): a randomised trial against atenolol",
+      "authors": [
+        "Dahlöf B",
+        "Devereux RB",
+        "Kjeldsen SE",
+        "LIFE Study Group"
+      ],
+      "year": 2002,
+      "quality_score": 0.95,
+      "journal": "The Lancet",
+      "supports_claim": "Losartan prevents more cardiovascular morbidity and death than atenolol for a similar reduction in blood pressure in hypertensive patients.",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "provenance": {
+        "created_at": "2026-07-08T00:00:00+00:00",
+        "updated_at": "2026-07-08T00:00:00+00:00",
+        "created_by": "curator@farmacograph.local",
+        "source": "manual"
+      },
+      "versioning": {
+        "dataset_version": "2026.1.0",
+        "valid_from": "2026-07-08",
+        "status": "published"
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000053",
+      "entity_type": "Receptor",
+      "slug": "agtr1",
+      "label": "Angiotensin II Type 1 Receptor",
+      "gene_symbol": "AGTR1",
+      "family": "G-protein coupled receptor (Gq/11)",
+      "description": "Major physiological receptor for angiotensin II mediating vasoconstriction and aldosterone release.",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "provenance": {
+        "created_at": "2026-07-08T00:00:00+00:00",
+        "updated_at": "2026-07-08T00:00:00+00:00",
+        "created_by": "curator@farmacograph.local",
+        "source": "manual"
+      },
+      "versioning": {
+        "dataset_version": "2026.1.0",
+        "valid_from": "2026-07-08",
+        "status": "published"
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000056",
+      "entity_type": "Enzyme",
+      "slug": "cyp2c9",
+      "label": "Cytochrome P450 2C9",
+      "gene_symbol": "CYP2C9",
+      "is_cyp": true,
+      "cyp_family": "CYP2C",
+      "description": "Hepatic cytochrome P450 enzyme responsible for oxidation of losartan to its active carboxylic acid metabolite.",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "provenance": {
+        "created_at": "2026-07-08T00:00:00+00:00",
+        "updated_at": "2026-07-08T00:00:00+00:00",
+        "created_by": "curator@farmacograph.local",
+        "source": "manual"
+      },
+      "versioning": {
+        "dataset_version": "2026.1.0",
+        "valid_from": "2026-07-08",
+        "status": "published"
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "relationship_type": "BELONGS_TO",
+      "source_type": "Drug",
+      "target_type": "DrugClass",
+      "source_id": "04fe6ccc-c02e-5256-b362-af0fd4adff98",
+      "target_id": "b1000001-0000-4000-8010-000000000003"
+    },
+    {
+      "relationship_type": "TREATS",
+      "source_type": "Drug",
+      "target_type": "Disease",
+      "source_id": "04fe6ccc-c02e-5256-b362-af0fd4adff98",
+      "target_id": "d1000001-0000-4000-8010-000000000001",
+      "properties": {
+        "confidence_score": 0.98,
+        "evidence_level": "A",
+        "explanation": "Losartan lowers systemic arterial blood pressure by blocking angiotensin II-mediated arterial vasoconstriction and aldosterone-dependent volume retention.",
+        "evidence_ids": [
+          "e1000001-0000-4000-8010-000000000005"
+        ]
+      }
+    },
+    {
+      "relationship_type": "TREATS",
+      "source_type": "Drug",
+      "target_type": "Disease",
+      "source_id": "04fe6ccc-c02e-5256-b362-af0fd4adff98",
+      "target_id": "d1000001-0000-4000-8010-000000000004",
+      "properties": {
+        "confidence_score": 0.98,
+        "evidence_level": "A",
+        "explanation": "Losartan slows progression of renal disease in patients with type 2 diabetes and nephropathy by reducing intraglomerular hypertension and proteinuria.",
+        "evidence_ids": [
+          "e1000001-0000-4000-8010-000000000004"
+        ]
+      }
+    },
+    {
+      "relationship_type": "HAS_MECHANISM_ROOT",
+      "source_type": "Drug",
+      "target_type": "MechanismFragment",
+      "source_id": "04fe6ccc-c02e-5256-b362-af0fd4adff98",
+      "target_id": "m1000001-0000-4000-8010-000000000004",
+      "properties": {
+        "confidence_score": 0.98,
+        "evidence_level": "expert_consensus",
+        "explanation": "Potent and selective competitive antagonism of the AT1 receptor subtype initiating pharmacodynamic response."
+      }
+    },
+    {
+      "relationship_type": "PRECEDES",
+      "source_type": "MechanismFragment",
+      "target_type": "MechanismFragment",
+      "source_id": "m1000001-0000-4000-8010-000000000004",
+      "target_id": "m1000001-0000-4000-8010-000000000014",
+      "properties": {
+        "confidence_score": 0.95,
+        "evidence_level": "expert_consensus",
+        "explanation": "AT1 blockade prevents Gq-activation of phospholipase C, inhibiting IP3 generation and intracellular calcium mobilization in vascular myocytes."
+      }
+    },
+    {
+      "relationship_type": "PRECEDES",
+      "source_type": "MechanismFragment",
+      "target_type": "MechanismFragment",
+      "source_id": "m1000001-0000-4000-8010-000000000004",
+      "target_id": "m1000001-0000-4000-8010-000000000015",
+      "properties": {
+        "confidence_score": 0.95,
+        "evidence_level": "expert_consensus",
+        "explanation": "Blockade of AT1 receptors on adrenal glomerulosa cells suppresses calcium-mediated transcriptional activation of aldosterone synthase."
+      }
+    },
+    {
+      "relationship_type": "PRECEDES",
+      "source_type": "MechanismFragment",
+      "target_type": "MechanismFragment",
+      "source_id": "m1000001-0000-4000-8010-000000000014",
+      "target_id": "m1000001-0000-4000-8010-000000000016",
+      "properties": {
+        "confidence_score": 0.95,
+        "evidence_level": "expert_consensus",
+        "explanation": "Preferential reduction of vascular tone in post-glomerular efferent arterioles lowers glomerular capillary hydraulic pressure."
+      }
+    },
+    {
+      "relationship_type": "SUPPORTED_BY",
+      "source_type": "Drug",
+      "target_type": "Evidence",
+      "source_id": "04fe6ccc-c02e-5256-b362-af0fd4adff98",
+      "target_id": "e1000001-0000-4000-8010-000000000004",
+      "properties": {
+        "assertion_relationship": "TREATS",
+        "assertion_target_id": "d1000001-0000-4000-8010-000000000004",
+        "assertion_target_type": "Disease"
+      }
+    },
+    {
+      "relationship_type": "SUPPORTED_BY",
+      "source_type": "Drug",
+      "target_type": "Evidence",
+      "source_id": "04fe6ccc-c02e-5256-b362-af0fd4adff98",
+      "target_id": "e1000001-0000-4000-8010-000000000005",
+      "properties": {
+        "assertion_relationship": "TREATS",
+        "assertion_target_id": "d1000001-0000-4000-8010-000000000001",
+        "assertion_target_type": "Disease"
+      }
+    },
+    {
+      "relationship_type": "TARGETS",
+      "source_type": "Drug",
+      "target_type": "Receptor",
+      "source_id": "04fe6ccc-c02e-5256-b362-af0fd4adff98",
+      "target_id": "00000000-0000-4000-8000-000000000053",
+      "properties": {
+        "confidence_score": 0.99,
+        "evidence_level": "expert_consensus",
+        "explanation": "Losartan and its active metabolite E-3174 selectively block angiotensin II type 1 (AT1) receptors."
+      }
+    },
+    {
+      "relationship_type": "METABOLIZED_BY",
+      "source_type": "Drug",
+      "target_type": "Enzyme",
+      "source_id": "04fe6ccc-c02e-5256-b362-af0fd4adff98",
+      "target_id": "00000000-0000-4000-8000-000000000056",
+      "properties": {
+        "confidence_score": 0.98,
+        "evidence_level": "expert_consensus",
+        "explanation": "Losartan is oxidized by CYP2C9 and CYP3A4 to generate the active metabolite E-3174."
+      }
+    }
+  ],
+  "education": [
+    {
+      "id": "04fe6ccc-c02e-5256-b362-af0fd4adff98:education:Flashcard:target",
+      "entity_type": "EducationResource",
+      "kind": "Flashcard",
+      "slug": "target",
+      "label": "target",
+      "content_layer": "education",
+      "audience": [
+        "medical_student"
+      ],
+      "difficulty_level": "core",
+      "language": "en",
+      "module": "cardiovascular",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "linked_entity_ids": [
+        "04fe6ccc-c02e-5256-b362-af0fd4adff98"
+      ],
+      "front": "Which receptor does losartan block?",
+      "back": "Angiotensin II type 1 (AT1) receptor, competitive antagonism.",
+      "hint": "ARB, not ACE inhibitor"
+    },
+    {
+      "id": "04fe6ccc-c02e-5256-b362-af0fd4adff98:education:Flashcard:pk",
+      "entity_type": "EducationResource",
+      "kind": "Flashcard",
+      "slug": "pk",
+      "label": "pk",
+      "content_layer": "education",
+      "audience": [
+        "medical_student"
+      ],
+      "difficulty_level": "core",
+      "language": "en",
+      "module": "cardiovascular",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "linked_entity_ids": [
+        "04fe6ccc-c02e-5256-b362-af0fd4adff98"
+      ],
+      "front": "Losartan active metabolite and duration?",
+      "back": "E-3174 via CYP2C9/CYP3A4; effect lasts 6–9 hours.",
+      "hint": "Prodrug-like activation"
+    },
+    {
+      "id": "04fe6ccc-c02e-5256-b362-af0fd4adff98:education:BoardExamPearl:renaal",
+      "entity_type": "EducationResource",
+      "kind": "BoardExamPearl",
+      "slug": "renaal",
+      "label": "renaal",
+      "content_layer": "education",
+      "audience": [
+        "medical_student"
+      ],
+      "difficulty_level": "core",
+      "language": "en",
+      "module": "cardiovascular",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "linked_entity_ids": [
+        "04fe6ccc-c02e-5256-b362-af0fd4adff98"
+      ],
+      "text": "RENAAL (2001): losartan protects kidneys in type 2 diabetic nephropathy.",
+      "exam_tags": [
+        "TUS"
+      ]
+    },
+    {
+      "id": "04fe6ccc-c02e-5256-b362-af0fd4adff98:education:CommonMistake:pregnancy",
+      "entity_type": "EducationResource",
+      "kind": "CommonMistake",
+      "slug": "pregnancy",
+      "label": "pregnancy",
+      "content_layer": "education",
+      "audience": [
+        "medical_student"
+      ],
+      "difficulty_level": "core",
+      "language": "en",
+      "module": "cardiovascular",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "linked_entity_ids": [
+        "04fe6ccc-c02e-5256-b362-af0fd4adff98"
+      ],
+      "mistake": "Losartan is safe in pregnancy like most antihypertensives.",
+      "correction": "RAAS blockers cause fetal injury and death — stop immediately if pregnancy is detected."
+    },
+    {
+      "id": "04fe6ccc-c02e-5256-b362-af0fd4adff98:education:Mnemonic:sartan",
+      "entity_type": "EducationResource",
+      "kind": "Mnemonic",
+      "slug": "sartan",
+      "label": "sartan",
+      "content_layer": "education",
+      "audience": [
+        "medical_student"
+      ],
+      "difficulty_level": "core",
+      "language": "en",
+      "module": "cardiovascular",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "linked_entity_ids": [
+        "04fe6ccc-c02e-5256-b362-af0fd4adff98"
+      ],
+      "mnemonic": "SARTANs block AT1",
+      "expansion": "Losartan (-sartan) blocks AT1 receptors: lower pressure, renal protection."
+    }
+  ]
+}

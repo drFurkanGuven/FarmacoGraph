@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, Moon, Sun, Laptop } from "lucide-react";
+import { ChevronDown, Languages, Moon, Sun, Laptop } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useModules } from "@/lib/api/react-query/hooks";
 import { useAuth } from "@/lib/auth/context";
+import { useLanguage } from "@/lib/i18n/context";
+import { STUDIO_LOCALES, type StudioLocale } from "@/lib/i18n/dictionaries";
 import { DEFAULT_WORKSPACES } from "@/lib/auth/storage";
 import type { Workspace } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
@@ -31,13 +33,14 @@ function workspaceFromModule(slug: string, name: string): Workspace {
 export function TopNav({ onOpenCommand }: TopNavProps) {
   const { session, activeWorkspace, setActiveWorkspace } = useAuth();
   const { setTheme, theme } = useTheme();
+  const { locale, setLocale, t } = useLanguage();
   const pathname = usePathname();
   const modulesQuery = useModules();
 
   const title =
     pathname === "/"
       ? "Dashboard"
-      : pathname.split("/").filter(Boolean).slice(-1)[0]?.replace(/-/g, " ") ?? "Studio";
+      : (pathname.split("/").filter(Boolean).slice(-1)[0]?.replace(/-/g, " ") ?? "Studio");
 
   const modules =
     modulesQuery.data?.data?.map((row) => workspaceFromModule(row.slug, row.name)) ??
@@ -46,25 +49,27 @@ export function TopNav({ onOpenCommand }: TopNavProps) {
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b bg-background/80 px-4 backdrop-blur md:px-6">
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Curation Studio</p>
+        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          Curation Studio
+        </p>
         <h1 className="truncate text-lg font-semibold capitalize">{title}</h1>
       </div>
 
       <Button variant="outline" size="sm" className="hidden md:inline-flex" onClick={onOpenCommand}>
-        <span className="text-muted-foreground">Search</span>
+        <span className="text-muted-foreground">{t("topnav.search", "Search")}</span>
         <kbd className="ml-2 rounded border bg-muted px-1.5 py-0.5 text-[10px] font-medium">⌘K</kbd>
       </Button>
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="sm" className="hidden sm:inline-flex gap-1.5">
-            <span className="text-muted-foreground">Module</span>
+            <span className="text-muted-foreground">{t("topnav.module", "Module")}</span>
             <span className="font-medium">{activeWorkspace.name}</span>
             <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
-          <DropdownMenuLabel>Active module</DropdownMenuLabel>
+          <DropdownMenuLabel>{t("topnav.activeModule", "Active module")}</DropdownMenuLabel>
           <DropdownMenuSeparator />
           {modules.map((module) => (
             <DropdownMenuItem
@@ -80,6 +85,31 @@ export function TopNav({ onOpenCommand }: TopNavProps) {
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="sm" className="hidden sm:inline-flex gap-1.5">
+            <Languages className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="font-medium uppercase">{locale}</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-40">
+          <DropdownMenuLabel>{t("topnav.language", "Language")}</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {STUDIO_LOCALES.map((code: StudioLocale) => (
+            <DropdownMenuItem
+              key={code}
+              onClick={() => setLocale(code)}
+              className={cn(code === locale && "bg-accent")}
+            >
+              <span className="font-medium uppercase">{code}</span>
+              <span className="ml-2 text-muted-foreground">
+                {code === "tr" ? "Türkçe" : "English"}
+              </span>
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" aria-label="Toggle theme">
             <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
             <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
@@ -87,16 +117,18 @@ export function TopNav({ onOpenCommand }: TopNavProps) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={() => setTheme("light")}>
-            <Sun className="mr-2 h-4 w-4" /> Light
+            <Sun className="mr-2 h-4 w-4" /> {t("topnav.light", "Light")}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setTheme("dark")}>
-            <Moon className="mr-2 h-4 w-4" /> Dark
+            <Moon className="mr-2 h-4 w-4" /> {t("topnav.dark", "Dark")}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setTheme("system")}>
-            <Laptop className="mr-2 h-4 w-4" /> System
+            <Laptop className="mr-2 h-4 w-4" /> {t("topnav.system", "System")}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuLabel className="text-xs text-muted-foreground">Current: {theme}</DropdownMenuLabel>
+          <DropdownMenuLabel className="text-xs text-muted-foreground">
+            {t("topnav.current", "Current")}: {theme}
+          </DropdownMenuLabel>
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -104,7 +136,7 @@ export function TopNav({ onOpenCommand }: TopNavProps) {
         href="/settings"
         className={cn(
           "flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary",
-          "ring-2 ring-transparent transition hover:ring-primary/30",
+          "ring-2 ring-transparent transition hover:ring-primary/30"
         )}
         aria-label="Profile and settings"
       >

@@ -132,7 +132,9 @@ function SnapshotDetailPanel({ item, loading }: { item: SnapshotItem | null; loa
         </div>
       </dl>
       <div className="space-y-2">
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Manifest JSON</p>
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          Manifest JSON
+        </p>
         <pre className="max-h-72 overflow-auto rounded-md border bg-muted/30 p-3 text-xs leading-relaxed">
           {JSON.stringify(item.manifest, null, 2)}
         </pre>
@@ -154,7 +156,8 @@ function SnapshotsPageContent() {
 
   const snapshotRows = snapshots.data?.data ?? [];
   const dashboardSnapshot = dashboard.data?.data?.snapshot;
-  const recentPublished = published.data?.data ?? dashboard.data?.data?.curator.recently_published ?? [];
+  const recentPublished =
+    published.data?.data ?? dashboard.data?.data?.curator.recently_published ?? [];
 
   const latestRow = snapshotRows[0] ?? null;
   const latestVersion = latestRow?.version_tag ?? dashboardSnapshot?.version_tag ?? null;
@@ -163,7 +166,11 @@ function SnapshotsPageContent() {
   const activeVersion = selectedVersion ?? latestRow?.version_tag ?? null;
   const activeDetail = useMemo(() => {
     if (selectedVersion) {
-      return selectedSnapshot.data?.data ?? snapshotRows.find((row) => row.version_tag === selectedVersion) ?? null;
+      return (
+        selectedSnapshot.data?.data ??
+        snapshotRows.find((row) => row.version_tag === selectedVersion) ??
+        null
+      );
     }
     return latestRow;
   }, [latestRow, selectedSnapshot.data?.data, selectedVersion, snapshotRows]);
@@ -175,7 +182,11 @@ function SnapshotsPageContent() {
     return (
       <ErrorState
         title="Unable to load snapshots"
-        message={snapshots.error instanceof Error ? snapshots.error.message : "Snapshot API request failed."}
+        message={
+          snapshots.error instanceof Error
+            ? snapshots.error.message
+            : "Snapshot API request failed."
+        }
         onRetry={() => snapshots.refetch()}
       />
     );
@@ -185,10 +196,13 @@ function SnapshotsPageContent() {
     <div className="mx-auto max-w-6xl space-y-6 animate-fade-in">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div className="space-y-1">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Release operations</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Release operations
+          </p>
           <h2 className="text-2xl font-semibold tracking-tight">Snapshots</h2>
           <p className="max-w-2xl text-sm text-muted-foreground">
-            Read-only release manifests from publish workflows. Diff views and release-note tooling remain deferred.
+            Read-only release manifests from publish workflows. Diff views and release-note tooling
+            remain deferred.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -233,7 +247,8 @@ function SnapshotsPageContent() {
             </p>
           ) : (
             <p className="mt-1 text-muted-foreground">
-              No snapshot linked yet. Publish this drug with <code>create_snapshot</code> to attach release metadata.
+              No snapshot linked yet. Publish this drug with <code>create_snapshot</code> to attach
+              release metadata.
             </p>
           )}
         </div>
@@ -263,11 +278,13 @@ function SnapshotsPageContent() {
                         onClick={() => setSelectedVersion(row.version_tag)}
                         className={cn(
                           "flex w-full items-start justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/40",
-                          isActive && "bg-muted/50",
+                          isActive && "bg-muted/50"
                         )}
                       >
                         <span className="min-w-0">
-                          <span className="block truncate font-mono text-sm">{row.version_tag}</span>
+                          <span className="block truncate font-mono text-sm">
+                            {row.version_tag}
+                          </span>
                           <span className="block truncate text-xs text-muted-foreground">
                             {row.module ?? "module unknown"} · {formatRelativeTime(row.released_at)}
                           </span>
@@ -280,7 +297,8 @@ function SnapshotsPageContent() {
               </ul>
             ) : (
               <p className="p-4 text-sm text-muted-foreground">
-                No snapshots recorded yet. Publish a drug with snapshot creation enabled to populate this list.
+                No snapshots recorded yet. Publish a drug with snapshot creation enabled to populate
+                this list.
               </p>
             )}
           </div>
@@ -298,7 +316,9 @@ function SnapshotsPageContent() {
       <section className="rounded-md border">
         <div className="border-b px-4 py-3">
           <h3 className="text-sm font-semibold">Recently published drugs</h3>
-          <p className="text-xs text-muted-foreground">Return to the source Drug Editor workflow.</p>
+          <p className="text-xs text-muted-foreground">
+            Return to the source Drug Editor workflow.
+          </p>
         </div>
         <div className="p-4">
           {published.isLoading || dashboard.isLoading ? (

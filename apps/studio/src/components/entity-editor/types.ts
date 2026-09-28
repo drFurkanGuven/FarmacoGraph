@@ -12,7 +12,7 @@ export interface EntityEditorSection {
 export interface EntityEditorField {
   key: string;
   label: string;
-  type: "text" | "textarea" | "readonly";
+  type: "text" | "textarea" | "readonly" | "boolean";
   path: string;
   placeholder?: string;
   description?: string;

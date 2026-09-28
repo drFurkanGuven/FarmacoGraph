@@ -31,14 +31,18 @@ export function resolveGraphEmptyReason(input: {
   }
   if (graphError) return "load_error";
   if (!identityResolved) return "invalid_identity";
-  if (graph?.neo4j_available === false) return "neo4j_unavailable";
-
   if (nodeCount > 0 && edgeCount === 0) return "no_relationships";
   if (nodeCount > 0) return null;
 
+  if (graph?.neo4j_available === false) return "neo4j_unavailable";
+
   if (workflowStatus === "draft" || workflowStatus === "review") return "draft";
   if (workflowStatus === "approved") return "approved";
-  if (graph?.drug_in_graph === false || workflowStatus === "published" || workflowStatus === "deprecated") {
+  if (
+    graph?.drug_in_graph === false ||
+    workflowStatus === "published" ||
+    workflowStatus === "deprecated"
+  ) {
     return "not_in_graph";
   }
   return "generic";
@@ -106,8 +110,7 @@ export function GraphNeighborhoodEmptyState({
   publishHref: string;
 }) {
   const copy = COPY[reason];
-  const href =
-    copy.cta === "publish" ? publishHref : copy.cta === "editor" ? editorHref : null;
+  const href = copy.cta === "publish" ? publishHref : copy.cta === "editor" ? editorHref : null;
   const Icon =
     reason === "neo4j_unavailable"
       ? Database

@@ -13,10 +13,20 @@ import {
   Server,
   ShieldAlert,
   Workflow,
+  Compass,
+  Stethoscope,
+  ArrowLeftRight,
+  Pill,
+  BookOpen,
+  Search,
 } from "lucide-react";
 import Link from "next/link";
 import { ValidationBadge } from "@/components/badges";
-import { describeAuditEntry, formatRelativeTime, jobStatusLabel } from "@/components/dashboard/dashboard-utils";
+import {
+  describeAuditEntry,
+  formatRelativeTime,
+  jobStatusLabel,
+} from "@/components/dashboard/dashboard-utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -26,6 +36,7 @@ import { usePermissions } from "@/lib/auth/hooks";
 import { ApiError } from "@/lib/api";
 import { DASHBOARD_REFRESH_MS } from "@/lib/api/react-query/config";
 import type { WorkflowItem } from "@/lib/api/types";
+import { useUIMode } from "@/lib/ui-mode/context";
 
 function editorHref(item: WorkflowItem): string | null {
   const slug = item.entity_slug;
@@ -55,9 +66,7 @@ function StatCard({
           {loading ? <Skeleton className="h-8 w-20" /> : value}
         </CardTitle>
       </CardHeader>
-      {hint && (
-        <CardContent className="pt-0 text-xs text-muted-foreground">{hint}</CardContent>
-      )}
+      {hint && <CardContent className="pt-0 text-xs text-muted-foreground">{hint}</CardContent>}
     </Card>
   );
 }
@@ -97,18 +106,19 @@ export function DashboardView() {
   const { hasPermission } = usePermissions();
   const isAdmin = hasPermission("admin:org");
   const dashboard = useDashboard(activeWorkspace.slug);
+  const { isSimple } = useUIMode();
   const data = dashboard.data?.data;
   const loading = dashboard.isLoading;
   const isFetching = dashboard.isFetching && !dashboard.isLoading;
   const unpublishRequests = data?.curator.unpublish_requests ?? [];
-
 
   const publishedCount =
     data?.published_drugs ??
     data?.curriculum?.published_in_graph ??
     data?.curator.recently_published.length ??
     0;
-  const pendingReview = data?.curator.queue_counts.review ?? data?.curator.pending_review.length ?? 0;
+  const pendingReview =
+    data?.curator.queue_counts.review ?? data?.curator.pending_review.length ?? 0;
   const drafts = data?.curator.queue_counts.draft ?? data?.curator.drafts.length ?? 0;
   const completion = data?.curriculum?.completion_pct ?? 0;
   const snapshotTag =
@@ -116,6 +126,158 @@ export function DashboardView() {
     data?.health.checks.latest_snapshot ??
     data?.statistics.latest_snapshot ??
     "unpublished";
+
+  if (isSimple) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight">Hoş Geldiniz</h2>
+          <p className="text-sm text-muted-foreground">
+            İlaç bilgilerine hızlıca erişin ve etkileşimleri kontrol edin.
+          </p>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Link href="/explore">
+            <Card className="h-full hover:bg-muted/50 transition-colors cursor-pointer">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                    <Compass className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">İlaç Keşfet</CardTitle>
+                    <CardDescription>
+                      İlaçların etki mekanizmalarını ve detaylarını öğrenin
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
+          </Link>
+
+          <Link href="/interactions">
+            <Card className="h-full hover:bg-muted/50 transition-colors cursor-pointer">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-red-500/10 text-red-500">
+                    <Stethoscope className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">Etkileşim Kontrolü</CardTitle>
+                    <CardDescription>
+                      İlaç kombinasyonlarının güvenliğini kontrol edin
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
+          </Link>
+
+          <Link href="/compare">
+            <Card className="h-full hover:bg-muted/50 transition-colors cursor-pointer">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-blue-500/10 text-blue-500">
+                    <ArrowLeftRight className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">İlaç Karşılaştır</CardTitle>
+                    <CardDescription>
+                      İki ilacı yan yana karşılaştırın
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
+          </Link>
+
+          <Link href="/knowledge/drugs">
+            <Card className="h-full hover:bg-muted/50 transition-colors cursor-pointer">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500">
+                    <Pill className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">İlaç Listesi</CardTitle>
+                    <CardDescription>
+                      Tüm ilaçları görüntüleyin ({publishedCount} ilaç)
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
+          </Link>
+
+          <Link href="/knowledge/education">
+            <Card className="h-full hover:bg-muted/50 transition-colors cursor-pointer">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-purple-500/10 text-purple-500">
+                    <BookOpen className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">Eğitim Materyalleri</CardTitle>
+                    <CardDescription>
+                      Klinik bilgiler ve sınav hazırlık notları
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
+          </Link>
+
+          <Link href="/search">
+            <Card className="h-full hover:bg-muted/50 transition-colors cursor-pointer">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-amber-500/10 text-amber-500">
+                    <Search className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">Arama</CardTitle>
+                    <CardDescription>
+                      İlaç, hastalık veya mekanizma arayın
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
+          </Link>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Layers className="h-4 w-4" />
+              Sistem Durumu
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+            <div>
+              <p className="text-muted-foreground">Yayınlanan İlaç</p>
+              <p className="text-lg font-semibold">{loading ? "—" : publishedCount}</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">Toplam Varlık</p>
+              <p className="text-lg font-semibold">{loading ? "—" : (data?.statistics.entity_count ?? 0)}</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">İlişkiler</p>
+              <p className="text-lg font-semibold">{loading ? "—" : (data?.statistics.relationship_count ?? 0)}</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">API Durumu</p>
+              <p className="text-lg font-semibold">
+                {loading ? "—" : (data?.health.status === "ok" ? "Aktif" : "Bakımda")}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -160,8 +322,18 @@ export function DashboardView() {
       )}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard title="Published drugs" value={publishedCount} hint="Knowledge graph" loading={loading} />
-        <StatCard title="Pending review" value={pendingReview} hint="Curator queue" loading={loading} />
+        <StatCard
+          title="Published drugs"
+          value={publishedCount}
+          hint="Knowledge graph"
+          loading={loading}
+        />
+        <StatCard
+          title="Pending review"
+          value={pendingReview}
+          hint="Curator queue"
+          loading={loading}
+        />
         <StatCard title="Draft workflows" value={drafts} hint="In progress" loading={loading} />
         <StatCard
           title="Module progress"
@@ -177,7 +349,9 @@ export function DashboardView() {
             <CardTitle className="flex items-center gap-2 text-base">
               <GitPullRequest className="h-4 w-4" /> Curator queue
             </CardTitle>
-            <CardDescription>Workflows awaiting review and recently published entities</CardDescription>
+            <CardDescription>
+              Workflows awaiting review and recently published entities
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {loading ? (
@@ -331,7 +505,9 @@ export function DashboardView() {
                 </div>
                 <div>
                   <p className="text-muted-foreground">Relationships</p>
-                  <p className="text-lg font-semibold">{data?.statistics.relationship_count ?? 0}</p>
+                  <p className="text-lg font-semibold">
+                    {data?.statistics.relationship_count ?? 0}
+                  </p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Evidence</p>
@@ -373,7 +549,10 @@ export function DashboardView() {
                   <span>{data.curriculum.published_in_graph ?? 0}</span>
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-muted">
-                  <div className="h-full bg-primary transition-all" style={{ width: `${completion}%` }} />
+                  <div
+                    className="h-full bg-primary transition-all"
+                    style={{ width: `${completion}%` }}
+                  />
                 </div>
               </>
             ) : (
@@ -400,7 +579,9 @@ export function DashboardView() {
               <>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Failed validations</span>
-                  <span className="font-semibold tabular-nums">{data?.validation.failed_count ?? 0}</span>
+                  <span className="font-semibold tabular-nums">
+                    {data?.validation.failed_count ?? 0}
+                  </span>
                 </div>
                 {data?.validation.recent_failures.length ? (
                   <ul className="space-y-2">
@@ -409,7 +590,9 @@ export function DashboardView() {
                         <p className="font-mono text-xs text-muted-foreground">
                           {failure.entity_id ?? failure.job_type}
                         </p>
-                        <p className="line-clamp-2 text-xs">{failure.message ?? "Validation failed"}</p>
+                        <p className="line-clamp-2 text-xs">
+                          {failure.message ?? "Validation failed"}
+                        </p>
                       </li>
                     ))}
                   </ul>
@@ -434,7 +617,10 @@ export function DashboardView() {
             ) : data?.activity.length ? (
               <ul className="space-y-2 text-sm">
                 {data.activity.slice(0, 8).map((entry) => (
-                  <li key={entry.id} className="flex items-start justify-between gap-2 border-b pb-2 last:border-0">
+                  <li
+                    key={entry.id}
+                    className="flex items-start justify-between gap-2 border-b pb-2 last:border-0"
+                  >
                     <span className="line-clamp-2">{describeAuditEntry(entry)}</span>
                     <span className="shrink-0 text-xs text-muted-foreground">
                       {formatRelativeTime(entry.timestamp)}
@@ -475,7 +661,10 @@ export function DashboardView() {
                 {data?.jobs.recent.length ? (
                   <ul className="space-y-2">
                     {data.jobs.recent.slice(0, 6).map((job) => (
-                      <li key={job.id} className="flex items-center justify-between rounded-md border px-3 py-2">
+                      <li
+                        key={job.id}
+                        className="flex items-center justify-between rounded-md border px-3 py-2"
+                      >
                         <div>
                           <p className="font-medium">{job.job_type}</p>
                           <p className="text-xs text-muted-foreground">

@@ -1,6 +1,11 @@
 import type { EvidenceRecord, EvidenceSearchHit, OntologyEvidenceType } from "@/lib/api/evidence";
 import { ONTOLOGY_EVIDENCE_TYPES } from "@/lib/api/evidence";
-import type { EvidenceBrowserFilters, EvidenceBrowserRow, EvidenceSortField, SortDirection } from "./types";
+import type {
+  EvidenceBrowserFilters,
+  EvidenceBrowserRow,
+  EvidenceSortField,
+  SortDirection,
+} from "./types";
 
 export function searchHitToRow(hit: EvidenceSearchHit): EvidenceBrowserRow {
   const entity = hit.entity;
@@ -42,7 +47,10 @@ export function recordToRow(record: EvidenceRecord): EvidenceBrowserRow {
   };
 }
 
-export function filterEvidenceRows(rows: EvidenceBrowserRow[], filters: EvidenceBrowserFilters): EvidenceBrowserRow[] {
+export function filterEvidenceRows(
+  rows: EvidenceBrowserRow[],
+  filters: EvidenceBrowserFilters
+): EvidenceBrowserRow[] {
   return rows.filter((row) => {
     if (filters.evidenceType !== "all" && row.evidenceType !== filters.evidenceType) {
       return false;
@@ -66,12 +74,13 @@ export function filterEvidenceRows(rows: EvidenceBrowserRow[], filters: Evidence
 export function sortEvidenceRows(
   rows: EvidenceBrowserRow[],
   field: EvidenceSortField,
-  direction: SortDirection,
+  direction: SortDirection
 ): EvidenceBrowserRow[] {
   const sorted = [...rows].sort((a, b) => {
     const compareStrings = (left: string | null, right: string | null) =>
       (left ?? "").localeCompare(right ?? "", undefined, { sensitivity: "base" });
-    const compareNumbers = (left: number | null, right: number | null) => (left ?? -1) - (right ?? -1);
+    const compareNumbers = (left: number | null, right: number | null) =>
+      (left ?? -1) - (right ?? -1);
 
     switch (field) {
       case "evidenceType":
@@ -157,7 +166,10 @@ export function recordToFormValues(record: EvidenceRecord) {
     title: record.title ?? record.label ?? "",
     authors: Array.isArray(record.authors) ? record.authors.join(", ") : "",
     year: record.year ? String(record.year) : "",
-    quality_score: record.quality_score !== undefined && record.quality_score !== null ? String(record.quality_score) : "0.5",
+    quality_score:
+      record.quality_score !== undefined && record.quality_score !== null
+        ? String(record.quality_score)
+        : "0.5",
     journal: record.journal ?? "",
     extract: record.extract ?? "",
     supports_claim: record.supports_claim ?? "",

@@ -39,13 +39,13 @@ export function useEvidenceBrowser({
   const searchQuery = useApiQuery(
     apiQueryKeys.evidenceSearch(trimmedQuery, pageSize),
     () => searchEvidence(client, trimmedQuery, { limit: 100, offset: 0 }),
-    { enabled: isSearching },
+    { enabled: isSearching }
   );
 
   const lookupQuery = useApiQuery(
     apiQueryKeys.evidence(trimmedQuery),
     () => getEvidence(client, trimmedQuery),
-    { enabled: isIdLookup },
+    { enabled: isIdLookup }
   );
 
   const statisticsQuery = useStatistics();
@@ -61,12 +61,18 @@ export function useEvidenceBrowser({
     return hits.map(searchHitToRow);
   }, [isIdLookup, lookupQuery.data, searchQuery.data]);
 
-  const filteredRows = useMemo(() => filterEvidenceRows(enrichedRows, filters), [enrichedRows, filters]);
+  const filteredRows = useMemo(
+    () => filterEvidenceRows(enrichedRows, filters),
+    [enrichedRows, filters]
+  );
   const sortedRows = useMemo(
     () => sortEvidenceRows(filteredRows, sortField, sortDirection),
-    [filteredRows, sortField, sortDirection],
+    [filteredRows, sortField, sortDirection]
   );
-  const rows = useMemo(() => paginateRows(sortedRows, page, pageSize), [sortedRows, page, pageSize]);
+  const rows = useMemo(
+    () => paginateRows(sortedRows, page, pageSize),
+    [sortedRows, page, pageSize]
+  );
   const totalItems = sortedRows.length;
   const pageCount = totalPages(totalItems, pageSize);
 
@@ -94,6 +100,6 @@ export function useEvidenceDetail(evidenceId: string | null) {
   return useApiQuery(
     apiQueryKeys.evidence(evidenceId ?? ""),
     () => getEvidence(client, evidenceId!),
-    { enabled: Boolean(evidenceId) },
+    { enabled: Boolean(evidenceId) }
   );
 }

@@ -4,7 +4,13 @@ import { normalizeScopes } from "./scopes";
 /** Default scopes granted to each Studio role (UI hints until JWT scopes are present). */
 export const ROLE_SCOPES: Record<UserRole, AuthScope[]> = {
   viewer: ["knowledge:read", "knowledge:search", "education:read"],
-  curator: ["knowledge:read", "knowledge:search", "knowledge:explain", "education:read", "curator:write"],
+  curator: [
+    "knowledge:read",
+    "knowledge:search",
+    "knowledge:explain",
+    "education:read",
+    "curator:write",
+  ],
   reviewer: [
     "knowledge:read",
     "knowledge:search",
@@ -66,7 +72,7 @@ export function scopesFromRoles(roles: UserRole[]): AuthScope[] {
 
 export function resolveSessionScopes(
   explicitScopes: AuthScope[] | undefined,
-  roles: UserRole[],
+  roles: UserRole[]
 ): AuthScope[] {
   if (explicitScopes?.length) return normalizeScopes(explicitScopes);
   return scopesFromRoles(roles);
@@ -83,9 +89,6 @@ export function hasScope(scopes: AuthScope[], required: AuthScope | AuthScope[])
   return needed.some((scope) => scopes.includes(scope));
 }
 
-export function hasPermission(
-  scopes: AuthScope[],
-  permission: AuthScope | AuthScope[],
-): boolean {
+export function hasPermission(scopes: AuthScope[], permission: AuthScope | AuthScope[]): boolean {
   return hasScope(scopes, permission);
 }

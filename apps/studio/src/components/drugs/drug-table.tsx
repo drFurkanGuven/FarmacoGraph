@@ -27,9 +27,21 @@ interface DrugTableProps {
   onSort: (field: SortField) => void;
 }
 
-function SortIcon({ field, activeField, direction }: { field: SortField; activeField: SortField; direction: SortDirection }) {
+function SortIcon({
+  field,
+  activeField,
+  direction,
+}: {
+  field: SortField;
+  activeField: SortField;
+  direction: SortDirection;
+}) {
   if (field !== activeField) return <ArrowUpDown className="h-3.5 w-3.5 opacity-40" />;
-  return direction === "asc" ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />;
+  return direction === "asc" ? (
+    <ArrowUp className="h-3.5 w-3.5" />
+  ) : (
+    <ArrowDown className="h-3.5 w-3.5" />
+  );
 }
 
 function SortableHeader({
@@ -154,11 +166,7 @@ export function DrugTable({ rows, sortField, sortDirection, onSort }: DrugTableP
             <TableCell>
               <StatusBadge
                 status={workflowStatusValue(row)}
-                label={
-                  row.workflowState
-                    ? row.workflowState
-                    : row.curriculumStatus ?? row.status
-                }
+                label={row.workflowState ? row.workflowState : (row.curriculumStatus ?? row.status)}
               />
             </TableCell>
             <TableCell>
@@ -166,9 +174,7 @@ export function DrugTable({ rows, sortField, sortDirection, onSort }: DrugTableP
                 <ConfidenceBadge
                   level={row.confidenceLevel}
                   score={
-                    row.confidenceScore !== null
-                      ? Math.round(row.confidenceScore * 100)
-                      : undefined
+                    row.confidenceScore !== null ? Math.round(row.confidenceScore * 100) : undefined
                   }
                 />
               ) : (

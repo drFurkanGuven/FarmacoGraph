@@ -99,7 +99,7 @@ describe("summarizeDrugEvidence", () => {
           },
         },
       ]),
-      [{ id: "missing-1", message: "Missing evidence on TREATS edge" }],
+      [{ id: "missing-1", message: "Missing evidence on TREATS edge" }]
     );
 
     expect(summary).toEqual({
@@ -113,7 +113,7 @@ describe("summarizeDrugEvidence", () => {
 
   it("returns none quality when no attachments exist", () => {
     expect(
-      summarizeDrugEvidence([], [{ id: "missing-1", message: "No evidence attached" }]),
+      summarizeDrugEvidence([], [{ id: "missing-1", message: "No evidence attached" }])
     ).toEqual({
       attachedCount: 0,
       missingCount: 1,
@@ -166,8 +166,8 @@ describe("evidence utility helpers", () => {
             },
           },
         ]),
-        "evidence-1",
-      ),
+        "evidence-1"
+      )
     ).toBe(true);
   });
 });

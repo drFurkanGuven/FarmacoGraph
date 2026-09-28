@@ -19,6 +19,7 @@ from farmacograph.services.evidence import EvidenceService
 from farmacograph.services.explain import ExplainService
 from farmacograph.services.health import HealthService
 from farmacograph.services.info import InfoService
+from farmacograph.services.interaction import InteractionService
 from farmacograph.services.learning import LearningService
 from farmacograph.services.modules import ModuleService
 from farmacograph.services.search import SearchService
@@ -72,6 +73,13 @@ def get_compare_service(
     container: Annotated[Container, Depends(get_app_container)],
 ) -> CompareService:
     return container.compare_service
+
+
+def get_interaction_service(
+    container: Annotated[Container, Depends(get_app_container)],
+) -> InteractionService:
+    return container.interaction_service
+
 
 
 def get_learning_service(

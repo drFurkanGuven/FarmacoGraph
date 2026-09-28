@@ -40,7 +40,7 @@ function DemoRequestQueue({ onApproved }: { onApproved: (userId: string) => void
   const [processing, setProcessing] = useState<string | null>(null);
   const [credentials, setCredentials] = useState<DemoAccessRequest | null>(null);
   const requestsQuery = useApiQuery(apiQueryKeys.demoRequests("pending"), () =>
-    client.listDemoRequests("pending"),
+    client.listDemoRequests("pending")
   );
   const requests = requestsQuery.data?.data ?? [];
 
@@ -84,16 +84,20 @@ function DemoRequestQueue({ onApproved }: { onApproved: (userId: string) => void
       <CardContent className="space-y-3">
         {credentials?.temporary_password ? (
           <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
-            <p className="font-medium">Copy credentials now — the password will not be shown again.</p>
+            <p className="font-medium">
+              Copy credentials now — the password will not be shown again.
+            </p>
             <p className="mt-2 font-mono text-xs">{credentials.email}</p>
-            <code className="block break-all font-mono text-xs">{credentials.temporary_password}</code>
+            <code className="block break-all font-mono text-xs">
+              {credentials.temporary_password}
+            </code>
             <Button
               size="sm"
               variant="outline"
               className="mt-2"
               onClick={() => {
                 void navigator.clipboard.writeText(
-                  `${credentials.email}\n${credentials.temporary_password}`,
+                  `${credentials.email}\n${credentials.temporary_password}`
                 );
                 toast.success("Credentials copied");
               }}
@@ -112,9 +116,12 @@ function DemoRequestQueue({ onApproved }: { onApproved: (userId: string) => void
               <li key={request.id} className="space-y-2 p-3 text-sm">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <p className="font-medium">{request.full_name} · {request.email}</p>
+                    <p className="font-medium">
+                      {request.full_name} · {request.email}
+                    </p>
                     <p className="text-xs text-muted-foreground">
-                      {request.organization || "No organization"} · {request.created_at?.slice(0, 10)}
+                      {request.organization || "No organization"} ·{" "}
+                      {request.created_at?.slice(0, 10)}
                     </p>
                   </div>
                   <div className="flex gap-2">
@@ -219,7 +226,11 @@ function CreateUserDialog({ onCreated }: { onCreated: (user: AdminUser) => void 
             </div>
             <div className="grid gap-2">
               <Label htmlFor="user-name">Full name</Label>
-              <Input id="user-name" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+              <Input
+                id="user-name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+              />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="user-password">Password (min 12)</Label>
@@ -250,7 +261,12 @@ function CreateUserDialog({ onCreated }: { onCreated: (user: AdminUser) => void 
             {error ? <p className="text-sm text-destructive">{error}</p> : null}
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={submitting}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              disabled={submitting}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={submitting}>
@@ -290,7 +306,7 @@ function UserDetailPanel({
   }, [user]);
 
   const keysQuery = useApiQuery(apiQueryKeys.userApiKeys(user.id), () =>
-    client.listUserApiKeys(user.id),
+    client.listUserApiKeys(user.id)
   );
 
   async function handleSave() {
@@ -447,7 +463,10 @@ function UserDetailPanel({
           ) : (
             <ul className="divide-y rounded-md border">
               {keys.map((key) => (
-                <li key={key.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm">
+                <li
+                  key={key.id}
+                  className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm"
+                >
                   <div>
                     <p className="font-medium">{key.name}</p>
                     <p className="font-mono text-xs text-muted-foreground">
@@ -479,13 +498,13 @@ export function UsersAdminPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const usersQuery = useApiQuery(apiQueryKeys.users({ search }), () =>
-    client.listUsers({ search: search || undefined, limit: 100 }),
+    client.listUsers({ search: search || undefined, limit: 100 })
   );
 
   const users = usersQuery.data?.data ?? [];
   const selected = useMemo(
     () => users.find((row) => row.id === selectedId) ?? users[0] ?? null,
-    [users, selectedId],
+    [users, selectedId]
   );
 
   useEffect(() => {

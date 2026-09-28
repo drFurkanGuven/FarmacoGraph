@@ -46,7 +46,13 @@ staging/cardiovascular/shared/diseases.runtime.json
 # Logs
 *.log
 
+# Large datasets & data directory
+data/
+*.parquet
+*.csv
+
 # Node (Curation Studio)
 node_modules/
 apps/studio/.next/
 apps/studio/out/
+

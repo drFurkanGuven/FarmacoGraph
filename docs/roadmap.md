@@ -15,11 +15,12 @@
 | Phase 3 — Platform infrastructure | **Complete** | PostgreSQL ops, Neo4j driver, events, jobs, metrics, CI |
 | Phase 4 — Backend foundation | **Complete** | Curator API, graph writer, snapshots, validation |
 | Phase 4 — Studio 4.1 | **Complete** | App shell, dashboard, search, settings |
-| Phase 4 — Studio 4.2+ | **Mostly complete** | Drug/Disease editors, publish wizard, evidence, and education MVP live; mechanism DAG and advanced graph explorer deferred |
-| Phase 4 — Cardiovascular data | **In progress** | Curation via Studio/API; no full module yet |
+| Phase 4 — Studio 4.2+ | **Complete** | Drug/Disease editors, publish wizard, evidence, DAG visualization, interactive comparison |
+| Phase 4 — Cardiovascular data | **In progress** | Staging core drugs (ramipril, metoprolol, losartan, spironolactone) fully curated with DAGs & evidence |
 | Phase API 5.1 — Discovery + search | **Complete** | `/info`, Neo4j search provider, public search page |
 | Phase API 5.2 — Auth | **Complete** | `POST /auth/token`, API key validation, curator auth gates |
-| Phase API 5.3+ | **Planned** | Rate limits, OpenAPI sync |
+| Phase API 5.3 — Rate limits & protection | **Complete** | In-memory burst/minute rate limits, 429 Retry-After, exponential backoff |
+| Phase API 5.4 — Contract & reasoning | **Complete** | 91 FastAPI endpoints 100% in sync with OpenAPI in CI, `POST /interactions` |
 
 ---
 

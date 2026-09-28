@@ -76,7 +76,8 @@ function LoginForm() {
         <CardHeader>
           <CardTitle>Sign in to Studio</CardTitle>
           <CardDescription>
-            Use an API key or account credentials. JWT refresh is supported when the auth API is enabled.
+            Use an API key or account credentials. JWT refresh is supported when the auth API is
+            enabled.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -123,7 +124,12 @@ function LoginForm() {
                 <label className="text-sm font-medium" htmlFor="email">
                   Email
                 </label>
-                <Input id="email" type="email" autoComplete="email" {...passwordForm.register("email")} />
+                <Input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  {...passwordForm.register("email")}
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium" htmlFor="password">

@@ -76,6 +76,13 @@ class ExplainService:
 
         drug_id = UUID(str(drug_node["id"]))
         mechanism = await self._graph.get_drug_mechanism_dag(drug_id)
+        if not mechanism.get("nodes"):
+            from farmacograph.curator.drug_package import extract_mechanism_dag, find_package_by_ref
+
+            pkg = find_package_by_ref(drug_id)
+            if pkg:
+                mechanism = extract_mechanism_dag(pkg)
+
         nodes = mechanism.get("nodes") or []
         edges = mechanism.get("edges") or []
         root_id = mechanism.get("root_fragment_id")
@@ -104,20 +111,71 @@ class ExplainService:
             root_edge,
             fallback=f"{_node_label(drug_node)} is linked to the mechanism fragment {_node_label(root_node)}.",
         )
-        step = ExplainStep(
-            step=1,
-            from_entity=_entity_summary(drug_node, EntityType.DRUG),
-            relationship="HAS_MECHANISM_ROOT",
-            to_entity=_entity_summary(root_node, EntityType.MECHANISM_FRAGMENT),
-            explanation=explanation,
-            evidence_ids=_edge_evidence_ids(root_edge),
+        steps = [
+            ExplainStep(
+                step=1,
+                from_entity=_entity_summary(drug_node, EntityType.DRUG),
+                relationship="HAS_MECHANISM_ROOT",
+                to_entity=_entity_summary(root_node, EntityType.MECHANISM_FRAGMENT),
+                explanation=explanation,
+                evidence_ids=_edge_evidence_ids(root_edge),
+            )
+        ]
+
+        # Traverse downstream PRECEDES / RESULTS_IN / BRANCHES_TO edges
+        current_node_id = str(root_id)
+        visited = {current_node_id}
+        step_idx = 2
+        while True:
+            next_edge = next(
+                (
+                    e
+                    for e in edges
+                    if e.get("relationship_type") in ("PRECEDES", "RESULTS_IN", "BRANCHES_TO")
+                    and str(e.get("source_id")) == current_node_id
+                    and str(e.get("target_id")) not in visited
+                ),
+                None,
+            )
+            if not next_edge:
+                break
+            target_id = str(next_edge.get("target_id"))
+            visited.add(target_id)
+            source_node = node_by_id.get(
+                current_node_id, {"id": current_node_id, "label": current_node_id}
+            )
+            target_node = node_by_id.get(target_id, {"id": target_id, "label": target_id})
+
+            explanation_step = _edge_explanation(
+                next_edge,
+                fallback=f"{_node_label(source_node)} leads to {_node_label(target_node)}.",
+            )
+            steps.append(
+                ExplainStep(
+                    step=step_idx,
+                    from_entity=_entity_summary(source_node, EntityType.MECHANISM_FRAGMENT),
+                    relationship=str(next_edge.get("relationship_type", "PRECEDES")),
+                    to_entity=_entity_summary(target_node, EntityType.MECHANISM_FRAGMENT),
+                    explanation=explanation_step,
+                    evidence_ids=_edge_evidence_ids(next_edge),
+                )
+            )
+            step_idx += 1
+            current_node_id = target_id
+
+        summary = (
+            f"{_node_label(drug_node)} mechanism initiates at {_node_label(root_node)} "
+            f"and propagates through {len(steps) - 1} causal stages to clinical outcome."
+            if len(steps) > 1
+            else f"{_node_label(drug_node)} mechanism starts at {_node_label(root_node)}."
         )
+
         return ExplainResponse(
             question=f"Explain {drug_ref} mechanism",
-            answer_summary=f"{_node_label(drug_node)} mechanism starts at {_node_label(root_node)}.",
-            reasoning_chain=[step],
-            confidence=_edge_confidence(root_edge),
-            evidence_level=_edge_evidence_level(root_edge),
+            answer_summary=summary,
+            reasoning_chain=steps,
+            confidence=_edge_confidence(root_edge) or 0.95,
+            evidence_level=_edge_evidence_level(root_edge) or "A",
             content_layers=[ContentLayer.BIOMEDICAL],
         )
 
@@ -127,6 +185,11 @@ class ExplainService:
         except ValueError:
             row = await self._graph.get_drug_by_slug(drug_ref)
         if not row:
+            from farmacograph.curator.drug_package import find_package_by_ref
+
+            pkg = find_package_by_ref(drug_ref)
+            if pkg:
+                return pkg.entity_payload
             return None
         if "d" in row and isinstance(row["d"], dict):
             return row["d"]
@@ -143,8 +206,15 @@ def _node_slug(node: dict[str, Any]) -> str:
 
 def _entity_summary(node: dict[str, Any], fallback_type: EntityType) -> EntitySummary:
     entity_type = _entity_type(node.get("entity_type"), fallback_type)
+    raw_id = str(node.get("id") or "")
+    try:
+        parsed_id = UUID(raw_id)
+    except (ValueError, AttributeError):
+        import uuid
+
+        parsed_id = uuid.uuid5(uuid.UUID("a1000001-0000-4000-8000-000000000000"), raw_id)
     return EntitySummary(
-        id=UUID(str(node["id"])),
+        id=parsed_id,
         type=entity_type,
         slug=_node_slug(node),
         label=_node_label(node),

@@ -13,6 +13,7 @@ export interface ResponseMeta {
   offset?: number;
   module?: string;
   error_count?: number;
+  provenance?: string | null;
 }
 
 export interface ApiEnvelope<T> {
@@ -136,6 +137,8 @@ export interface MechanismFragmentBrowseItem {
   module?: string;
   publication_status?: string;
   description?: string | null;
+  fragment_type?: string | null;
+  direction?: string | null;
 }
 
 export interface DrugPackage {

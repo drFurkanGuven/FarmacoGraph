@@ -285,7 +285,11 @@ class AuthService:
 
                 UTC = timezone.utc  # noqa: UP017
 
-            if record.expires_at <= datetime.now(UTC):
+            expires = record.expires_at
+            now_dt = datetime.now(UTC)
+            if expires.tzinfo is None:
+                expires = expires.replace(tzinfo=UTC)
+            if expires <= now_dt:
                 return None
         await self._repo.touch_api_key_last_used(record.id)
         return self._context_from_api_key(record)

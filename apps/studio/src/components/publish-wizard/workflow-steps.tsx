@@ -1,5 +1,6 @@
 import { Check, Circle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/lib/i18n/context";
 import type { WorkflowStepDefinition } from "./types";
 
 export const WORKFLOW_STEPS: WorkflowStepDefinition[] = [
@@ -21,10 +22,33 @@ export interface WorkflowStepperProps {
 
 export function WorkflowStepper({ workflowState, className }: WorkflowStepperProps) {
   const currentIndex = stepIndex(workflowState);
+  const { t } = useLanguage();
+  const steps: WorkflowStepDefinition[] = [
+    {
+      id: "draft",
+      label: t("wizard.stepDraft", "Draft"),
+      description: t("wizard.stepDraftHint", "Edit and validate the package"),
+    },
+    {
+      id: "review",
+      label: t("wizard.stepReview", "Review"),
+      description: t("wizard.stepReviewHint", "Submitted for curator review"),
+    },
+    {
+      id: "approved",
+      label: t("wizard.stepApproved", "Approved"),
+      description: t("wizard.stepApprovedHint", "Ready to publish to the graph"),
+    },
+    {
+      id: "published",
+      label: t("wizard.stepPublished", "Published"),
+      description: t("wizard.stepPublishedHint", "Live in the knowledge graph"),
+    },
+  ];
 
   return (
     <ol className={cn("grid gap-2 sm:grid-cols-4", className)}>
-      {WORKFLOW_STEPS.map((step, index) => {
+      {steps.map((step, index) => {
         const completed = index < currentIndex;
         const active = index === currentIndex;
         const upcoming = index > currentIndex;
@@ -36,7 +60,7 @@ export function WorkflowStepper({ workflowState, className }: WorkflowStepperPro
               "rounded-lg border px-3 py-2 text-sm transition-colors",
               active && "border-primary bg-primary/5",
               completed && "border-emerald-500/40 bg-emerald-500/5",
-              upcoming && "border-border bg-muted/20 text-muted-foreground",
+              upcoming && "border-border bg-muted/20 text-muted-foreground"
             )}
           >
             <div className="flex items-center gap-2">
@@ -45,10 +69,16 @@ export function WorkflowStepper({ workflowState, className }: WorkflowStepperPro
                   "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-medium",
                   completed && "border-emerald-500 bg-emerald-500 text-white",
                   active && "border-primary bg-primary text-primary-foreground",
-                  upcoming && "border-muted-foreground/30 text-muted-foreground",
+                  upcoming && "border-muted-foreground/30 text-muted-foreground"
                 )}
               >
-                {completed ? <Check className="h-3.5 w-3.5" /> : active ? <Circle className="h-3 w-3 fill-current" /> : index + 1}
+                {completed ? (
+                  <Check className="h-3.5 w-3.5" />
+                ) : active ? (
+                  <Circle className="h-3 w-3 fill-current" />
+                ) : (
+                  index + 1
+                )}
               </span>
               <div className="min-w-0">
                 <p className="font-medium">{step.label}</p>

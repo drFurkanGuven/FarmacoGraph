@@ -36,7 +36,11 @@ function SortIcon({
   direction: SortDirection;
 }) {
   if (field !== activeField) return <ArrowUpDown className="h-3.5 w-3.5 opacity-40" />;
-  return direction === "asc" ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />;
+  return direction === "asc" ? (
+    <ArrowUp className="h-3.5 w-3.5" />
+  ) : (
+    <ArrowDown className="h-3.5 w-3.5" />
+  );
 }
 
 function SortableHeader({
@@ -150,7 +154,9 @@ export function EvidenceTable({
             >
               <TableCell>
                 <p className="font-medium">{row.label}</p>
-                {row.snippet && <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{row.snippet}</p>}
+                {row.snippet && (
+                  <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{row.snippet}</p>
+                )}
                 <code className="mt-1 inline-block rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
                   {row.id}
                 </code>
@@ -158,12 +164,16 @@ export function EvidenceTable({
               <TableCell>
                 <EvidenceTypeBadge type={row.evidenceType} />
               </TableCell>
-              <TableCell className="tabular-nums text-muted-foreground">{row.year ?? "—"}</TableCell>
+              <TableCell className="tabular-nums text-muted-foreground">
+                {row.year ?? "—"}
+              </TableCell>
               <TableCell>
                 {confidence ? (
                   <ConfidenceBadge
                     level={confidence}
-                    score={row.qualityScore !== null ? Math.round(row.qualityScore * 100) : undefined}
+                    score={
+                      row.qualityScore !== null ? Math.round(row.qualityScore * 100) : undefined
+                    }
                   />
                 ) : (
                   <Badge variant="muted">—</Badge>
@@ -180,7 +190,12 @@ export function EvidenceTable({
                 {row.searchScore !== null ? row.searchScore.toFixed(2) : "—"}
               </TableCell>
               <TableCell className="text-right" onClick={(event) => event.stopPropagation()}>
-                <Button variant="ghost" size="sm" aria-label={`Edit ${row.label}`} onClick={() => onEdit(row.id)}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  aria-label={`Edit ${row.label}`}
+                  onClick={() => onEdit(row.id)}
+                >
                   <Pencil className="h-4 w-4" />
                 </Button>
               </TableCell>

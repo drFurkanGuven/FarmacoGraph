@@ -27,7 +27,7 @@ api:
   rate_limit_per_minute: 100
 
 dataset:
-  current_version: null  # Set on publish, e.g. 2026.1.0
+  current_version: "2026.1.0"
   default_language: en
 
 validation:

@@ -36,10 +36,17 @@ function DetailField({ label, value }: { label: string; value: React.ReactNode }
   );
 }
 
-export function EvidenceDetailDrawer({ evidenceId, open, onClose, onEdit }: EvidenceDetailDrawerProps) {
+export function EvidenceDetailDrawer({
+  evidenceId,
+  open,
+  onClose,
+  onEdit,
+}: EvidenceDetailDrawerProps) {
   const detailQuery = useEvidenceDetail(open ? evidenceId : null);
   const record = detailQuery.data?.data;
-  const confidence = qualityToConfidenceLevel(record?.quality_score ?? record?.confidence_score ?? null);
+  const confidence = qualityToConfidenceLevel(
+    record?.quality_score ?? record?.confidence_score ?? null
+  );
 
   const errorMessage =
     detailQuery.error instanceof ApiError

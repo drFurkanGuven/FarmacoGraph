@@ -60,7 +60,7 @@ function normalizeDetail(body: AuthApiErrorBody | null, status: number): string 
 async function postAuth<T>(
   path: string,
   body: Record<string, unknown>,
-  extraHeaders?: Record<string, string>,
+  extraHeaders?: Record<string, string>
 ): Promise<T> {
   const url = `${getBaseUrl().replace(/\/$/, "")}${path}`;
   const response = await fetch(url, {
@@ -78,7 +78,10 @@ async function postAuth<T>(
   const json = text ? (JSON.parse(text) as T | AuthApiErrorBody) : null;
 
   if (!response.ok) {
-    throw new AuthApiError(normalizeDetail(json as AuthApiErrorBody | null, response.status), response.status);
+    throw new AuthApiError(
+      normalizeDetail(json as AuthApiErrorBody | null, response.status),
+      response.status
+    );
   }
 
   return json as T;

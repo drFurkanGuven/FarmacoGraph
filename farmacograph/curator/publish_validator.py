@@ -5,9 +5,15 @@ from __future__ import annotations
 from typing import Any
 
 from farmacograph.core.exceptions import ValidationError
-from farmacograph.models.clinical import Disease
+from farmacograph.models.clinical import Disease, MechanismFragment
+from farmacograph.models.enums import FragmentType
 from farmacograph.models.pharmacologic import Drug
-from farmacograph.validators.base import ValidationLevel, ValidationResult
+from farmacograph.validators.base import (
+    ValidationIssue,
+    ValidationLevel,
+    ValidationResult,
+    ValidationSeverity,
+)
 from farmacograph.validators.education_validator import EducationValidator
 from farmacograph.validators.evidence_validator import EvidenceValidator
 from farmacograph.validators.ontology_validator import OntologyValidator
@@ -51,6 +57,36 @@ def validate_publish_package(
                     relationships=relationships,
                 )
             )
+
+    valid_fragment_types = {ft.value for ft in FragmentType}
+    for ent in related_entities or []:
+        if ent.get("entity_type") == "MechanismFragment":
+            ft = ent.get("fragment_type")
+            ent_label = ent.get("label") or ent.get("slug") or ent.get("id")
+            if not ft:
+                result.issues.append(
+                    ValidationIssue(
+                        constraint_id="FG-C015",
+                        level=ValidationLevel.BIOMEDICAL,
+                        severity=ValidationSeverity.ERROR,
+                        message=f"MechanismFragment '{ent_label}' is missing required 'fragment_type'.",
+                        field="fragment_type",
+                        entity_id=str(ent.get("id")),
+                    )
+                )
+                result.valid = False
+            elif ft not in valid_fragment_types:
+                result.issues.append(
+                    ValidationIssue(
+                        constraint_id="FG-C015",
+                        level=ValidationLevel.BIOMEDICAL,
+                        severity=ValidationSeverity.ERROR,
+                        message=f"MechanismFragment '{ent_label}' has invalid fragment_type '{ft}'. Must be one of: {', '.join(sorted(valid_fragment_types))}.",
+                        field="fragment_type",
+                        entity_id=str(ent.get("id")),
+                    )
+                )
+                result.valid = False
 
     for item in education or []:
         result = result.merge(education_validator.validate(item))

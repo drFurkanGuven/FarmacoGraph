@@ -75,13 +75,13 @@ describe("evidence client route selection", () => {
         drugId: DRUG_ID,
         entityId: DRUG_ID,
         slug: null,
-      }),
+      })
     ).rejects.toThrow("route failed");
 
     expect(client.request).toHaveBeenCalledTimes(1);
     expect(client.request).not.toHaveBeenCalledWith(
       "/evidence",
-      expect.objectContaining({ params: expect.objectContaining({ drug_id: DRUG_ID }) }),
+      expect.objectContaining({ params: expect.objectContaining({ drug_id: DRUG_ID }) })
     );
   });
 
@@ -93,7 +93,7 @@ describe("evidence client route selection", () => {
         drugId: "ramipril",
         entityId: "draft-only",
         slug: null,
-      }),
+      })
     ).rejects.toThrow("Cannot resolve drug identity for evidence");
 
     expect(client.request).not.toHaveBeenCalled();
@@ -118,7 +118,7 @@ describe("evidence client route selection", () => {
     expect(client.request).toHaveBeenNthCalledWith(
       2,
       `/curator/drugs/ramipril/evidence/${EVIDENCE_ID}`,
-      { method: "DELETE" },
+      { method: "DELETE" }
     );
   });
 
@@ -136,7 +136,7 @@ describe("evidence client route selection", () => {
     const attachment = await attachEvidenceToDrug(
       client as never,
       { drugId: "ramipril", entityId: DRUG_ID, slug: "ramipril" },
-      EVIDENCE_ID,
+      EVIDENCE_ID
     );
 
     expect(attachment.evidence.title).toBe("Evidence stub");

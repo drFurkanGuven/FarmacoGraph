@@ -1,10 +1,7 @@
 import type { FarmacoGraphClient, PaginationParams } from "@/lib/api";
 import { buildPaginationParams } from "@/lib/api";
 import { searchEvidence as searchEvidenceCatalog } from "@/lib/api/evidence";
-import {
-  parseDrugEvidenceAttachments,
-  parseEvidenceItem,
-} from "./evidence-helpers";
+import { parseDrugEvidenceAttachments, parseEvidenceItem } from "./evidence-helpers";
 import type { CreateEvidenceInput, DrugEvidenceAttachment, EvidenceItem } from "./evidence-types";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -71,7 +68,7 @@ function searchHitToEvidenceItem(hit: {
 
 export async function fetchDrugEvidence(
   client: FarmacoGraphClient,
-  context: DrugEvidenceRouteContext,
+  context: DrugEvidenceRouteContext
 ): Promise<DrugEvidenceAttachment[]> {
   const route = resolveDrugEvidenceRoute(context);
   const envelope = await client.request<unknown[]>(route);
@@ -80,7 +77,7 @@ export async function fetchDrugEvidence(
 
 export async function searchEvidence(
   client: FarmacoGraphClient,
-  options?: PaginationParams & { q?: string; evidenceType?: string },
+  options?: PaginationParams & { q?: string; evidenceType?: string }
 ): Promise<EvidenceItem[]> {
   const { q, evidenceType, ...pagination } = options ?? {};
   const query = q?.trim() ?? "";
@@ -114,7 +111,7 @@ export async function searchEvidence(
 
 export async function createEvidenceRecord(
   client: FarmacoGraphClient,
-  body: CreateEvidenceInput,
+  body: CreateEvidenceInput
 ): Promise<EvidenceItem> {
   const envelope = await client.request<Record<string, unknown>>("/evidence", {
     method: "POST",
@@ -131,7 +128,7 @@ export async function createEvidenceRecord(
 export async function attachEvidenceToDrug(
   client: FarmacoGraphClient,
   context: DrugEvidenceRouteContext,
-  evidenceId: string,
+  evidenceId: string
 ): Promise<DrugEvidenceAttachment> {
   const route = resolveDrugEvidenceRoute(context);
   const normalizedEvidenceId = normalizeEvidenceId(evidenceId);
@@ -158,7 +155,7 @@ export async function attachEvidenceToDrug(
 export async function detachEvidenceFromDrug(
   client: FarmacoGraphClient,
   context: DrugEvidenceRouteContext,
-  evidenceId: string,
+  evidenceId: string
 ): Promise<void> {
   const route = resolveDrugEvidenceRoute(context);
   const normalizedEvidenceId = normalizeEvidenceId(evidenceId);

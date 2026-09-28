@@ -58,7 +58,9 @@ export function KnowledgeSurface({
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{eyebrow}</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {eyebrow}
+            </p>
             <Badge variant="muted">{status}</Badge>
             {focusedDrug && <Badge variant="outline">Drug: {focusedDrug}</Badge>}
           </div>
@@ -90,7 +92,9 @@ export function KnowledgeSurface({
         <Card className="rounded-md">
           <CardHeader>
             <CardTitle className="text-base">Connected workflow</CardTitle>
-            <CardDescription>This surface is linked to the live curation path without inventing unsupported CRUD.</CardDescription>
+            <CardDescription>
+              This surface is linked to the live curation path without inventing unsupported CRUD.
+            </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3 md:grid-cols-2">
             {links.map((item) => {

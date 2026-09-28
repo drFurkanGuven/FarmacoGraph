@@ -108,17 +108,25 @@ def _diseases_by_slug(index: dict[str, Any] | None = None) -> dict[str, dict[str
     return {entity["slug"]: entity for entity in _diseases_from_index(index)}
 
 
+def _diseases_by_id(index: dict[str, Any] | None = None) -> dict[str, dict[str, Any]]:
+    return {str(entity["id"]): entity for entity in _diseases_from_index(index) if entity.get("id")}
+
+
 def find_disease_in_index(slug: str, index: dict[str, Any] | None = None) -> dict[str, Any] | None:
     return _diseases_by_slug(index).get(slug)
 
 
+def get_disease_by_id(disease_id: str, index: dict[str, Any] | None = None) -> dict[str, Any] | None:
+    return _diseases_by_id(index).get(str(disease_id))
+
+
 def known_disease_ids(index: dict[str, Any] | None = None) -> set[str]:
     """Canonical Disease entity IDs from bootstrap index + runtime catalog."""
-    return {entity["id"] for entity in _diseases_from_index(index)}
+    return set(_diseases_by_id(index).keys())
 
 
 def is_known_disease_id(entity_id: str, index: dict[str, Any] | None = None) -> bool:
-    return entity_id in known_disease_ids(index)
+    return str(entity_id) in _diseases_by_id(index)
 
 
 def disease_entity_id(slug: str, index: dict[str, Any] | None = None) -> str:

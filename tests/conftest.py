@@ -8,6 +8,16 @@ from farmacograph.models.enums import ContentLayer, EntityStatus, ValidationStat
 from farmacograph.models.provenance import ProvenanceMetadata, VersioningMetadata
 
 
+@pytest.fixture(autouse=True)
+def _reset_rate_limiter() -> None:
+    """Isolate sliding-window rate-limit state between tests sharing one process."""
+    from farmacograph.api.middleware import _global_rate_limiter
+
+    _global_rate_limiter.clear()
+    yield
+    _global_rate_limiter.clear()
+
+
 @pytest.fixture
 def sample_provenance() -> ProvenanceMetadata:
     from datetime import datetime

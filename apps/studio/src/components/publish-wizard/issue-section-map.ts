@@ -5,7 +5,9 @@ export function resolveSectionForField(field: string | null | undefined): string
   if (!field) return null;
 
   for (const section of DRUG_EDITOR_SECTIONS) {
-    if (section.fields.some((entry) => field === entry.path || field.startsWith(`${entry.path}.`))) {
+    if (
+      section.fields.some((entry) => field === entry.path || field.startsWith(`${entry.path}.`))
+    ) {
       return section.id;
     }
   }

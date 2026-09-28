@@ -19,7 +19,9 @@ export function MechanismPicker({ selectedIds, disabled = false, onChange }: Mec
   const rows = query.data?.data ?? [];
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
   const selectedRows = rows.filter((row) => selectedSet.has(row.entity_id));
-  const missingSelectedIds = selectedIds.filter((id) => !selectedRows.some((row) => row.entity_id === id));
+  const missingSelectedIds = selectedIds.filter(
+    (id) => !selectedRows.some((row) => row.entity_id === id)
+  );
 
   function metaFor(ids: string[]): MechanismFragmentRef[] {
     return ids
@@ -31,6 +33,8 @@ export function MechanismPicker({ selectedIds, disabled = false, onChange }: Mec
           slug: row.slug,
           label: row.label,
           description: row.description,
+          fragment_type: row.fragment_type,
+          direction: row.direction,
         };
       })
       .filter(Boolean);
@@ -53,7 +57,10 @@ export function MechanismPicker({ selectedIds, disabled = false, onChange }: Mec
   return (
     <div className="space-y-4">
       <div className="space-y-1.5">
-        <label className="text-sm font-medium text-muted-foreground" htmlFor="mechanism-picker-search">
+        <label
+          className="text-sm font-medium text-muted-foreground"
+          htmlFor="mechanism-picker-search"
+        >
           Mechanism roots
         </label>
         <div className="relative">
@@ -68,8 +75,8 @@ export function MechanismPicker({ selectedIds, disabled = false, onChange }: Mec
           />
         </div>
         <p className="text-[0.8rem] text-muted-foreground">
-          Select MechanismFragment roots. Flat HAS_MECHANISM_ROOT edges are written into the package for
-          publish.
+          Select MechanismFragment roots. Flat HAS_MECHANISM_ROOT edges are written into the package
+          for publish.
         </p>
       </div>
 
@@ -78,7 +85,11 @@ export function MechanismPicker({ selectedIds, disabled = false, onChange }: Mec
           {selectedRows.map((row) => (
             <Badge key={row.entity_id} variant="secondary" className="gap-1.5">
               {row.label}
-              <button type="button" onClick={() => remove(row.entity_id)} aria-label={`Remove ${row.label}`}>
+              <button
+                type="button"
+                onClick={() => remove(row.entity_id)}
+                aria-label={`Remove ${row.label}`}
+              >
                 <X className="h-3 w-3" />
               </button>
             </Badge>
@@ -121,8 +132,18 @@ export function MechanismPicker({ selectedIds, disabled = false, onChange }: Mec
                       {selected && <Check className="h-3.5 w-3.5" />}
                     </span>
                     <span className="min-w-0">
-                      <span className="block truncate text-sm font-medium">{row.label}</span>
-                      <span className="block truncate text-xs text-muted-foreground">{row.slug}</span>
+                      <span className="flex flex-wrap items-center gap-1.5 text-sm font-medium">
+                        <span className="truncate">{row.label}</span>
+                        {row.fragment_type && (
+                          <Badge variant="outline" className="shrink-0 text-[10px]">
+                            {row.fragment_type}
+                          </Badge>
+                        )}
+                      </span>
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {row.slug}
+                        {row.description ? ` · ${row.description}` : ""}
+                      </span>
                     </span>
                   </button>
                 </li>

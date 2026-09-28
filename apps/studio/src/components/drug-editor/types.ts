@@ -1,7 +1,7 @@
 import type { PublishPackageInput, ValidationResult, WorkflowItem } from "@/lib/api";
 export type DrugPublishPackage = PublishPackageInput;
 
-export type DrugFieldType = "text" | "textarea" | "readonly" | "uuid-list";
+export type DrugFieldType = "text" | "textarea" | "readonly" | "uuid-list" | "boolean";
 
 export interface DrugFieldDef {
   key: string;

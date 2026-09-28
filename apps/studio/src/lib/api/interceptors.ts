@@ -78,7 +78,7 @@ export interface DefaultInterceptorOptions {
 }
 
 export function createDefaultInterceptors(
-  options: DefaultInterceptorOptions = {},
+  options: DefaultInterceptorOptions = {}
 ): InterceptorRegistry {
   const registry = new InterceptorRegistry();
 

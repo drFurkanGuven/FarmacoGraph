@@ -40,7 +40,7 @@ export function extractResponseTraceMeta(response: Response): ResponseTraceMeta 
 
 export function mergeTraceMetaIntoEnvelope<T>(
   envelope: ApiEnvelope<T>,
-  trace: ResponseTraceMeta,
+  trace: ResponseTraceMeta
 ): ApiEnvelope<T> {
   const meta = { ...envelope.meta };
   if (trace.datasetVersion && !meta.dataset_version) {

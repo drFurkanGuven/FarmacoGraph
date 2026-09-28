@@ -9,7 +9,7 @@ describe("evaluateTreatsIndicationReadiness", () => {
         ...defaultTreatsIndicationProperties(),
         explanation: "Clinically indicated for hypertension.",
       },
-      true,
+      true
     );
     expect(result.status).toBe("ready");
     expect(result.missing).toEqual([]);
@@ -21,7 +21,7 @@ describe("evaluateTreatsIndicationReadiness", () => {
         ...defaultTreatsIndicationProperties(),
         explanation: "Clinically indicated for hypertension.",
       },
-      false,
+      false
     );
     expect(result.missing).toContain("curator_attestation");
   });
@@ -33,7 +33,7 @@ describe("evaluateTreatsIndicationReadiness", () => {
         explanation: "Supported by trial evidence.",
         evidence_ids: ["e1000001-0000-4000-8010-000000000001"],
       },
-      false,
+      false
     );
     expect(result.status).toBe("ready");
   });
@@ -45,7 +45,7 @@ describe("evaluateTreatsIndicationReadiness", () => {
         explanation: "Level A indication.",
         evidence_level: "A",
       },
-      true,
+      true
     );
     expect(result.missing).toContain("evidence");
   });

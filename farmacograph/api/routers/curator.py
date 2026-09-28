@@ -13,6 +13,7 @@ from farmacograph.api.schemas.curator import (
     CreateDiseaseRequest,
     CreateDrugRequest,
     CreateMechanismFragmentRequest,
+    CreateTargetRequest,
     CreateWorkflowRequest,
     DrugWorkflowStateResponse,
     EntityWorkflowStateResponse,
@@ -24,7 +25,12 @@ from farmacograph.api.schemas.curator import (
 from farmacograph.api.schemas.evidence import AttachDrugEvidenceRequest
 from farmacograph.auth.models import AuthContext
 from farmacograph.core.container import Container
-from farmacograph.core.exceptions import FarmacoGraphError, NotFoundError, ValidationError
+from farmacograph.core.exceptions import (
+    FarmacoGraphError,
+    NotFoundError,
+    ServiceUnavailableError,
+    ValidationError,
+)
 from farmacograph.curator.drug_package import drug_entity_id
 from farmacograph.curator.education_graph import normalize_education_graph
 from farmacograph.curator.publish_validator import validate_publish_package
@@ -222,6 +228,60 @@ async def create_mechanism_fragment(
             slug=body.slug,
             label=body.label,
             description=body.description,
+            fragment_type=body.fragment_type,
+            direction=body.direction,
+        )
+    except ValidationError as exc:
+        raise HTTPException(status_code=400, detail=exc.message) from exc
+    return {
+        "data": {"entity": entity},
+        "meta": {"api_version": "v1", "slug": entity["slug"]},
+    }
+
+
+@router.get("/targets")
+async def list_curator_targets(
+    service=Depends(get_curator_service),
+    _auth: Annotated[AuthContext, Depends(require_scope("curator:write"))] = None,
+    search: str = Query(""),
+    entity_type: str | None = Query(None),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+) -> dict:
+    data, total = await service.list_targets_browser(
+        search=search,
+        entity_type=entity_type,
+        limit=limit,
+        offset=offset,
+    )
+    return {
+        "data": data,
+        "meta": {
+            "api_version": "v1",
+            "count": len(data),
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+        },
+    }
+
+
+@router.post("/targets", status_code=201)
+async def create_target(
+    body: CreateTargetRequest,
+    service=Depends(get_curator_service),
+    _auth: Annotated[AuthContext, Depends(require_scope("curator:write"))] = None,
+) -> dict:
+    try:
+        entity = await service.create_target(
+            entity_type=body.entity_type,
+            slug=body.slug,
+            label=body.label,
+            description=body.description,
+            gene_symbol=body.gene_symbol,
+            is_cyp=body.is_cyp,
+            cyp_family=body.cyp_family,
+            family=body.family,
         )
     except ValidationError as exc:
         raise HTTPException(status_code=400, detail=exc.message) from exc
@@ -825,6 +885,9 @@ async def publish_workflow(
             },
             "meta": {"api_version": "v1"},
         }
+    except ServiceUnavailableError as exc:
+        await service.log_publish_failure(workflow_id, exc.message, actor_id=auth.user_id)
+        raise HTTPException(status_code=503, detail=exc.message) from exc
     except (ValidationError, NotFoundError, FarmacoGraphError) as exc:
         await service.log_publish_failure(workflow_id, exc.message, actor_id=auth.user_id)
         raise HTTPException(status_code=400, detail=exc.message) from exc

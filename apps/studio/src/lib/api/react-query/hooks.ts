@@ -36,11 +36,10 @@ export function useModules() {
 
 export function useCurriculum(moduleSlug: string) {
   const client = useApiClient();
-  return useApiQuery(
-    apiQueryKeys.curriculum(moduleSlug),
-    () => client.curriculum(moduleSlug),
-    { ...defaultQueryOptions, enabled: Boolean(moduleSlug) },
-  );
+  return useApiQuery(apiQueryKeys.curriculum(moduleSlug), () => client.curriculum(moduleSlug), {
+    ...defaultQueryOptions,
+    enabled: Boolean(moduleSlug),
+  });
 }
 
 export function useCuratorQueue(state: string) {
@@ -48,7 +47,7 @@ export function useCuratorQueue(state: string) {
   return useApiQuery(
     apiQueryKeys.curatorQueue(state),
     () => client.curatorQueue(state),
-    defaultQueryOptions,
+    defaultQueryOptions
   );
 }
 
@@ -57,27 +56,25 @@ export function usePublishedDrugs(module?: string) {
   return useApiQuery(
     apiQueryKeys.drugs(module),
     () => client.drugs({ module }),
-    defaultQueryOptions,
+    defaultQueryOptions
   );
 }
 
 export function useSearch(q: string, enabled = q.trim().length >= 2) {
   const client = useApiClient();
-  return useApiQuery(
-    apiQueryKeys.search(q),
-    () => client.search(q),
-    { ...defaultQueryOptions, enabled },
-  );
+  return useApiQuery(apiQueryKeys.search(q), () => client.search(q), {
+    ...defaultQueryOptions,
+    enabled,
+  });
 }
 
 export function useDashboard(workspaceSlug = "cardiovascular") {
   const client = useApiClient();
   const moduleSlug = resolveModuleSlug(workspaceSlug);
-  return useApiQuery(
-    apiQueryKeys.dashboard(moduleSlug),
-    () => fetchDashboard(client, moduleSlug),
-    { ...defaultQueryOptions, refetchInterval: DASHBOARD_REFRESH_MS },
-  );
+  return useApiQuery(apiQueryKeys.dashboard(moduleSlug), () => fetchDashboard(client, moduleSlug), {
+    ...defaultQueryOptions,
+    refetchInterval: DASHBOARD_REFRESH_MS,
+  });
 }
 
 export function useAuditLogs(options?: { resourceType?: string; limit?: number; offset?: number }) {
@@ -85,7 +82,7 @@ export function useAuditLogs(options?: { resourceType?: string; limit?: number; 
   return useApiQuery(
     apiQueryKeys.auditLogs(options),
     () => client.auditLogs(options),
-    defaultQueryOptions,
+    defaultQueryOptions
   );
 }
 
@@ -96,38 +93,35 @@ export function useJobs(options?: {
   offset?: number;
 }) {
   const client = useApiClient();
-  return useApiQuery(
-    apiQueryKeys.jobs(options),
-    () => client.jobs(options),
-    defaultQueryOptions,
-  );
+  return useApiQuery(apiQueryKeys.jobs(options), () => client.jobs(options), defaultQueryOptions);
 }
 
 export function useWorkflow(workflowId: string) {
   const client = useApiClient();
-  return useApiQuery(
-    apiQueryKeys.workflow(workflowId),
-    () => client.getWorkflow(workflowId),
-    { ...defaultQueryOptions, enabled: Boolean(workflowId) },
-  );
+  return useApiQuery(apiQueryKeys.workflow(workflowId), () => client.getWorkflow(workflowId), {
+    ...defaultQueryOptions,
+    enabled: Boolean(workflowId),
+  });
 }
 
-export function useWorkflowTimeline(workflowId: string, options?: { limit?: number; offset?: number }) {
+export function useWorkflowTimeline(
+  workflowId: string,
+  options?: { limit?: number; offset?: number }
+) {
   const client = useApiClient();
   return useApiQuery(
     apiQueryKeys.workflowTimeline(workflowId, options),
     () => client.getWorkflowTimeline(workflowId, options),
-    { ...defaultQueryOptions, enabled: Boolean(workflowId) },
+    { ...defaultQueryOptions, enabled: Boolean(workflowId) }
   );
 }
 
 export function useDrug(drugId: string) {
   const client = useApiClient();
-  return useApiQuery(
-    apiQueryKeys.drug(drugId),
-    () => client.getDrug(drugId),
-    { ...defaultQueryOptions, enabled: Boolean(drugId) },
-  );
+  return useApiQuery(apiQueryKeys.drug(drugId), () => client.getDrug(drugId), {
+    ...defaultQueryOptions,
+    enabled: Boolean(drugId),
+  });
 }
 
 export function useDrugEducation(drug: string) {
@@ -135,7 +129,7 @@ export function useDrugEducation(drug: string) {
   return useApiQuery(
     apiQueryKeys.drugEducation(drug),
     () => (isUuid(drug) ? client.getDrugEducation(drug) : client.getCuratorDrugEducation(drug)),
-    { ...defaultQueryOptions, enabled: Boolean(drug) },
+    { ...defaultQueryOptions, enabled: Boolean(drug) }
   );
 }
 
@@ -144,17 +138,16 @@ export function useDrugFlashcards(drug: string) {
   return useApiQuery(
     apiQueryKeys.drugFlashcards(drug),
     () => (isUuid(drug) ? client.getDrugFlashcards(drug) : client.getCuratorDrugFlashcards(drug)),
-    { ...defaultQueryOptions, enabled: Boolean(drug) },
+    { ...defaultQueryOptions, enabled: Boolean(drug) }
   );
 }
 
 export function useDrugStudyView(drug: string) {
   const client = useApiClient();
-  return useApiQuery(
-    apiQueryKeys.drugStudyView(drug),
-    () => client.getDrugStudyView(drug),
-    { ...defaultQueryOptions, enabled: Boolean(drug) },
-  );
+  return useApiQuery(apiQueryKeys.drugStudyView(drug), () => client.getDrugStudyView(drug), {
+    ...defaultQueryOptions,
+    enabled: Boolean(drug),
+  });
 }
 
 export function useDrugGraph(drug: string, depth = 2) {
@@ -162,26 +155,24 @@ export function useDrugGraph(drug: string, depth = 2) {
   return useApiQuery(
     apiQueryKeys.drugGraph(drug, depth),
     () => client.getDrugGraph(drug, { depth }),
-    { ...defaultQueryOptions, enabled: Boolean(drug) && isUuid(drug) },
+    { ...defaultQueryOptions, enabled: Boolean(drug) && isUuid(drug) }
   );
 }
 
 export function useDrugMechanism(drug: string) {
   const client = useApiClient();
-  return useApiQuery(
-    apiQueryKeys.drugMechanism(drug),
-    () => client.getDrugMechanism(drug),
-    { ...defaultQueryOptions, enabled: Boolean(drug) && isUuid(drug) },
-  );
+  return useApiQuery(apiQueryKeys.drugMechanism(drug), () => client.getDrugMechanism(drug), {
+    ...defaultQueryOptions,
+    enabled: Boolean(drug) && isUuid(drug),
+  });
 }
 
 export function useExplain(drug: string, effect?: string) {
   const client = useApiClient();
-  return useApiQuery(
-    apiQueryKeys.explain(drug, effect),
-    () => client.explain({ drug, effect }),
-    { ...defaultQueryOptions, enabled: Boolean(drug) },
-  );
+  return useApiQuery(apiQueryKeys.explain(drug, effect), () => client.explain({ drug, effect }), {
+    ...defaultQueryOptions,
+    enabled: Boolean(drug),
+  });
 }
 
 export function useCuratorDrugs(options?: {
@@ -198,7 +189,7 @@ export function useCuratorDrugs(options?: {
   return useApiQuery(
     apiQueryKeys.curatorDrugs(filters),
     () => client.curatorDrugs(options),
-    defaultQueryOptions,
+    defaultQueryOptions
   );
 }
 
@@ -215,7 +206,7 @@ export function useCuratorDiseases(options?: {
   return useApiQuery(
     apiQueryKeys.curatorDiseases(filters),
     () => client.curatorDiseases(options),
-    defaultQueryOptions,
+    defaultQueryOptions
   );
 }
 
@@ -225,7 +216,7 @@ export function useCuratorDrugClasses(options?: { module?: string }) {
   return useApiQuery(
     apiQueryKeys.curatorDrugClasses(filters),
     () => client.curatorDrugClasses(options),
-    defaultQueryOptions,
+    defaultQueryOptions
   );
 }
 
@@ -240,17 +231,16 @@ export function useCuratorMechanismFragments(options?: {
   return useApiQuery(
     apiQueryKeys.curatorMechanismFragments(filters),
     () => client.curatorMechanismFragments(options),
-    defaultQueryOptions,
+    defaultQueryOptions
   );
 }
 
 export function useDrugPackage(slug: string) {
   const client = useApiClient();
-  return useApiQuery(
-    apiQueryKeys.drugPackage(slug),
-    () => client.getDrugPackage(slug),
-    { ...defaultQueryOptions, enabled: Boolean(slug) },
-  );
+  return useApiQuery(apiQueryKeys.drugPackage(slug), () => client.getDrugPackage(slug), {
+    ...defaultQueryOptions,
+    enabled: Boolean(slug),
+  });
 }
 
 export function useDrugWorkflowState(slug: string) {
@@ -258,7 +248,7 @@ export function useDrugWorkflowState(slug: string) {
   return useApiQuery(
     apiQueryKeys.drugWorkflowState(slug),
     () => client.getDrugWorkflowState(slug),
-    { ...defaultQueryOptions, enabled: Boolean(slug) },
+    { ...defaultQueryOptions, enabled: Boolean(slug) }
   );
 }
 
@@ -267,7 +257,7 @@ export function useDiseaseWorkflowState(slug: string) {
   return useApiQuery(
     apiQueryKeys.diseaseWorkflowState(slug),
     () => client.getDiseaseWorkflowState(slug),
-    { ...defaultQueryOptions, enabled: Boolean(slug) },
+    { ...defaultQueryOptions, enabled: Boolean(slug) }
   );
 }
 
@@ -277,17 +267,16 @@ export function useSnapshots(options?: { module?: string; limit?: number; offset
   return useApiQuery(
     apiQueryKeys.snapshots(filters),
     () => client.snapshots(options),
-    defaultQueryOptions,
+    defaultQueryOptions
   );
 }
 
 export function useSnapshot(versionTag: string) {
   const client = useApiClient();
-  return useApiQuery(
-    apiQueryKeys.snapshot(versionTag),
-    () => client.snapshot(versionTag),
-    { ...defaultQueryOptions, enabled: Boolean(versionTag) },
-  );
+  return useApiQuery(apiQueryKeys.snapshot(versionTag), () => client.snapshot(versionTag), {
+    ...defaultQueryOptions,
+    enabled: Boolean(versionTag),
+  });
 }
 
 export function useOpenDrugWorkflow() {

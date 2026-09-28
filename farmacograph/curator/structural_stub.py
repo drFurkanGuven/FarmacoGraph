@@ -85,13 +85,16 @@ def build_cardiovascular_publish_package(
             "Hypertension",
             dataset_version=dataset_version,
         ),
-        _base_entity(
-            CV_STUB_MECHANISM_ID,
-            "MechanismFragment",
-            "cv-stub-mechanism-root",
-            "Structural Mechanism Root Stub",
-            dataset_version=dataset_version,
-        ),
+        {
+            **_base_entity(
+                CV_STUB_MECHANISM_ID,
+                "MechanismFragment",
+                "cv-stub-mechanism-root",
+                "Structural Mechanism Root Stub",
+                dataset_version=dataset_version,
+            ),
+            "fragment_type": "molecular",
+        },
     ]
 
     relationships = [

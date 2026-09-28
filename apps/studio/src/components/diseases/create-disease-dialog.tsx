@@ -169,7 +169,12 @@ export function CreateDiseaseDialog() {
             {error ? <p className="text-sm text-destructive">{error}</p> : null}
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={submitting}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              disabled={submitting}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={submitting || !label.trim() || !slug.trim()}>

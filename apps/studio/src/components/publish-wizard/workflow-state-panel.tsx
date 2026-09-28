@@ -30,7 +30,11 @@ export interface WorkflowStatePanelProps {
   entityType?: "Drug" | "Disease";
 }
 
-export function WorkflowStatePanel({ snapshot, compact = false, entityType = "Drug" }: WorkflowStatePanelProps) {
+export function WorkflowStatePanel({
+  snapshot,
+  compact = false,
+  entityType = "Drug",
+}: WorkflowStatePanelProps) {
   const slug = isDrugSlug(snapshot.drugId)
     ? snapshot.drugId
     : String(snapshot.package.entity_payload.slug ?? "");
@@ -69,7 +73,10 @@ export function WorkflowStatePanel({ snapshot, compact = false, entityType = "Dr
           <>
             <div className="flex items-center justify-between gap-2">
               <span className="text-muted-foreground">Status</span>
-              <StatusBadge status={workflowBadgeStatus(workflowState)} label={workflowState ?? "none"} />
+              <StatusBadge
+                status={workflowBadgeStatus(workflowState)}
+                label={workflowState ?? "none"}
+              />
             </div>
             {workflowId && (
               <div className="flex items-center justify-between gap-2">

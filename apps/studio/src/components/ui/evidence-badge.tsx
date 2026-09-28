@@ -3,7 +3,10 @@ import { cn } from "@/lib/utils";
 
 export type EvidenceType = "primary" | "secondary" | "tertiary" | "unsupported";
 
-const TYPE_MAP: Record<EvidenceType, { label: string; variant: NonNullable<BadgeProps["variant"]> }> = {
+const TYPE_MAP: Record<
+  EvidenceType,
+  { label: string; variant: NonNullable<BadgeProps["variant"]> }
+> = {
   primary: { label: "Primary", variant: "success" },
   secondary: { label: "Secondary", variant: "default" },
   tertiary: { label: "Tertiary", variant: "secondary" },

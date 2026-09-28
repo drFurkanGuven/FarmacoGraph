@@ -17,7 +17,7 @@ export interface WorkflowActionState {
 async function invalidateWorkflowCaches(
   queryClient: ReturnType<typeof useQueryClient>,
   workflowId: string,
-  slug: string,
+  slug: string
 ) {
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: apiQueryKeys.workflow(workflowId) }),

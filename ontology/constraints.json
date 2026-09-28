@@ -65,7 +65,7 @@
       "severity": "error",
       "category": "biomedical",
       "description": "Published Drug must have at least one IS_A or BELONGS_TO DrugClass.",
-      "applies_to": {"entity": "Drug", "status": "published", "min_relationships": {"IS_A": 1}}
+      "applies_to": {"entity": "Drug", "status": "published", "allowed_class_relationships": ["IS_A", "BELONGS_TO"], "min_count": 1}
     },
     {
       "id": "FG-C009",
@@ -237,6 +237,22 @@
     },
     {
       "id": "FG-C030",
+      "name": "education_resource_kind_supported",
+      "severity": "error",
+      "category": "education",
+      "description": "Education entities must use a supported kind.",
+      "applies_to": {"entity": "EducationResource", "allowed_kinds": ["flashcard", "clinical_pearl", "mistake_correction", "high_yield_summary", "exam_tip", "mnemonic"]}
+    },
+    {
+      "id": "FG-C031",
+      "name": "education_resource_required_fields",
+      "severity": "error",
+      "category": "education",
+      "description": "Education entities must contain all required fields for their specific kind.",
+      "applies_to": {"entity": "EducationResource"}
+    },
+    {
+      "id": "FG-C032",
       "name": "postgres_no_biomedical_duplication",
       "severity": "error",
       "category": "architecture",

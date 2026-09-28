@@ -39,3 +39,26 @@ def test_register_mechanism_fragment_rejects_duplicate():
 def test_register_mechanism_fragment_rejects_invalid_slug():
     with pytest.raises(ValueError, match="kebab-case"):
         catalog.register_mechanism_fragment(slug="Bad!!!", label="Bad")
+
+
+def test_register_mechanism_fragment_persists_type_and_direction():
+    entity = catalog.register_mechanism_fragment(
+        slug="typed-fragment",
+        label="Typed fragment",
+        fragment_type="cellular",
+        direction="decrease",
+    )
+    assert entity["fragment_type"] == "cellular"
+    assert entity["direction"] == "decrease"
+
+    rows, _ = catalog.list_mechanism_fragment_catalog(search="typed-fragment")
+    match = next(row for row in rows if row["id"] == entity["id"])
+    assert match["fragment_type"] == "cellular"
+    assert match["direction"] == "decrease"
+
+
+def test_register_mechanism_fragment_rejects_invalid_type():
+    with pytest.raises(ValueError, match="fragment_type"):
+        catalog.register_mechanism_fragment(
+            slug="bad-type-fragment", label="Bad type", fragment_type="subatomic"
+        )

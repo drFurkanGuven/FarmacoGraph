@@ -25,6 +25,8 @@ export interface MechanismFragmentRef {
   slug?: string;
   label?: string;
   description?: string | null;
+  fragment_type?: string | null;
+  direction?: string | null;
 }
 
 export interface PackageRelationshipRow {
@@ -98,14 +100,12 @@ export function listMechanismRootIds(pkg: DrugPublishPackage): string[] {
 
 function normalizeFragmentEntity(
   fragment: MechanismFragmentRef,
-  existing?: Record<string, unknown>,
+  existing?: Record<string, unknown>
 ): Record<string, unknown> {
   const slug =
-    fragment.slug?.trim() ||
-    (typeof existing?.slug === "string" ? existing.slug : fragment.id);
+    fragment.slug?.trim() || (typeof existing?.slug === "string" ? existing.slug : fragment.id);
   const label =
-    fragment.label?.trim() ||
-    (typeof existing?.label === "string" ? existing.label : slug);
+    fragment.label?.trim() || (typeof existing?.label === "string" ? existing.label : slug);
   return {
     ...(existing ?? {}),
     id: fragment.id,
@@ -115,13 +115,18 @@ function normalizeFragmentEntity(
     description:
       fragment.description ??
       (typeof existing?.description === "string" ? existing.description : null),
+    fragment_type:
+      fragment.fragment_type ??
+      (typeof existing?.fragment_type === "string" ? existing.fragment_type : null),
+    direction:
+      fragment.direction ?? (typeof existing?.direction === "string" ? existing.direction : null),
     status: typeof existing?.status === "string" ? existing.status : "draft",
   };
 }
 
 export function ensureMechanismFragments(
   pkg: DrugPublishPackage,
-  fragments: MechanismFragmentRef[],
+  fragments: MechanismFragmentRef[]
 ): DrugPublishPackage {
   if (fragments.length === 0) return pkg;
   const next = clonePackage(pkg);
@@ -158,7 +163,7 @@ export function setMechanismRoot(
   drugEntityId: string,
   fragmentId: string,
   enabled: boolean,
-  fragmentMeta?: MechanismFragmentRef,
+  fragmentMeta?: MechanismFragmentRef
 ): DrugPublishPackage {
   const id = fragmentId.trim();
   if (!id) return pkg;
@@ -171,14 +176,14 @@ export function setMechanismRoot(
       pkg,
       drugEntityId,
       [...roots, id],
-      fragmentMeta ? [fragmentMeta] : [{ id }],
+      fragmentMeta ? [fragmentMeta] : [{ id }]
     );
   }
   if (!roots.includes(id)) return pkg;
   return syncMechanismRootSelection(
     pkg,
     drugEntityId,
-    roots.filter((rootId) => rootId !== id),
+    roots.filter((rootId) => rootId !== id)
   );
 }
 
@@ -186,7 +191,7 @@ export function syncMechanismRootSelection(
   pkg: DrugPublishPackage,
   drugEntityId: string,
   nextIds: string[],
-  fragmentMeta: MechanismFragmentRef[] = [],
+  fragmentMeta: MechanismFragmentRef[] = []
 ): DrugPublishPackage {
   const unique = [...new Set(nextIds.map((id) => id.trim()).filter(Boolean))];
   let next = clonePackage(pkg);
@@ -204,10 +209,9 @@ export function syncMechanismRootSelection(
     preserved
       .filter(
         (row) =>
-          row.relationship_type === "HAS_MECHANISM_ROOT" &&
-          String(row.source_id) === drugEntityId,
+          row.relationship_type === "HAS_MECHANISM_ROOT" && String(row.source_id) === drugEntityId
       )
-      .map((row) => String(row.target_id)),
+      .map((row) => String(row.target_id))
   );
 
   for (const fragmentId of unique) {
@@ -225,9 +229,7 @@ export function syncMechanismRootSelection(
   next.relationships = preserved as unknown as Record<string, unknown>[];
   next = ensureMechanismFragments(next, [
     ...fragmentMeta.filter((row) => unique.includes(row.id)),
-    ...unique
-      .filter((id) => !fragmentMeta.some((row) => row.id === id))
-      .map((id) => ({ id })),
+    ...unique.filter((id) => !fragmentMeta.some((row) => row.id === id)).map((id) => ({ id })),
   ]);
   touchProvenance(next);
   return next;
@@ -244,9 +246,7 @@ export function listPathwayEdges(pkg: DrugPublishPackage): PathwayEdgeRow[] {
       target_type: "MechanismFragment",
       properties: {
         ...defaultMechanismEdgeProperties(),
-        ...(isRecord(row.properties)
-          ? (row.properties as unknown as MechanismEdgeProperties)
-          : {}),
+        ...(isRecord(row.properties) ? (row.properties as unknown as MechanismEdgeProperties) : {}),
       },
     }));
 }
@@ -307,7 +307,7 @@ export function isPathwayAcyclic(pkg: DrugPublishPackage): boolean {
 export function wouldCreateCycle(
   pkg: DrugPublishPackage,
   sourceId: string,
-  targetId: string,
+  targetId: string
 ): boolean {
   if (sourceId === targetId) return true;
   const probe = clonePackage(pkg);
@@ -332,7 +332,7 @@ export function addPathwayEdge(
     relationshipType?: PathwayEdgeType;
     properties?: Partial<MechanismEdgeProperties>;
     fragments?: MechanismFragmentRef[];
-  },
+  }
 ): DrugPublishPackage {
   const sourceId = input.sourceId.trim();
   const targetId = input.targetId.trim();
@@ -343,7 +343,7 @@ export function addPathwayEdge(
     (edge) =>
       edge.source_id === sourceId &&
       edge.target_id === targetId &&
-      edge.relationship_type === relationshipType,
+      edge.relationship_type === relationshipType
   );
   if (existing) return pkg;
   if (wouldCreateCycle(pkg, sourceId, targetId)) {
@@ -373,11 +373,40 @@ export function addPathwayEdge(
   return next;
 }
 
+export function updatePathwayEdgeProperties(
+  pkg: DrugPublishPackage,
+  sourceId: string,
+  targetId: string,
+  patch: Partial<MechanismEdgeProperties>,
+  relationshipType?: PathwayEdgeType
+): DrugPublishPackage {
+  const next = clonePackage(pkg);
+  const rows = relationshipRows(next);
+  const index = rows.findIndex(
+    (row) =>
+      isPathwayEdgeType(String(row.relationship_type)) &&
+      String(row.source_id) === sourceId &&
+      String(row.target_id) === targetId &&
+      (!relationshipType || row.relationship_type === relationshipType)
+  );
+  if (index < 0) return pkg;
+  const current = isRecord(rows[index]?.properties)
+    ? (rows[index]?.properties as unknown as MechanismEdgeProperties)
+    : defaultMechanismEdgeProperties();
+  rows[index] = {
+    ...rows[index]!,
+    properties: { ...defaultMechanismEdgeProperties(), ...current, ...patch },
+  };
+  next.relationships = rows as unknown as Record<string, unknown>[];
+  touchProvenance(next);
+  return next;
+}
+
 export function removePathwayEdge(
   pkg: DrugPublishPackage,
   sourceId: string,
   targetId: string,
-  relationshipType?: PathwayEdgeType,
+  relationshipType?: PathwayEdgeType
 ): DrugPublishPackage {
   const next = clonePackage(pkg);
   next.relationships = relationshipRows(next).filter((row) => {
@@ -392,7 +421,7 @@ export function removePathwayEdge(
 
 export function addPathwayNode(
   pkg: DrugPublishPackage,
-  fragment: MechanismFragmentRef,
+  fragment: MechanismFragmentRef
 ): DrugPublishPackage {
   return ensureMechanismFragments(pkg, [fragment]);
 }
@@ -415,7 +444,7 @@ export function removePathwayNode(pkg: DrugPublishPackage, fragmentId: string): 
   const stillRoot = listMechanismRootIds(next).includes(id);
   if (!stillRoot && Array.isArray(next.related_entities)) {
     next.related_entities = next.related_entities.filter(
-      (row) => !(isRecord(row) && row.entity_type === "MechanismFragment" && row.id === id),
+      (row) => !(isRecord(row) && row.entity_type === "MechanismFragment" && row.id === id)
     );
   }
   touchProvenance(next);

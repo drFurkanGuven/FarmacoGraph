@@ -96,7 +96,7 @@ describe("usePublishWizard", () => {
           onWorkflowUpdated,
           enabled: true,
         }),
-      { wrapper: createWrapper() },
+      { wrapper: createWrapper() }
     );
 
     act(() => {
@@ -110,7 +110,7 @@ describe("usePublishWizard", () => {
     await waitFor(() => expect(publishWorkflow).toHaveBeenCalledWith("wf-1", packageInput));
     expect(saveWorkflowPackage).not.toHaveBeenCalled();
     expect(onWorkflowUpdated).toHaveBeenCalledWith(
-      expect.objectContaining({ id: "wf-1", state: "published" }),
+      expect.objectContaining({ id: "wf-1", state: "published" })
     );
   });
 });

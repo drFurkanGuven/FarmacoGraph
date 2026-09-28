@@ -32,7 +32,9 @@ export function DrugEvidencePanel({
           <FileText className="h-4 w-4" />
           Evidence
         </CardTitle>
-        {!compact && <CardDescription>Attached citations and validation gaps for this drug.</CardDescription>}
+        {!compact && (
+          <CardDescription>Attached citations and validation gaps for this drug.</CardDescription>
+        )}
       </CardHeader>
       <CardContent className={compact ? "space-y-2 p-3 pt-0" : "space-y-3"}>
         {evidence.loading ? (

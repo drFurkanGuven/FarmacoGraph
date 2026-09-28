@@ -4,6 +4,7 @@ from farmacograph.services.compare import CompareService, CompareServiceProtocol
 from farmacograph.services.drugs import DrugService
 from farmacograph.services.explain import ExplainService, ExplainServiceProtocol
 from farmacograph.services.health import HealthService
+from farmacograph.services.interaction import InteractionService, InteractionServiceProtocol
 from farmacograph.services.learning import LearningService, LearningServiceProtocol
 from farmacograph.services.modules import ModuleService
 from farmacograph.services.reasoning import ReasoningService, ReasoningServiceProtocol
@@ -17,6 +18,8 @@ __all__ = [
     "ExplainService",
     "ExplainServiceProtocol",
     "HealthService",
+    "InteractionService",
+    "InteractionServiceProtocol",
     "LearningService",
     "LearningServiceProtocol",
     "ModuleService",

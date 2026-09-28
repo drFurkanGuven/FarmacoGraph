@@ -43,7 +43,11 @@ function readinessLabel(status: PublishReadiness["status"]) {
   }
 }
 
-export function PublishReadinessPanel({ readiness, queueItems, loading }: PublishReadinessPanelProps) {
+export function PublishReadinessPanel({
+  readiness,
+  queueItems,
+  loading,
+}: PublishReadinessPanelProps) {
   return (
     <Card>
       <CardHeader>

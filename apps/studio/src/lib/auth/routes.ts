@@ -6,8 +6,24 @@ export interface RouteGuardConfig {
   scopes?: AuthScope[];
 }
 
-/** Public routes — no guard applied. Everything else requires an authenticated session. */
-export const PUBLIC_ROUTES = new Set(["/login"]);
+/**
+ * Public routes — no guard applied.
+ *
+ * Rationale:
+ * - /login: Authentication entry point; must remain public to prevent recursive redirection loops.
+ * - /explore: Self-service knowledge exploration allowing medical students, pharmacologists, and researchers
+ *   to browse published drugs, classes, and pathways without an account.
+ * - /interactions: Clinical drug-drug interaction checker accessible to point-of-care clinicians and students.
+ * - /compare: Side-by-side pharmacological comparison table for comparing mechanism and kinetic parameters.
+ * - /developer: API documentation, OpenAPI specs, and developer onboarding for ecosystem integrations.
+ */
+export const PUBLIC_ROUTES = new Set([
+  "/login",
+  "/explore",
+  "/interactions",
+  "/compare",
+  "/developer",
+]);
 
 /**
  * Explicit route guards for elevated Studio pages.
@@ -15,7 +31,7 @@ export const PUBLIC_ROUTES = new Set(["/login"]);
  */
 export const ROUTE_GUARDS: Record<string, RouteGuardConfig> = {
   "/": { requireAuth: true, scopes: ["knowledge:read"] },
-  "/dashboard": { requireAuth: true, scopes: ["knowledge:read"] },
+  "/activity": { requireAuth: true, scopes: ["curator:write"] },
   "/settings": { requireAuth: true },
   "/users": { requireAuth: true, roles: ["administrator"] },
   "/knowledge/drugs": { requireAuth: true, scopes: ["curator:write"] },
@@ -68,7 +84,12 @@ export function matchRouteGuard(pathname: string): RouteGuardConfig | null {
   if (isLoginPath(pathname)) return null;
 
   const path = normalizePathname(pathname);
-  if (PUBLIC_ROUTES.has(path)) return null;
+  if (
+    PUBLIC_ROUTES.has(path) ||
+    Array.from(PUBLIC_ROUTES).some((p) => p !== "/" && path.startsWith(`${p}/`))
+  ) {
+    return null;
+  }
   if (ROUTE_GUARDS[path]) return ROUTE_GUARDS[path];
 
   for (const [route, guard] of Object.entries(ROUTE_GUARDS)) {
@@ -122,8 +143,7 @@ export function loginRedirectUrl(returnTo: string): string {
 }
 
 export type AuthMiddlewareDecision =
-  | { action: "next" }
-  | { action: "redirect"; loginPath: string; returnTo?: string };
+  { action: "next" } | { action: "redirect"; loginPath: string; returnTo?: string };
 
 /**
  * Pure middleware decision — keeps `/login` / `/login/` public forever and never
@@ -132,26 +152,44 @@ export type AuthMiddlewareDecision =
 export function resolveAuthMiddleware(
   pathname: string,
   authenticated: boolean,
+  userScopes?: AuthScope[],
+  userRoles?: UserRole[]
 ): AuthMiddlewareDecision {
   // Login must NEVER require auth (trailing slash / basePath variants included).
   if (isLoginPath(pathname)) {
     return { action: "next" };
   }
 
-  if (!isProtectedPath(pathname)) {
+  const guard = matchRouteGuard(pathname);
+  if (!guard?.requireAuth) {
     return { action: "next" };
   }
 
-  if (authenticated) {
-    return { action: "next" };
+  if (!authenticated) {
+    const returnTo = safeReturnTo(pathname === "/" ? "/" : pathname);
+    if (isLoginPath(returnTo)) {
+      return { action: "redirect", loginPath: LOGIN_PATH, returnTo: "/" };
+    }
+    return { action: "redirect", loginPath: LOGIN_PATH, returnTo };
   }
 
-  const returnTo = safeReturnTo(pathname === "/" ? "/" : pathname);
-  if (isLoginPath(returnTo)) {
-    return { action: "redirect", loginPath: LOGIN_PATH, returnTo: "/" };
+  // Enforce role guard if roles are specified
+  if (guard.roles?.length && userRoles && userRoles.length > 0) {
+    const hasRequiredRole = guard.roles.some((role) => userRoles.includes(role));
+    if (!hasRequiredRole) {
+      return { action: "redirect", loginPath: "/", returnTo: undefined };
+    }
   }
 
-  return { action: "redirect", loginPath: LOGIN_PATH, returnTo };
+  // Enforce scope guard if scopes are specified
+  if (guard.scopes?.length && userScopes && userScopes.length > 0) {
+    const hasRequiredScope = guard.scopes.some((scope) => userScopes.includes(scope));
+    if (!hasRequiredScope) {
+      return { action: "redirect", loginPath: "/", returnTo: undefined };
+    }
+  }
+
+  return { action: "next" };
 }
 
 /** Detect the production login-loop Location signature. */

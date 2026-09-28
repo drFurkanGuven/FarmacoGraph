@@ -194,6 +194,43 @@ class EvidenceService:
     ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
         start = time.perf_counter()
         rows = await self._repo.list_drug_evidence(str(drug_id))
+        provenance: str | None = None
+        if not rows:
+            # Staging fallback: curator staging packages carry Evidence nodes and
+            # SUPPORTED_BY rows readable without Neo4j. Flagged so readers never
+            # mistake staging content for published graph data.
+            from farmacograph.curator.drug_package import find_package_by_ref
+
+            pkg = find_package_by_ref(drug_id)
+            if pkg is not None:
+                by_id = {
+                    str(e.get("id")): e
+                    for e in (pkg.related_entities or [])
+                    if e.get("id")
+                }
+                for rel in pkg.relationships or []:
+                    if rel.get("relationship_type") != "SUPPORTED_BY":
+                        continue
+                    evidence = by_id.get(str(rel.get("target_id")))
+                    if not evidence or evidence.get("entity_type") != "Evidence":
+                        continue
+                    props = rel.get("properties") or {}
+                    assertion = None
+                    if props.get("assertion_relationship"):
+                        assertion = {
+                            "relationship_type": props.get("assertion_relationship"),
+                            "target_id": props.get("assertion_target_id"),
+                            "target_type": props.get("assertion_target_type"),
+                        }
+                    rows.append(
+                        {
+                            "evidence_id": evidence.get("id"),
+                            "evidence": evidence,
+                            "assertion": assertion,
+                        }
+                    )
+                if rows:
+                    provenance = "staging-fallback"
         if dataset_version:
             rows = [
                 row
@@ -202,7 +239,13 @@ class EvidenceService:
             ]
         elapsed = int((time.perf_counter() - start) * 1000)
         meta = self._meta(dataset_version, elapsed).model_dump()
-        meta.update({"count": len(rows), "drug_id": str(drug_id)})
+        meta.update(
+            {
+                "count": len(rows),
+                "drug_id": str(drug_id),
+                "provenance": provenance,
+            }
+        )
         return rows, meta
 
     async def attach_to_drug(

@@ -60,7 +60,7 @@ export function DiseaseEditorWorkspace({ diseaseSlug }: { diseaseSlug: string })
           ? "Unpublished — editing unlocked (admin)."
           : workflowState === "deprecated"
             ? "Restored from deprecated — editing unlocked (admin)."
-            : "Returned to draft — editing unlocked.",
+            : "Returned to draft — editing unlocked."
       );
     } catch (error) {
       toast.error(error instanceof ApiError ? error.message : "Could not return to draft.");
@@ -71,7 +71,9 @@ export function DiseaseEditorWorkspace({ diseaseSlug }: { diseaseSlug: string })
 
   async function handleDeprecate() {
     if (!workflow?.id || deprecating) return;
-    if (!window.confirm("Deprecate this published disease? Soft-deletes from public graph reads.")) {
+    if (
+      !window.confirm("Deprecate this published disease? Soft-deletes from public graph reads.")
+    ) {
       return;
     }
     setDeprecating(true);
@@ -114,8 +116,17 @@ export function DiseaseEditorWorkspace({ diseaseSlug }: { diseaseSlug: string })
             {workflowState === "approved" ||
             (workflowState === "published" && isAdmin) ||
             (workflowState === "deprecated" && isAdmin) ? (
-              <Button size="sm" variant="secondary" disabled={unlocking} onClick={() => void handleReturnToDraft()}>
-                {unlocking ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={unlocking}
+                onClick={() => void handleReturnToDraft()}
+              >
+                {unlocking ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RotateCcw className="h-4 w-4" />
+                )}
                 {workflowState === "published"
                   ? "Unpublish to edit"
                   : workflowState === "deprecated"
@@ -124,8 +135,17 @@ export function DiseaseEditorWorkspace({ diseaseSlug }: { diseaseSlug: string })
               </Button>
             ) : null}
             {workflowState === "published" && isAdmin ? (
-              <Button size="sm" variant="outline" disabled={deprecating} onClick={() => void handleDeprecate()}>
-                {deprecating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Archive className="h-4 w-4" />}
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={deprecating}
+                onClick={() => void handleDeprecate()}
+              >
+                {deprecating ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Archive className="h-4 w-4" />
+                )}
                 Deprecate
               </Button>
             ) : null}

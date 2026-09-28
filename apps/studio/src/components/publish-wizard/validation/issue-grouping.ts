@@ -11,12 +11,7 @@ import {
   type WorkflowGatingContext,
 } from "./types";
 
-const LEVEL_GROUPS = new Set<IssueGroupId>([
-  "schema",
-  "ontology",
-  "biomedical",
-  "educational",
-]);
+const LEVEL_GROUPS = new Set<IssueGroupId>(["schema", "ontology", "biomedical", "educational"]);
 
 /** Score threshold aligned with drug browser confidence levels (medium starts at 0.5). */
 export const LOW_CONFIDENCE_SCORE_THRESHOLD = 0.5;
@@ -58,7 +53,7 @@ export function buildAttestationIssue(): PublishWizardIssue {
 export function buildWorkflowStateIssue(
   workflowState: string | null,
   requiredState: string,
-  actionLabel: string,
+  actionLabel: string
 ): PublishWizardIssue {
   return {
     constraint_id: null,
@@ -83,7 +78,10 @@ export function buildGraphPendingIssue(pendingCount: number): PublishWizardIssue
   };
 }
 
-export function buildGraphFailureIssue(message: string, entityId?: string | null): PublishWizardIssue {
+export function buildGraphFailureIssue(
+  message: string,
+  entityId?: string | null
+): PublishWizardIssue {
   return {
     constraint_id: null,
     level: "workflow",
@@ -217,7 +215,7 @@ export function computeEvidenceGating(evidenceIssues: PublishWizardIssue[]): Evi
 }
 
 export function getNonemptyEvidenceCategories(
-  categorized: CategorizedEvidenceIssues,
+  categorized: CategorizedEvidenceIssues
 ): Array<{ id: EvidenceIssueCategory; issues: PublishWizardIssue[] }> {
   const order: EvidenceIssueCategory[] = ["blockers", "missing", "lowConfidence", "warnings"];
 
@@ -237,7 +235,7 @@ export function buildWorkflowIssues(context: WorkflowGatingContext): PublishWiza
 
   if (summary && summary.failed_count > 0) {
     const entityFailures = summary.recent_failures.filter(
-      (failure) => !entityId || failure.entity_id === entityId,
+      (failure) => !entityId || failure.entity_id === entityId
     );
 
     if (entityFailures.length > 0) {
@@ -245,15 +243,15 @@ export function buildWorkflowIssues(context: WorkflowGatingContext): PublishWiza
         issues.push(
           buildGraphFailureIssue(
             failure.message ?? "Graph validation failed.",
-            failure.entity_id ?? entityId,
-          ),
+            failure.entity_id ?? entityId
+          )
         );
       }
     } else if (!entityId) {
       issues.push(
         buildGraphFailureIssue(
-          `${summary.failed_count} graph validation failure${summary.failed_count === 1 ? "" : "s"} recorded.`,
-        ),
+          `${summary.failed_count} graph validation failure${summary.failed_count === 1 ? "" : "s"} recorded.`
+        )
       );
     }
   }
@@ -267,7 +265,7 @@ export function buildWorkflowIssues(context: WorkflowGatingContext): PublishWiza
  */
 export function groupValidationIssues(
   issues: ValidationIssue[],
-  workflowContext?: WorkflowGatingContext,
+  workflowContext?: WorkflowGatingContext
 ): GroupedValidationIssues {
   const grouped = emptyGroups();
 
@@ -314,7 +312,7 @@ export function countBlockingIssues(grouped: GroupedValidationIssues): number {
 }
 
 export function getNonemptyIssueGroups(
-  grouped: GroupedValidationIssues,
+  grouped: GroupedValidationIssues
 ): Array<{ id: IssueGroupId; issues: PublishWizardIssue[] }> {
   return ISSUE_GROUP_ORDER.filter((groupId) => grouped[groupId].length > 0).map((groupId) => ({
     id: groupId,

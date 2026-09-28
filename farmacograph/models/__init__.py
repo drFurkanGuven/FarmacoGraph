@@ -14,6 +14,7 @@ from farmacograph.models.clinical import (
     Prerequisite,
     Reference,
 )
+from farmacograph.models.enums import FragmentType
 from farmacograph.models.confidence import (
     ConfidenceMetadata,
     ExplainabilityMetadata,
@@ -93,6 +94,7 @@ __all__ = [
     "FiveMinuteExplanation",
     "FiveSecondSummary",
     "Flashcard",
+    "FragmentType",
     "Gene",
     "GraphEdge",
     "GraphNode",

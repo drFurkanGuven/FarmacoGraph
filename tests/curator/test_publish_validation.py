@@ -106,3 +106,42 @@ def test_unknown_education_kind_fails_validation():
 
     assert result.valid is False
     assert any(i.constraint_id == "FG-C030" for i in result.errors)
+
+
+def test_missing_fragment_type_fails_publish_validation():
+    import copy
+    package = build_cardiovascular_publish_package()
+    related = copy.deepcopy(package["related_entities"])
+    for ent in related:
+        if ent.get("entity_type") == "MechanismFragment":
+            del ent["fragment_type"]
+            break
+
+    result = validate_publish_package(
+        package["entity_payload"],
+        related_entities=related,
+        relationships=package["relationships"],
+    )
+    assert result.valid is False
+    assert any(i.field == "fragment_type" for i in result.errors)
+    assert any("missing required 'fragment_type'" in i.message for i in result.errors)
+
+
+def test_invalid_fragment_type_fails_publish_validation():
+    import copy
+    package = build_cardiovascular_publish_package()
+    related = copy.deepcopy(package["related_entities"])
+    for ent in related:
+        if ent.get("entity_type") == "MechanismFragment":
+            ent["fragment_type"] = "invalid_subcellular"
+            break
+
+    result = validate_publish_package(
+        package["entity_payload"],
+        related_entities=related,
+        relationships=package["relationships"],
+    )
+    assert result.valid is False
+    assert any(i.field == "fragment_type" for i in result.errors)
+    assert any("invalid fragment_type 'invalid_subcellular'" in i.message for i in result.errors)
+

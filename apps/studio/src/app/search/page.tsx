@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Search } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
+import { ApiErrorPanel } from "@/components/ui/api-error-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useApiClient } from "@/lib/hooks/use-api-client";
@@ -39,10 +40,15 @@ export default function SearchPage() {
           <CardTitle className="text-base">Results</CardTitle>
         </CardHeader>
         <CardContent>
-          {q.length < 2 && <p className="text-sm text-muted-foreground">Type at least 2 characters.</p>}
+          {q.length < 2 && (
+            <p className="text-sm text-muted-foreground">Type at least 2 characters.</p>
+          )}
           {search.isLoading && <Skeleton className="h-20 w-full" />}
-          {search.data?.data.length === 0 && q.length >= 2 && (
-            <p className="text-sm text-muted-foreground">No results. Publish knowledge via Studio workflows.</p>
+          {search.isError && q.length >= 2 && <ApiErrorPanel error={search.error} />}
+          {search.data?.data.length === 0 && q.length >= 2 && !search.isError && (
+            <p className="text-sm text-muted-foreground">
+              No results. Publish knowledge via Studio workflows.
+            </p>
           )}
           <ul className="space-y-2">
             {search.data?.data.map((item) => (

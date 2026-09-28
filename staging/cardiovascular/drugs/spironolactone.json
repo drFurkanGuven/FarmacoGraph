@@ -1,0 +1,605 @@
+{
+  "module": "cardiovascular",
+  "dataset_version": "2026.1.0",
+  "create_snapshot": true,
+  "entity_payload": {
+    "id": "b173f67c-ef61-55b1-8679-b6a9f2138f6c",
+    "entity_type": "Drug",
+    "slug": "spironolactone",
+    "label": "Spironolactone",
+    "generic_name": "Spironolactone",
+    "module": "cardiovascular",
+    "routes": [
+      "oral"
+    ],
+    "half_life": "1.4 hours (spironolactone); 16.5 hours (canrenone active metabolite); 13.8 hours (7alpha-thiomethylspironolactone)",
+    "protein_binding": ">90%",
+    "bioavailability": "~60–90% (extensively metabolized to active sulfur-containing metabolites and canrenone)",
+    "onset": "24–48 hours (delayed genomic effect; peak natriuresis at 48–72 hours)",
+    "duration": "48–72 hours",
+    "has_black_box_warning": false,
+    "is_high_alert": false,
+    "status": "published",
+    "dataset_version": "2026.1.0",
+    "external_ids": {
+      "rxnorm": "9997",
+      "atc": [
+        "C03DA01"
+      ]
+    },
+    "provenance": {
+      "created_at": "2026-07-08T00:00:00+00:00",
+      "updated_at": "2026-07-08T00:00:00+00:00",
+      "created_by": "curator@farmacograph.local",
+      "source": "manual",
+      "imported_from": "FDA label (Aldactone); BNF 2026; DailyMed",
+      "curator_attestation": true
+    },
+    "versioning": {
+      "dataset_version": "2026.1.0",
+      "ontology_version": "1.0.0",
+      "valid_from": "2026-07-08",
+      "status": "published",
+      "validation_state": "passed"
+    },
+    "relationships": {
+      "BELONGS_TO": [
+        "b1000001-0000-4000-8010-000000000021"
+      ],
+      "TREATS": [
+        "d1000001-0000-4000-8010-000000000001",
+        "d1000001-0000-4000-8010-000000000003",
+        "d1000001-0000-4000-8010-000000000005"
+      ],
+      "HAS_MECHANISM_ROOT": [
+        "m1000001-0000-4000-8010-000000000005"
+      ],
+      "TARGETS": [
+        "00000000-0000-4000-8000-000000000054"
+      ]
+    }
+  },
+  "related_entities": [
+    {
+      "id": "b1000001-0000-4000-8010-000000000021",
+      "entity_type": "DrugClass",
+      "slug": "aldosterone-antagonists",
+      "label": "Aldosterone antagonists",
+      "description": "Potassium-sparing diuretics that competitively antagonize aldosterone at mineralocorticoid receptors.",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "organ_system": "cardiovascular",
+      "provenance": {
+        "created_at": "2026-07-08T00:00:00+00:00",
+        "updated_at": "2026-07-08T00:00:00+00:00",
+        "created_by": "curator@farmacograph.local",
+        "source": "manual"
+      },
+      "versioning": {
+        "dataset_version": "2026.1.0",
+        "valid_from": "2026-07-08",
+        "status": "published"
+      }
+    },
+    {
+      "id": "d1000001-0000-4000-8010-000000000001",
+      "entity_type": "Disease",
+      "slug": "hypertension",
+      "label": "Hypertension",
+      "description": "Persistently elevated systemic arterial blood pressure.",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "provenance": {
+        "created_at": "2026-07-08T00:00:00+00:00",
+        "updated_at": "2026-07-08T00:00:00+00:00",
+        "created_by": "curator@farmacograph.local",
+        "source": "manual"
+      },
+      "versioning": {
+        "dataset_version": "2026.1.0",
+        "valid_from": "2026-07-08",
+        "status": "published"
+      }
+    },
+    {
+      "id": "d1000001-0000-4000-8010-000000000003",
+      "entity_type": "Disease",
+      "slug": "heart-failure",
+      "label": "Heart failure",
+      "description": "Complex clinical syndrome characterized by structural or functional impairment of ventricular filling or ejection of blood.",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "provenance": {
+        "created_at": "2026-07-08T00:00:00+00:00",
+        "updated_at": "2026-07-08T00:00:00+00:00",
+        "created_by": "curator@farmacograph.local",
+        "source": "manual"
+      },
+      "versioning": {
+        "dataset_version": "2026.1.0",
+        "valid_from": "2026-07-08",
+        "status": "published"
+      }
+    },
+    {
+      "id": "d1000001-0000-4000-8010-000000000005",
+      "entity_type": "Disease",
+      "slug": "hyperaldosteronism",
+      "label": "Hyperaldosteronism",
+      "description": "Endocrine disorder characterized by excessive secretion of aldosterone resulting in sodium retention, hypokalemia, and arterial hypertension.",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "provenance": {
+        "created_at": "2026-07-08T00:00:00+00:00",
+        "updated_at": "2026-07-08T00:00:00+00:00",
+        "created_by": "curator@farmacograph.local",
+        "source": "manual"
+      },
+      "versioning": {
+        "dataset_version": "2026.1.0",
+        "valid_from": "2026-07-08",
+        "status": "published"
+      }
+    },
+    {
+      "id": "m1000001-0000-4000-8010-000000000005",
+      "entity_type": "MechanismFragment",
+      "slug": "mineralocorticoid-receptor-antagonism",
+      "label": "Mineralocorticoid receptor antagonism",
+      "fragment_type": "molecular",
+      "description": "Competitive antagonism of aldosterone binding to cytoplasmic mineralocorticoid receptors prevents nuclear translocation and gene transcription.",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "provenance": {
+        "created_at": "2026-07-08T00:00:00+00:00",
+        "updated_at": "2026-07-08T00:00:00+00:00",
+        "created_by": "curator@farmacograph.local",
+        "source": "manual"
+      },
+      "versioning": {
+        "dataset_version": "2026.1.0",
+        "valid_from": "2026-07-08",
+        "status": "published"
+      }
+    },
+    {
+      "id": "m1000001-0000-4000-8010-000000000017",
+      "entity_type": "MechanismFragment",
+      "slug": "downregulation-of-enac-and-na-k-atpase",
+      "label": "Downregulation of ENaC and Na+/K+-ATPase",
+      "fragment_type": "cellular",
+      "description": "Inhibition of aldosterone-induced protein synthesis downregulates apical epithelial sodium channels (ENaC) and basolateral Na+/K+-ATPase pumps in late distal tubules and collecting ducts.",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "provenance": {
+        "created_at": "2026-07-08T00:00:00+00:00",
+        "updated_at": "2026-07-08T00:00:00+00:00",
+        "created_by": "curator@farmacograph.local",
+        "source": "manual"
+      },
+      "versioning": {
+        "dataset_version": "2026.1.0",
+        "valid_from": "2026-07-08",
+        "status": "published"
+      }
+    },
+    {
+      "id": "m1000001-0000-4000-8010-000000000018",
+      "entity_type": "MechanismFragment",
+      "slug": "increased-natriuresis-and-potassium-retention",
+      "label": "Increased natriuresis and potassium retention",
+      "fragment_type": "organ",
+      "description": "Reduced sodium reabsorption promotes moderate natriuresis and volume contraction while suppressing potassium and hydrogen ion luminal excretion.",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "provenance": {
+        "created_at": "2026-07-08T00:00:00+00:00",
+        "updated_at": "2026-07-08T00:00:00+00:00",
+        "created_by": "curator@farmacograph.local",
+        "source": "manual"
+      },
+      "versioning": {
+        "dataset_version": "2026.1.0",
+        "valid_from": "2026-07-08",
+        "status": "published"
+      }
+    },
+    {
+      "id": "m1000001-0000-4000-8010-000000000019",
+      "entity_type": "MechanismFragment",
+      "slug": "inhibition-of-aldosterone-mediated-cardiac-fibrosis",
+      "label": "Inhibition of aldosterone-mediated cardiac fibrosis",
+      "fragment_type": "tissue",
+      "description": "Blockade of extra-renal mineralocorticoid receptors in the myocardium and vasculature inhibits fibroblast proliferation and extracellular matrix collagen deposition.",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "provenance": {
+        "created_at": "2026-07-08T00:00:00+00:00",
+        "updated_at": "2026-07-08T00:00:00+00:00",
+        "created_by": "curator@farmacograph.local",
+        "source": "manual"
+      },
+      "versioning": {
+        "dataset_version": "2026.1.0",
+        "valid_from": "2026-07-08",
+        "status": "published"
+      }
+    },
+    {
+      "id": "e1000001-0000-4000-8010-000000000006",
+      "entity_type": "Evidence",
+      "evidence_type": "rct",
+      "slug": "rales-investigators-1999",
+      "label": "RALES Trial: Spironolactone in Severe Heart Failure",
+      "title": "The Effect of Spironolactone on Morbidity and Mortality in Patients with Severe Heart Failure",
+      "authors": [
+        "Pitt B",
+        "Zannad F",
+        "Remme WJ",
+        "RALES Investigators"
+      ],
+      "year": 1999,
+      "quality_score": 0.97,
+      "journal": "The New England Journal of Medicine",
+      "supports_claim": "Blockade of aldosterone receptors by spironolactone substantially reduces the risk of both morbidity and death among patients with severe heart failure.",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "provenance": {
+        "created_at": "2026-07-08T00:00:00+00:00",
+        "updated_at": "2026-07-08T00:00:00+00:00",
+        "created_by": "curator@farmacograph.local",
+        "source": "manual"
+      },
+      "versioning": {
+        "dataset_version": "2026.1.0",
+        "valid_from": "2026-07-08",
+        "status": "published"
+      }
+    },
+    {
+      "id": "e1000001-0000-4000-8010-000000000007",
+      "entity_type": "Evidence",
+      "evidence_type": "rct",
+      "slug": "pathway-2-investigators-2015",
+      "label": "PATHWAY-2 Trial: Spironolactone in Resistant Hypertension",
+      "title": "Spironolactone versus placebo, bisoprolol, and doxazosin to determine the optimal treatment for drug-resistant hypertension (PATHWAY-2): a randomised, double-blind, crossover trial",
+      "authors": [
+        "Williams B",
+        "MacDonald TM",
+        "Morter S",
+        "PATHWAY-2 Investigators"
+      ],
+      "year": 2015,
+      "quality_score": 0.95,
+      "journal": "The Lancet",
+      "supports_claim": "Spironolactone is the most effective add-on drug for the treatment of resistant hypertension.",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "provenance": {
+        "created_at": "2026-07-08T00:00:00+00:00",
+        "updated_at": "2026-07-08T00:00:00+00:00",
+        "created_by": "curator@farmacograph.local",
+        "source": "manual"
+      },
+      "versioning": {
+        "dataset_version": "2026.1.0",
+        "valid_from": "2026-07-08",
+        "status": "published"
+      }
+    },
+    {
+      "id": "e1000001-0000-4000-8010-000000000008",
+      "entity_type": "Evidence",
+      "evidence_type": "clinical_guideline",
+      "slug": "endocrine-society-guideline-primary-aldosteronism-2016",
+      "label": "Endocrine Society Primary Aldosteronism Guideline",
+      "title": "The Management of Primary Aldosteronism: Case Detection, Diagnosis, and Treatment: An Endocrine Society Clinical Practice Guideline",
+      "authors": [
+        "Funder JW",
+        "Carey RM",
+        "Mantero F",
+        "Endocrine Society"
+      ],
+      "year": 2016,
+      "quality_score": 0.94,
+      "journal": "The Journal of Clinical Endocrinology & Metabolism",
+      "supports_claim": "Mineralocorticoid receptor antagonists are recommended as medical therapy for patients with primary aldosteronism.",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "provenance": {
+        "created_at": "2026-07-08T00:00:00+00:00",
+        "updated_at": "2026-07-08T00:00:00+00:00",
+        "created_by": "curator@farmacograph.local",
+        "source": "manual"
+      },
+      "versioning": {
+        "dataset_version": "2026.1.0",
+        "valid_from": "2026-07-08",
+        "status": "published"
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000054",
+      "entity_type": "Receptor",
+      "slug": "nr3c2",
+      "label": "Mineralocorticoid Receptor",
+      "gene_symbol": "NR3C2",
+      "family": "Nuclear receptor superfamily",
+      "description": "Cytoplasmic steroid hormone receptor for aldosterone regulating electrolyte homeostasis.",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "provenance": {
+        "created_at": "2026-07-08T00:00:00+00:00",
+        "updated_at": "2026-07-08T00:00:00+00:00",
+        "created_by": "curator@farmacograph.local",
+        "source": "manual"
+      },
+      "versioning": {
+        "dataset_version": "2026.1.0",
+        "valid_from": "2026-07-08",
+        "status": "published"
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "relationship_type": "BELONGS_TO",
+      "source_type": "Drug",
+      "target_type": "DrugClass",
+      "source_id": "b173f67c-ef61-55b1-8679-b6a9f2138f6c",
+      "target_id": "b1000001-0000-4000-8010-000000000021"
+    },
+    {
+      "relationship_type": "TREATS",
+      "source_type": "Drug",
+      "target_type": "Disease",
+      "source_id": "b173f67c-ef61-55b1-8679-b6a9f2138f6c",
+      "target_id": "d1000001-0000-4000-8010-000000000001",
+      "properties": {
+        "confidence_score": 0.95,
+        "evidence_level": "A",
+        "explanation": "Spironolactone reduces blood pressure by blocking aldosterone-mediated renal sodium retention and plasma volume expansion.",
+        "evidence_ids": [
+          "e1000001-0000-4000-8010-000000000007"
+        ]
+      }
+    },
+    {
+      "relationship_type": "TREATS",
+      "source_type": "Drug",
+      "target_type": "Disease",
+      "source_id": "b173f67c-ef61-55b1-8679-b6a9f2138f6c",
+      "target_id": "d1000001-0000-4000-8010-000000000003",
+      "properties": {
+        "confidence_score": 0.98,
+        "evidence_level": "A",
+        "explanation": "Spironolactone reduces mortality and hospitalizations in heart failure with reduced ejection fraction by mitigating aldosterone-induced myocardial fibrosis and adverse remodeling.",
+        "evidence_ids": [
+          "e1000001-0000-4000-8010-000000000006"
+        ]
+      }
+    },
+    {
+      "relationship_type": "TREATS",
+      "source_type": "Drug",
+      "target_type": "Disease",
+      "source_id": "b173f67c-ef61-55b1-8679-b6a9f2138f6c",
+      "target_id": "d1000001-0000-4000-8010-000000000005",
+      "properties": {
+        "confidence_score": 0.96,
+        "evidence_level": "A",
+        "explanation": "Spironolactone directly antagonizes the biological actions of pathologically elevated aldosterone in primary and secondary hyperaldosteronism.",
+        "evidence_ids": [
+          "e1000001-0000-4000-8010-000000000008"
+        ]
+      }
+    },
+    {
+      "relationship_type": "HAS_MECHANISM_ROOT",
+      "source_type": "Drug",
+      "target_type": "MechanismFragment",
+      "source_id": "b173f67c-ef61-55b1-8679-b6a9f2138f6c",
+      "target_id": "m1000001-0000-4000-8010-000000000005",
+      "properties": {
+        "confidence_score": 0.98,
+        "evidence_level": "expert_consensus",
+        "explanation": "Competitive antagonism of the cytoplasmic mineralocorticoid receptor is the primary mechanism of spironolactone action."
+      }
+    },
+    {
+      "relationship_type": "PRECEDES",
+      "source_type": "MechanismFragment",
+      "target_type": "MechanismFragment",
+      "source_id": "m1000001-0000-4000-8010-000000000005",
+      "target_id": "m1000001-0000-4000-8010-000000000017",
+      "properties": {
+        "confidence_score": 0.95,
+        "evidence_level": "expert_consensus",
+        "explanation": "Inhibition of mineralocorticoid receptor transcription factors downregulates expression of luminal epithelial sodium channels and basolateral Na+/K+-ATPase pumps."
+      }
+    },
+    {
+      "relationship_type": "PRECEDES",
+      "source_type": "MechanismFragment",
+      "target_type": "MechanismFragment",
+      "source_id": "m1000001-0000-4000-8010-000000000017",
+      "target_id": "m1000001-0000-4000-8010-000000000018",
+      "properties": {
+        "confidence_score": 0.95,
+        "evidence_level": "expert_consensus",
+        "explanation": "Reduced transport capacity in the collecting duct decreases sodium reabsorption and reduces the lumen-negative electrical gradient driving potassium secretion."
+      }
+    },
+    {
+      "relationship_type": "PRECEDES",
+      "source_type": "MechanismFragment",
+      "target_type": "MechanismFragment",
+      "source_id": "m1000001-0000-4000-8010-000000000005",
+      "target_id": "m1000001-0000-4000-8010-000000000019",
+      "properties": {
+        "confidence_score": 0.95,
+        "evidence_level": "expert_consensus",
+        "explanation": "Blockade of mineralocorticoid receptors on cardiac fibroblasts inhibits collagen synthesis and prevents reactive interstitial fibrosis."
+      }
+    },
+    {
+      "relationship_type": "SUPPORTED_BY",
+      "source_type": "Drug",
+      "target_type": "Evidence",
+      "source_id": "b173f67c-ef61-55b1-8679-b6a9f2138f6c",
+      "target_id": "e1000001-0000-4000-8010-000000000006",
+      "properties": {
+        "assertion_relationship": "TREATS",
+        "assertion_target_id": "d1000001-0000-4000-8010-000000000003",
+        "assertion_target_type": "Disease"
+      }
+    },
+    {
+      "relationship_type": "SUPPORTED_BY",
+      "source_type": "Drug",
+      "target_type": "Evidence",
+      "source_id": "b173f67c-ef61-55b1-8679-b6a9f2138f6c",
+      "target_id": "e1000001-0000-4000-8010-000000000007",
+      "properties": {
+        "assertion_relationship": "TREATS",
+        "assertion_target_id": "d1000001-0000-4000-8010-000000000001",
+        "assertion_target_type": "Disease"
+      }
+    },
+    {
+      "relationship_type": "SUPPORTED_BY",
+      "source_type": "Drug",
+      "target_type": "Evidence",
+      "source_id": "b173f67c-ef61-55b1-8679-b6a9f2138f6c",
+      "target_id": "e1000001-0000-4000-8010-000000000008",
+      "properties": {
+        "assertion_relationship": "TREATS",
+        "assertion_target_id": "d1000001-0000-4000-8010-000000000005",
+        "assertion_target_type": "Disease"
+      }
+    },
+    {
+      "relationship_type": "TARGETS",
+      "source_type": "Drug",
+      "target_type": "Receptor",
+      "source_id": "b173f67c-ef61-55b1-8679-b6a9f2138f6c",
+      "target_id": "00000000-0000-4000-8000-000000000054",
+      "properties": {
+        "confidence_score": 0.99,
+        "evidence_level": "expert_consensus",
+        "explanation": "Spironolactone acts as a competitive antagonist at mineralocorticoid receptors (MR/NR3C2)."
+      }
+    }
+  ],
+  "education": [
+    {
+      "id": "b173f67c-ef61-55b1-8679-b6a9f2138f6c:education:Flashcard:target",
+      "entity_type": "EducationResource",
+      "kind": "Flashcard",
+      "slug": "target",
+      "label": "target",
+      "content_layer": "education",
+      "audience": [
+        "medical_student"
+      ],
+      "difficulty_level": "core",
+      "language": "en",
+      "module": "cardiovascular",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "linked_entity_ids": [
+        "b173f67c-ef61-55b1-8679-b6a9f2138f6c"
+      ],
+      "front": "Which receptor does spironolactone antagonize?",
+      "back": "Cytoplasmic mineralocorticoid (aldosterone) receptors.",
+      "hint": "Potassium-sparing"
+    },
+    {
+      "id": "b173f67c-ef61-55b1-8679-b6a9f2138f6c:education:Flashcard:onset",
+      "entity_type": "EducationResource",
+      "kind": "Flashcard",
+      "slug": "onset",
+      "label": "onset",
+      "content_layer": "education",
+      "audience": [
+        "medical_student"
+      ],
+      "difficulty_level": "core",
+      "language": "en",
+      "module": "cardiovascular",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "linked_entity_ids": [
+        "b173f67c-ef61-55b1-8679-b6a9f2138f6c"
+      ],
+      "front": "Why is spironolactone onset delayed 24–48 hours?",
+      "back": "Genomic effect: ENaC synthesis blockade; peak natriuresis at 48–72 hours.",
+      "hint": "Gene transcription"
+    },
+    {
+      "id": "b173f67c-ef61-55b1-8679-b6a9f2138f6c:education:BoardExamPearl:rales",
+      "entity_type": "EducationResource",
+      "kind": "BoardExamPearl",
+      "slug": "rales",
+      "label": "rales",
+      "content_layer": "education",
+      "audience": [
+        "medical_student"
+      ],
+      "difficulty_level": "core",
+      "language": "en",
+      "module": "cardiovascular",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "linked_entity_ids": [
+        "b173f67c-ef61-55b1-8679-b6a9f2138f6c"
+      ],
+      "text": "RALES (1999): spironolactone studied for morbidity/mortality benefit in severe heart failure.",
+      "exam_tags": [
+        "TUS"
+      ]
+    },
+    {
+      "id": "b173f67c-ef61-55b1-8679-b6a9f2138f6c:education:CommonMistake:potassium",
+      "entity_type": "EducationResource",
+      "kind": "CommonMistake",
+      "slug": "potassium",
+      "label": "potassium",
+      "content_layer": "education",
+      "audience": [
+        "medical_student"
+      ],
+      "difficulty_level": "core",
+      "language": "en",
+      "module": "cardiovascular",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "linked_entity_ids": [
+        "b173f67c-ef61-55b1-8679-b6a9f2138f6c"
+      ],
+      "mistake": "Spironolactone wastes potassium like other diuretics.",
+      "correction": "It is potassium-sparing: natriuresis with potassium retention (hyperkalemia risk)."
+    },
+    {
+      "id": "b173f67c-ef61-55b1-8679-b6a9f2138f6c:education:Mnemonic:spiro-aldo",
+      "entity_type": "EducationResource",
+      "kind": "Mnemonic",
+      "slug": "spiro-aldo",
+      "label": "spiro aldo",
+      "content_layer": "education",
+      "audience": [
+        "medical_student"
+      ],
+      "difficulty_level": "core",
+      "language": "en",
+      "module": "cardiovascular",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "linked_entity_ids": [
+        "b173f67c-ef61-55b1-8679-b6a9f2138f6c"
+      ],
+      "mnemonic": "SPIRO blocks ALDO",
+      "expansion": "Spironolactone antagonizes aldosterone: sodium out, potassium kept."
+    }
+  ]
+}

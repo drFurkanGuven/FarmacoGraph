@@ -1,6 +1,10 @@
 import type { DiseasePublishPackage } from "./sections";
 
-function setPath(target: Record<string, unknown>, path: string, value: string): Record<string, unknown> {
+function setPath(
+  target: Record<string, unknown>,
+  path: string,
+  value: unknown
+): Record<string, unknown> {
   const parts = path.split(".");
   const next = structuredClone(target);
   let cursor: Record<string, unknown> = next;
@@ -42,15 +46,20 @@ export function createEmptyDiseasePackage(slug: string): DiseasePublishPackage {
 export function applyFieldChange(
   pkg: DiseasePublishPackage,
   path: string,
-  value: string,
+  value: string
 ): DiseasePublishPackage {
-  return setPath(pkg as unknown as Record<string, unknown>, path, value) as unknown as DiseasePublishPackage;
+  const stored: unknown = value === "true" ? true : value === "false" ? false : value;
+  return setPath(
+    pkg as unknown as Record<string, unknown>,
+    path,
+    stored
+  ) as unknown as DiseasePublishPackage;
 }
 
 export function sectionFieldValues(
   pkg: DiseasePublishPackage,
   sectionId: string,
-  sections: { id: string; fields: { path: string }[] }[],
+  sections: { id: string; fields: { path: string }[] }[]
 ): Record<string, string> {
   const section = sections.find((entry) => entry.id === sectionId);
   if (!section) return {};

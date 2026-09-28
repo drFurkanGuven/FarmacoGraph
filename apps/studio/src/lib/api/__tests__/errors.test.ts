@@ -19,13 +19,13 @@ describe("parseErrorBody", () => {
 describe("normalizeErrorMessage", () => {
   it("prefers structured error.message", () => {
     expect(
-      normalizeErrorMessage({ error: { code: "X", message: "Structured failure" } }, 400),
+      normalizeErrorMessage({ error: { code: "X", message: "Structured failure" } }, 400)
     ).toBe("Structured failure");
   });
 
   it("joins FastAPI validation detail arrays", () => {
     expect(
-      normalizeErrorMessage({ detail: [{ msg: "field required" }, { msg: "invalid uuid" }] }, 422),
+      normalizeErrorMessage({ detail: [{ msg: "field required" }, { msg: "invalid uuid" }] }, 422)
     ).toBe("field required; invalid uuid");
   });
 
@@ -39,7 +39,7 @@ describe("createApiError", () => {
     const error = createApiError(
       404,
       { error: { code: "ENTITY_NOT_FOUND", message: "Drug missing" } },
-      "trace-123",
+      "trace-123"
     );
     expect(error).toBeInstanceOf(ApiError);
     expect(error.status).toBe(404);

@@ -93,7 +93,7 @@ describe("groupValidationIssues", () => {
     expect(grouped.workflow).toHaveLength(2);
     expect(grouped.workflow.some((issue) => issue.message.includes("still running"))).toBe(true);
     expect(grouped.workflow.some((issue) => issue.message.includes("Integrity check failed"))).toBe(
-      true,
+      true
     );
   });
 
@@ -104,9 +104,7 @@ describe("groupValidationIssues", () => {
       summary: {
         failed_count: 2,
         pending_count: 0,
-        recent_failures: [
-          { source: "graph", entity_id: "drug-2", message: "Other drug failed" },
-        ],
+        recent_failures: [{ source: "graph", entity_id: "drug-2", message: "Other drug failed" }],
       },
     });
 
@@ -125,7 +123,7 @@ describe("countBlockingIssues", () => {
       {
         workflowState: "approved",
         summary: { failed_count: 0, pending_count: 1, recent_failures: [] },
-      },
+      }
     );
 
     expect(countBlockingIssues(grouped)).toBe(3);
@@ -151,13 +149,13 @@ describe("computePublishReady", () => {
     expect(
       computePublishReady(true, {
         entity_payload: { provenance: { curator_attestation: true } },
-      }),
+      })
     ).toBe(true);
 
     expect(
       computePublishReady(true, {
         entity_payload: { provenance: { curator_attestation: false } },
-      }),
+      })
     ).toBe(false);
 
     expect(computePublishReady(false, samplePackage)).toBe(false);
@@ -186,9 +184,9 @@ describe("computePublishValidationState", () => {
     expect(state.canPublish).toBe(false);
     expect(state.status).toBe("blocked");
     expect(isPublishBlocked(state)).toBe(true);
-    expect(state.grouped.evidence.some((issue) => issue.field?.includes("curator_attestation"))).toBe(
-      true,
-    );
+    expect(
+      state.grouped.evidence.some((issue) => issue.field?.includes("curator_attestation"))
+    ).toBe(true);
   });
 
   it("allows publish when validation, attestation, and workflow state align", () => {
@@ -215,9 +213,12 @@ describe("computePublishValidationState", () => {
 
 describe("gatePublishAction", () => {
   const readyState = computePublishValidationState({
-    packageValidation: toPackageValidationSnapshot({ valid: true, issues: [] }, {
-      entity_payload: { provenance: { curator_attestation: true } },
-    }),
+    packageValidation: toPackageValidationSnapshot(
+      { valid: true, issues: [] },
+      {
+        entity_payload: { provenance: { curator_attestation: true } },
+      }
+    ),
     packageInput: { entity_payload: { provenance: { curator_attestation: true } } },
     workflowState: "approved",
     summary: { failed_count: 0, pending_count: 0, recent_failures: [] },
@@ -250,7 +251,7 @@ describe("gatePublishAction", () => {
           valid: false,
           issues: [{ level: "schema", severity: "error", message: "Required field missing" }],
         },
-        attestedPackage,
+        attestedPackage
       ),
       packageInput: attestedPackage,
       workflowState: "draft",

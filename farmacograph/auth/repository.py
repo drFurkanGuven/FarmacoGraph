@@ -61,6 +61,32 @@ class AuthRepository:
             result = await session.execute(stmt)
             return result.scalar_one_or_none()
 
+    async def create_api_key(
+        self,
+        *,
+        name: str,
+        key_prefix: str,
+        key_hash: str,
+        scopes: list[str],
+        user_id: uuid.UUID | None = None,
+        expires_at: datetime | None = None,
+    ) -> ApiKey:
+        """Persist a pre-generated API key record (hash never leaves the server)."""
+        async with self._session_factory() as session:
+            record = ApiKey(
+                user_id=user_id,
+                name=name,
+                key_prefix=key_prefix,
+                key_hash=key_hash,
+                scopes=scopes,
+                is_active=True,
+                expires_at=expires_at,
+            )
+            session.add(record)
+            await session.commit()
+            await session.refresh(record)
+            return record
+
     async def touch_api_key_last_used(self, api_key_id: uuid.UUID) -> None:
         async with self._session_factory() as session:
             stmt = select(ApiKey).where(ApiKey.id == api_key_id)

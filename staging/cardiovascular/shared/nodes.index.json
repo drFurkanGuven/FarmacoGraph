@@ -176,19 +176,124 @@
       "id": "m1000001-0000-4000-8010-000000000001",
       "entity_type": "MechanismFragment",
       "slug": "beta-adrenergic-blockade",
-      "label": "Beta-adrenergic blockade"
+      "label": "Beta-adrenergic blockade",
+      "fragment_type": "molecular"
     },
     {
       "id": "m1000001-0000-4000-8010-000000000002",
       "entity_type": "MechanismFragment",
       "slug": "ace-inhibition",
-      "label": "ACE inhibition"
+      "label": "ACE inhibition",
+      "fragment_type": "molecular"
     },
     {
       "id": "m1000001-0000-4000-8010-000000000003",
       "entity_type": "MechanismFragment",
       "slug": "bradykinin-accumulation",
-      "label": "Bradykinin accumulation"
+      "label": "Bradykinin accumulation",
+      "fragment_type": "cellular"
+    },
+    {
+      "id": "b1000001-0000-4000-8010-000000000021",
+      "entity_type": "DrugClass",
+      "slug": "aldosterone-antagonists",
+      "label": "Aldosterone antagonists",
+      "description": "Potassium-sparing diuretics that competitively antagonize aldosterone at mineralocorticoid receptors.",
+      "organ_system": "cardiovascular"
+    },
+    {
+      "id": "d1000001-0000-4000-8010-000000000003",
+      "entity_type": "Disease",
+      "slug": "heart-failure",
+      "label": "Heart failure",
+      "description": "Clinical syndrome caused by structural or functional cardiac abnormalities impairing ventricular filling or ejection."
+    },
+    {
+      "id": "d1000001-0000-4000-8010-000000000004",
+      "entity_type": "Disease",
+      "slug": "diabetic-nephropathy",
+      "label": "Diabetic nephropathy",
+      "description": "Progressive kidney disease caused by microvascular damage to renal glomeruli in patients with diabetes mellitus."
+    },
+    {
+      "id": "d1000001-0000-4000-8010-000000000005",
+      "entity_type": "Disease",
+      "slug": "hyperaldosteronism",
+      "label": "Hyperaldosteronism",
+      "description": "Endocrine disorder characterized by excessive secretion of aldosterone resulting in sodium retention, hypokalemia, and arterial hypertension."
+    },
+    {
+      "id": "m1000001-0000-4000-8010-000000000004",
+      "entity_type": "MechanismFragment",
+      "slug": "angiotensin-receptor-blockade",
+      "label": "Angiotensin receptor blockade",
+      "fragment_type": "molecular",
+      "description": "Selective competitive antagonism of the angiotensin II type 1 (AT1) receptor prevents vasoconstriction and aldosterone synthesis."
+    },
+    {
+      "id": "m1000001-0000-4000-8010-000000000005",
+      "entity_type": "MechanismFragment",
+      "slug": "mineralocorticoid-receptor-antagonism",
+      "label": "Mineralocorticoid receptor antagonism",
+      "fragment_type": "molecular",
+      "description": "Competitive inhibition of aldosterone binding to mineralocorticoid receptors in the distal renal tubules promotes natriuresis and potassium retention."
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000051",
+      "entity_type": "Receptor",
+      "slug": "adrb1",
+      "label": "Beta-1 Adrenergic Receptor",
+      "gene_symbol": "ADRB1",
+      "family": "G-protein coupled receptor (Gs)",
+      "description": "Cardiac beta-1 adrenergic receptor coupled to Gs protein and adenylyl cyclase."
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000052",
+      "entity_type": "TargetProtein",
+      "slug": "ace",
+      "label": "Angiotensin-Converting Enzyme",
+      "gene_symbol": "ACE",
+      "protein_type": "Enzyme",
+      "function": "Dipeptidyl carboxypeptidase converting angiotensin I to angiotensin II and inactivating bradykinin.",
+      "description": "Zinc metallopeptidase converting angiotensin I to vasoconstrictor angiotensin II."
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000053",
+      "entity_type": "Receptor",
+      "slug": "agtr1",
+      "label": "Angiotensin II Type 1 Receptor",
+      "gene_symbol": "AGTR1",
+      "family": "G-protein coupled receptor (Gq/11)",
+      "description": "Major physiological receptor for angiotensin II mediating vasoconstriction and aldosterone release."
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000054",
+      "entity_type": "Receptor",
+      "slug": "nr3c2",
+      "label": "Mineralocorticoid Receptor",
+      "gene_symbol": "NR3C2",
+      "family": "Nuclear receptor superfamily",
+      "description": "Cytoplasmic steroid hormone receptor for aldosterone regulating electrolyte homeostasis."
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000055",
+      "entity_type": "Enzyme",
+      "slug": "cyp2d6",
+      "label": "Cytochrome P450 2D6",
+      "gene_symbol": "CYP2D6",
+      "is_cyp": true,
+      "cyp_family": "CYP2D",
+      "description": "Hepatic microsomal cytochrome P450 monooxygenase responsible for oxidative metabolism of beta-blockers."
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000056",
+      "entity_type": "Enzyme",
+      "slug": "cyp2c9",
+      "label": "Cytochrome P450 2C9",
+      "gene_symbol": "CYP2C9",
+      "is_cyp": true,
+      "cyp_family": "CYP2C",
+      "description": "Hepatic cytochrome P450 enzyme responsible for oxidation of losartan to its active carboxylic acid metabolite."
     }
   ]
 }

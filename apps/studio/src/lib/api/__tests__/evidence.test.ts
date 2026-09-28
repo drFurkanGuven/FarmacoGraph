@@ -41,6 +41,9 @@ describe("evidence API helpers", () => {
 
     await getEvidence(client, "evidence:8f3c2a1b-4d5e-6f7a-8b9c-0d1e2f3a4b5c");
 
-    expect(transport.request).toHaveBeenCalledWith("/evidence/8f3c2a1b-4d5e-6f7a-8b9c-0d1e2f3a4b5c", {});
+    expect(transport.request).toHaveBeenCalledWith(
+      "/evidence/8f3c2a1b-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
+      {}
+    );
   });
 });

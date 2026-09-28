@@ -14,7 +14,7 @@ export interface DebouncedFn<T extends unknown[]> {
 
 export function createDebouncedFn<T extends unknown[]>(
   fn: (...args: T) => void | Promise<void>,
-  delayMs: number,
+  delayMs: number
 ): DebouncedFn<T> {
   let timer: ReturnType<typeof setTimeout> | null = null;
   let lastArgs: T | null = null;
@@ -52,7 +52,7 @@ export function createDebouncedFn<T extends unknown[]>(
 export async function saveDrugPackage(
   client: FarmacoGraphClient,
   workflowId: string | null,
-  pkg: DrugPublishPackage,
+  pkg: DrugPublishPackage
 ): Promise<SaveResult> {
   if (!workflowId) {
     throw new ApiError("Curator workflow is required before draft autosave.", 400, {
@@ -72,7 +72,7 @@ export async function saveDrugPackage(
 /** Open or create a draft workflow for the drug editor. */
 export async function ensureDraftWorkflow(
   client: FarmacoGraphClient,
-  drugIdOrSlug: string,
+  drugIdOrSlug: string
 ): Promise<string> {
   if (isDrugSlug(drugIdOrSlug)) {
     const envelope = await client.openDrugWorkflow(drugIdOrSlug);

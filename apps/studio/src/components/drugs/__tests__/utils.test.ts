@@ -36,7 +36,7 @@ describe("validationStatusFromRow", () => {
         status: "draft",
         validation_valid: true,
         validation_errors: 0,
-      }),
+      })
     ).toBe("valid");
   });
 
@@ -46,7 +46,7 @@ describe("validationStatusFromRow", () => {
         status: "draft",
         validation_valid: false,
         validation_errors: 3,
-      }),
+      })
     ).toBe("invalid");
   });
 
@@ -57,7 +57,7 @@ describe("validationStatusFromRow", () => {
         curriculumStatus: "pending",
         validation_valid: false,
         validation_errors: 0,
-      }),
+      })
     ).toBe("pending");
   });
 
@@ -67,7 +67,7 @@ describe("validationStatusFromRow", () => {
         status: "published",
         validation_valid: false,
         validation_errors: 0,
-      }),
+      })
     ).toBe("valid");
   });
 });

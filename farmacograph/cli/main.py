@@ -89,5 +89,12 @@ if typer is not None:
         else:
             typer.echo(f"No change for {slug} (not found or already published)")
             raise typer.Exit(1)
+
+    @app.command("mcp-serve")
+    def mcp_serve_cmd() -> None:
+        """Start FarmacoGraph Model Context Protocol (MCP) server over stdio for Claude/ChatGPT."""
+        from farmacograph.mcp.server import main as mcp_main
+
+        mcp_main()
 else:
     app = None  # type: ignore[assignment]

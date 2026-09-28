@@ -3,9 +3,62 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 from farmacograph.db.neo4j.driver import Neo4jDriver
+from farmacograph.models.enums import EntityType, RelationshipType
+
+_IDENTIFIER_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9_]*$")
+
+_ALLOWED_LABELS: set[str] = {
+    *(e.value for e in EntityType),
+    "PharmacologicEntity",
+    "MolecularEntity",
+    "PhysiologicEntity",
+    "ClinicalEntity",
+    "MechanisticEntity",
+    "EvidenceEntity",
+    "LearningEntity",
+    "FiveSecondSummary",
+    "ThirtySecondSummary",
+    "FiveMinuteExplanation",
+    "HighYieldReview",
+    "BoardExamPearl",
+    "CommonMistake",
+    "Mnemonic",
+    "Flashcard",
+    "ComparisonTable",
+    "ClinicalCase",
+    "LearningObjective",
+    "RevisionChecklist",
+    "FAQ",
+    "VisualExplanation",
+}
+
+_ALLOWED_RELATIONSHIPS: set[str] = {r.value for r in RelationshipType}
+
+
+def _validate_label(label: str) -> str:
+    if not isinstance(label, str) or label not in _ALLOWED_LABELS or not _IDENTIFIER_PATTERN.match(label):
+        raise ValueError(f"Invalid or disallowed Neo4j entity label: {label!r}")
+    return label
+
+
+def _validate_relationship_type(rel_type: str) -> str:
+    if (
+        not isinstance(rel_type, str)
+        or rel_type not in _ALLOWED_RELATIONSHIPS
+        or not _IDENTIFIER_PATTERN.match(rel_type)
+    ):
+        raise ValueError(f"Invalid or disallowed Neo4j relationship type: {rel_type!r}")
+    return rel_type
+
+
+def _validate_property_key(key: str) -> str:
+    if not isinstance(key, str) or not _IDENTIFIER_PATTERN.match(key):
+        raise ValueError(f"Invalid Neo4j property key: {key!r}")
+    return key
 
 
 class GraphWriter:
@@ -25,9 +78,9 @@ class GraphWriter:
         entity_id = properties.get("id")
         if not entity_id:
             raise ValueError("Entity properties must include 'id'")
-        # Dynamic label merge — label is validated by caller (service layer)
+        valid_label = _validate_label(label)
         query = f"""
-        MERGE (n:{label} {{id: $id}})
+        MERGE (n:{valid_label} {{id: $id}})
         SET n += $props
         SET n:BiomedicalEntity
         RETURN n {{.*}} AS node
@@ -79,10 +132,13 @@ class GraphWriter:
     ) -> bool:
         if not self.is_available:
             raise RuntimeError("Neo4j not connected")
+        valid_rel = _validate_relationship_type(rel_type)
+        valid_source = _validate_label(source_label)
+        valid_target = _validate_label(target_label)
         query = f"""
-        MATCH (a:{source_label} {{id: $source_id}})
-        MATCH (b:{target_label} {{id: $target_id}})
-        MERGE (a)-[r:{rel_type}]->(b)
+        MATCH (a:{valid_source} {{id: $source_id}})
+        MATCH (b:{valid_target} {{id: $target_id}})
+        MERGE (a)-[r:{valid_rel}]->(b)
         SET r += $props
         RETURN r IS NOT NULL AS created
         """
@@ -100,8 +156,8 @@ class GraphWriter:
         )
         if not results:
             raise ValueError(
-                f"Cannot MERGE {rel_type}: missing endpoint "
-                f"{source_label}({source_id}) or {target_label}({target_id})"
+                f"Cannot MERGE {valid_rel}: missing endpoint "
+                f"{valid_source}({source_id}) or {valid_target}({target_id})"
             )
         return bool(results[0]["created"])
 
@@ -119,13 +175,18 @@ class GraphWriter:
         """Delete relationship. When require_properties is True, only edges with all props match."""
         if not self.is_available:
             raise RuntimeError("Neo4j not connected")
+        valid_rel = _validate_relationship_type(rel_type)
+        valid_source = _validate_label(source_label)
+        valid_target = _validate_label(target_label)
         props = properties or {}
+        for key in props:
+            _validate_property_key(key)
         if require_properties:
             where_clause = " AND ".join(f"r.{key} = ${key}" for key in props) or "true"
         else:
             where_clause = " AND ".join(f"r.{key} IS NULL" for key in props) if props else "true"
         query = f"""
-        MATCH (a:{source_label} {{id: $source_id}})-[r:{rel_type}]->(b:{target_label} {{id: $target_id}})
+        MATCH (a:{valid_source} {{id: $source_id}})-[r:{valid_rel}]->(b:{valid_target} {{id: $target_id}})
         WHERE {where_clause}
         DELETE r
         RETURN count(r) AS deleted

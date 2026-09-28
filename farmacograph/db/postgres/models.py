@@ -281,3 +281,27 @@ class ApiUsage(Base):
     request_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
     __table_args__ = (Index("ix_api_usage_date_endpoint", "date", "endpoint"),)
+
+
+class AISettings(Base, TimestampMixin):
+    """AI provider settings per user/organization."""
+
+    __tablename__ = "ai_settings"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id"), nullable=True
+    )
+    organization_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=True
+    )
+    provider: Mapped[str] = mapped_column(String(50), nullable=False)
+    api_key_encrypted: Mapped[str] = mapped_column(Text, nullable=False)
+    model: Mapped[str] = mapped_column(String(100), nullable=False)
+    base_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+    __table_args__ = (
+        Index("ix_ai_settings_user_id", "user_id"),
+        Index("ix_ai_settings_org_id", "organization_id"),
+    )

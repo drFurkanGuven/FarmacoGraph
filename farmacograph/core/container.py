@@ -20,6 +20,7 @@ from farmacograph.repositories.jobs import JobRepository
 from farmacograph.repositories.outbox import OutboxRepository
 from farmacograph.repositories.snapshots import SnapshotRepository
 from farmacograph.search.graph_provider import GraphSearchProvider
+from farmacograph.search.staging_provider import StagingSearchProvider
 from farmacograph.services.admin_users import AdminUsersService
 from farmacograph.services.compare import CompareService
 from farmacograph.services.curator import CuratorService
@@ -31,6 +32,7 @@ from farmacograph.services.evidence import EvidenceService
 from farmacograph.services.explain import ExplainService
 from farmacograph.services.health import HealthService
 from farmacograph.services.info import InfoService
+from farmacograph.services.interaction import InteractionService
 from farmacograph.services.learning import LearningService
 from farmacograph.services.modules import ModuleService
 from farmacograph.services.reasoning import ReasoningService
@@ -68,6 +70,7 @@ class Container:
     evidence_service: EvidenceService = field(init=False)
     explain_service: ExplainService = field(init=False)
     compare_service: CompareService = field(init=False)
+    interaction_service: InteractionService = field(init=False)
     learning_service: LearningService = field(init=False)
     reasoning_service: ReasoningService = field(init=False)
     search_service: SearchService = field(init=False)
@@ -110,6 +113,7 @@ class Container:
         )
         self.explain_service = ExplainService(graph_repo=self.graph_repo)
         self.compare_service = CompareService(graph_repo=self.graph_repo)
+        self.interaction_service = InteractionService(graph_repo=self.graph_repo)
         self.learning_service = LearningService(graph_repo=self.graph_repo)
         self.reasoning_service = ReasoningService(
             explain_service=self.explain_service,
@@ -118,7 +122,7 @@ class Container:
         search_provider = (
             GraphSearchProvider(self.graph_repo)
             if self.settings.neo4j_enabled
-            else NullSearchProvider()
+            else StagingSearchProvider()
         )
         self.search_service = SearchService(
             search_provider,

@@ -29,7 +29,7 @@ export function useEvidenceBrowserState() {
       }
       setPage(1);
     },
-    [sortField],
+    [sortField]
   );
 
   const resetFilters = useCallback(() => {

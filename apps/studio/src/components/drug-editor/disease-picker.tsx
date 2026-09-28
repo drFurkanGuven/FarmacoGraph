@@ -20,7 +20,9 @@ export function DiseasePicker({ selectedIds, disabled = false, onChange }: Disea
   const rows = query.data?.data ?? [];
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
   const selectedRows = rows.filter((row) => selectedSet.has(row.entity_id));
-  const missingSelectedIds = selectedIds.filter((id) => !selectedRows.some((row) => row.entity_id === id));
+  const missingSelectedIds = selectedIds.filter(
+    (id) => !selectedRows.some((row) => row.entity_id === id)
+  );
 
   function toggle(entityId: string) {
     if (disabled) return;
@@ -39,7 +41,10 @@ export function DiseasePicker({ selectedIds, disabled = false, onChange }: Disea
   return (
     <div className="space-y-4">
       <div className="space-y-1.5">
-        <label className="text-sm font-medium text-muted-foreground" htmlFor="disease-picker-search">
+        <label
+          className="text-sm font-medium text-muted-foreground"
+          htmlFor="disease-picker-search"
+        >
           Treats
         </label>
         <div className="relative">
@@ -54,7 +59,8 @@ export function DiseasePicker({ selectedIds, disabled = false, onChange }: Disea
           />
         </div>
         <p className="text-[0.8rem] text-muted-foreground">
-          Select disease nodes from the curator catalog. The package stores canonical Disease entity IDs.
+          Select disease nodes from the curator catalog. The package stores canonical Disease entity
+          IDs.
         </p>
       </div>
 
@@ -63,7 +69,11 @@ export function DiseasePicker({ selectedIds, disabled = false, onChange }: Disea
           {selectedRows.map((row) => (
             <Badge key={row.entity_id} variant="secondary" className="gap-1.5">
               {row.label}
-              <button type="button" onClick={() => remove(row.entity_id)} aria-label={`Remove ${row.label}`}>
+              <button
+                type="button"
+                onClick={() => remove(row.entity_id)}
+                aria-label={`Remove ${row.label}`}
+              >
                 <X className="h-3 w-3" />
               </button>
             </Badge>
@@ -107,10 +117,18 @@ export function DiseasePicker({ selectedIds, disabled = false, onChange }: Disea
                     </span>
                     <span className="min-w-0">
                       <span className="block truncate text-sm font-medium">{row.label}</span>
-                      <span className="block truncate text-xs text-muted-foreground">{row.slug}</span>
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {row.slug}
+                      </span>
                     </span>
                   </button>
-                  <Button asChild variant="ghost" size="icon" className="h-8 w-8" aria-label={`Open ${row.label}`}>
+                  <Button
+                    asChild
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    aria-label={`Open ${row.label}`}
+                  >
                     <Link href={`/knowledge/diseases/${row.slug}`}>
                       <ExternalLink className="h-4 w-4" />
                     </Link>

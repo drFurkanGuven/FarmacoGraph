@@ -3,16 +3,9 @@
 import { AlertCircle, Check, Cloud, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/lib/i18n/context";
 import { describeSaveStrategy } from "./autosave";
 import type { SaveStatus } from "./types";
-
-const STATUS_COPY: Record<SaveStatus, string> = {
-  idle: "All changes saved",
-  pending: "Unsaved changes",
-  saving: "Saving…",
-  saved: "Saved",
-  error: "Save failed",
-};
 
 export interface AutosaveStatusProps {
   status: SaveStatus;
@@ -39,6 +32,14 @@ export function AutosaveStatus({
   onRetry,
   className,
 }: AutosaveStatusProps) {
+  const { t, locale } = useLanguage();
+  const statusCopy: Record<SaveStatus, string> = {
+    idle: locale === "tr" ? "Tüm değişiklikler kaydedildi" : "All changes saved",
+    pending: locale === "tr" ? "Kaydedilmemiş değişiklik" : "Unsaved changes",
+    saving: locale === "tr" ? "Kaydediliyor…" : "Saving…",
+    saved: locale === "tr" ? "Kaydedildi" : "Saved",
+    error: locale === "tr" ? "Kayıt başarısız" : "Save failed",
+  };
   const icon =
     status === "saving" ? (
       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -53,16 +54,18 @@ export function AutosaveStatus({
   return (
     <div className={cn("flex items-center gap-2 text-xs text-muted-foreground", className)}>
       {icon}
-      <span>{STATUS_COPY[status]}</span>
+      <span>{statusCopy[status]}</span>
       {status === "saved" && lastSavedAt && (
         <span className="hidden sm:inline">· {formatSavedAt(lastSavedAt)}</span>
       )}
       {strategy && status === "saved" && (
-        <span className="hidden md:inline">· {describeSaveStrategy(strategy as "curator_package")}</span>
+        <span className="hidden md:inline">
+          · {describeSaveStrategy(strategy as "curator_package")}
+        </span>
       )}
       {status === "error" && onRetry && (
         <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={onRetry}>
-          Retry
+          {t("common.retry", "Retry")}
         </Button>
       )}
       {status === "error" && error && (

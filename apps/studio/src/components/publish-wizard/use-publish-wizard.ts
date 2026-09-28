@@ -2,21 +2,14 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  ApiError,
-  type PublishPackageInput,
-  type WorkflowItem,
-} from "@/lib/api";
+import { ApiError, type PublishPackageInput, type WorkflowItem } from "@/lib/api";
 import { apiQueryKeys } from "@/lib/api/react-query/keys";
 import { defaultMutationOptions } from "@/lib/api/react-query/config";
 import { useApiClient } from "@/lib/hooks/use-api-client";
 import { usePermissions } from "@/lib/auth/hooks";
 import type { ValidationResult } from "@/lib/api";
 import type { SaveStatus } from "@/components/drug-editor/types";
-import {
-  type PublishWizardAction,
-  usePublishReadiness,
-} from "./validation";
+import { type PublishWizardAction, usePublishReadiness } from "./validation";
 import type { PublishWizardPhase, PublishWizardResult } from "./types";
 
 const ACTION_LABELS: Record<PublishWizardAction, string> = {
@@ -106,7 +99,9 @@ export function usePublishWizard({
       if (entityType === "Disease") {
         await queryClient.invalidateQueries({ queryKey: apiQueryKeys.curatorDiseases({}) });
         await queryClient.invalidateQueries({ queryKey: apiQueryKeys.diseasePackage(drugId) });
-        await queryClient.invalidateQueries({ queryKey: apiQueryKeys.diseaseWorkflowState(drugId) });
+        await queryClient.invalidateQueries({
+          queryKey: apiQueryKeys.diseaseWorkflowState(drugId),
+        });
       } else {
         await queryClient.invalidateQueries({ queryKey: apiQueryKeys.drug(drugId) });
         await queryClient.invalidateQueries({ queryKey: apiQueryKeys.drugPackage(drugId) });
@@ -114,7 +109,7 @@ export function usePublishWizard({
       }
       readiness.refetch();
     },
-    [drugId, entityType, queryClient, readiness],
+    [drugId, entityType, queryClient, readiness]
   );
 
   const workflowMutation = useMutation({
@@ -167,7 +162,9 @@ export function usePublishWizard({
     },
     onError: (error, action) => {
       const message =
-        error instanceof ApiError ? error.message : `Failed to ${ACTION_LABELS[action].toLowerCase()}.`;
+        error instanceof ApiError
+          ? error.message
+          : `Failed to ${ACTION_LABELS[action].toLowerCase()}.`;
       setResult({
         status: "error",
         action,
@@ -193,7 +190,8 @@ export function usePublishWizard({
       onWorkflowUpdated(workflowEnvelope.data);
       return id;
     } catch (error) {
-      const message = error instanceof ApiError ? error.message : "Could not open curator workflow.";
+      const message =
+        error instanceof ApiError ? error.message : "Could not open curator workflow.";
       setEnsureError(message);
       return null;
     } finally {
@@ -228,7 +226,9 @@ export function usePublishWizard({
       const blockers: string[] = [];
 
       if (!workflowId) {
-        blockers.push("A curator workflow is required. Save the draft or wait while one is created.");
+        blockers.push(
+          "A curator workflow is required. Save the draft or wait while one is created."
+        );
       }
 
       if (hasUnsavedChanges) {
@@ -248,16 +248,13 @@ export function usePublishWizard({
 
       return blockers;
     },
-    [hasPermission, hasUnsavedChanges, readiness, workflowId],
+    [hasPermission, hasUnsavedChanges, readiness, workflowId]
   );
 
-  const requestAction = useCallback(
-    (action: PublishWizardAction) => {
-      setPendingAction(action);
-      setPhase("confirm");
-    },
-    [],
-  );
+  const requestAction = useCallback((action: PublishWizardAction) => {
+    setPendingAction(action);
+    setPhase("confirm");
+  }, []);
 
   const confirmAction = useCallback(async () => {
     if (!pendingAction) return;

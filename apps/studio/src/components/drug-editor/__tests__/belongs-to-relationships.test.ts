@@ -12,9 +12,12 @@ describe("syncBelongsToSelection", () => {
     pkg.entity_payload.slug = "adenosine";
     pkg.entity_payload.label = "Adenosine";
 
-    const next = syncBelongsToSelection(pkg, drugId, [ANTIARRHYTHMICS_ID], [
-      { id: ANTIARRHYTHMICS_ID, slug: "antiarrhythmics", label: "Antiarrhythmics" },
-    ]);
+    const next = syncBelongsToSelection(
+      pkg,
+      drugId,
+      [ANTIARRHYTHMICS_ID],
+      [{ id: ANTIARRHYTHMICS_ID, slug: "antiarrhythmics", label: "Antiarrhythmics" }]
+    );
 
     expect(listBelongsToClassIds(next)).toEqual([ANTIARRHYTHMICS_ID]);
     expect(next.relationships).toEqual(
@@ -25,7 +28,7 @@ describe("syncBelongsToSelection", () => {
           target_id: ANTIARRHYTHMICS_ID,
           target_type: "DrugClass",
         }),
-      ]),
+      ])
     );
     expect(next.related_entities).toEqual(
       expect.arrayContaining([
@@ -34,29 +37,39 @@ describe("syncBelongsToSelection", () => {
           entity_type: "DrugClass",
           slug: "antiarrhythmics",
         }),
-      ]),
+      ])
     );
   });
 
   it("removes stale BELONGS_TO edges and related entities", () => {
     const drugId = "drug-1";
     const pkg = createEmptyDrugPackage(drugId);
-    const withBoth = syncBelongsToSelection(pkg, drugId, [ANTIARRHYTHMICS_ID, ACE_ID], [
-      { id: ANTIARRHYTHMICS_ID, slug: "antiarrhythmics", label: "Antiarrhythmics" },
-      { id: ACE_ID, slug: "ace-inhibitors", label: "ACE inhibitors" },
-    ]);
+    const withBoth = syncBelongsToSelection(
+      pkg,
+      drugId,
+      [ANTIARRHYTHMICS_ID, ACE_ID],
+      [
+        { id: ANTIARRHYTHMICS_ID, slug: "antiarrhythmics", label: "Antiarrhythmics" },
+        { id: ACE_ID, slug: "ace-inhibitors", label: "ACE inhibitors" },
+      ]
+    );
 
-    const next = syncBelongsToSelection(withBoth, drugId, [ANTIARRHYTHMICS_ID], [
-      { id: ANTIARRHYTHMICS_ID, slug: "antiarrhythmics", label: "Antiarrhythmics" },
-      { id: ACE_ID, slug: "ace-inhibitors", label: "ACE inhibitors" },
-    ]);
+    const next = syncBelongsToSelection(
+      withBoth,
+      drugId,
+      [ANTIARRHYTHMICS_ID],
+      [
+        { id: ANTIARRHYTHMICS_ID, slug: "antiarrhythmics", label: "Antiarrhythmics" },
+        { id: ACE_ID, slug: "ace-inhibitors", label: "ACE inhibitors" },
+      ]
+    );
 
     expect(listBelongsToClassIds(next)).toEqual([ANTIARRHYTHMICS_ID]);
     expect(
-      (next.relationships ?? []).filter((row) => row.relationship_type === "BELONGS_TO"),
+      (next.relationships ?? []).filter((row) => row.relationship_type === "BELONGS_TO")
     ).toHaveLength(1);
     expect(
-      (next.related_entities ?? []).filter((row) => row.entity_type === "DrugClass"),
+      (next.related_entities ?? []).filter((row) => row.entity_type === "DrugClass")
     ).toHaveLength(1);
   });
 });

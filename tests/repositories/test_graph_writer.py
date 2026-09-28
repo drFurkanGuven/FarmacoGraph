@@ -40,3 +40,46 @@ async def test_merge_entity_serializes_nested_properties_for_neo4j():
     assert node["authors"] == ["FDA"]
     assert json.loads(node["provenance"]) == {"created_by": "curator", "source": "manual"}
     assert json.loads(node["attachments"]) == [{"source_id": "drug-1"}]
+
+
+@pytest.mark.asyncio
+async def test_merge_entity_rejects_disallowed_label_injection():
+    driver = FakeDriver()
+    writer = GraphWriter(driver)  # type: ignore[arg-type]
+
+    with pytest.raises(ValueError, match="Invalid or disallowed Neo4j entity label"):
+        await writer.merge_entity(
+            "Drug {id: '1'}) DETACH DELETE n //",
+            {"id": "test-1"},
+        )
+
+
+@pytest.mark.asyncio
+async def test_merge_relationship_rejects_disallowed_rel_type():
+    driver = FakeDriver()
+    writer = GraphWriter(driver)  # type: ignore[arg-type]
+
+    with pytest.raises(ValueError, match="Invalid or disallowed Neo4j relationship type"):
+        await writer.merge_relationship(
+            "INVALID_REL_TYPE",
+            "source-1",
+            "target-1",
+            "Drug",
+            "Disease",
+        )
+
+
+@pytest.mark.asyncio
+async def test_delete_relationship_rejects_invalid_prop_key():
+    driver = FakeDriver()
+    writer = GraphWriter(driver)  # type: ignore[arg-type]
+
+    with pytest.raises(ValueError, match="Invalid Neo4j property key"):
+        await writer.delete_relationship(
+            "TREATS",
+            "source-1",
+            "target-1",
+            "Drug",
+            "Disease",
+            properties={"invalid-key; DROP TABLE;": "val"},
+        )

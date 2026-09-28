@@ -1,5 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { AUTH_COOKIE_NAME } from "@/lib/auth/storage";
+import type { AuthScope, UserRole } from "@/lib/api/types";
+import {
+  AUTH_COOKIE_NAME,
+  AUTH_ROLES_COOKIE_NAME,
+  AUTH_SCOPES_COOKIE_NAME,
+} from "@/lib/auth/storage";
 import {
   isLoginLoopLocation,
   isLoginPath,
@@ -20,7 +25,12 @@ export function middleware(request: NextRequest) {
   }
 
   const authenticated = request.cookies.get(AUTH_COOKIE_NAME)?.value === "1";
-  const decision = resolveAuthMiddleware(pathname, authenticated);
+  const scopesHeader = request.cookies.get(AUTH_SCOPES_COOKIE_NAME)?.value;
+  const rolesHeader = request.cookies.get(AUTH_ROLES_COOKIE_NAME)?.value;
+  const userScopes = scopesHeader ? (scopesHeader.split(",") as AuthScope[]) : undefined;
+  const userRoles = rolesHeader ? (rolesHeader.split(",") as UserRole[]) : undefined;
+
+  const decision = resolveAuthMiddleware(pathname, authenticated, userScopes, userRoles);
 
   if (decision.action === "next") {
     return NextResponse.next();

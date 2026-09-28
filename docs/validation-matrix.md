@@ -44,7 +44,9 @@
 | FG-C027 | Broken link detection | | ✓ | ✓ | |
 | FG-C028 | AI draft not publishable | | | ✓ | |
 | FG-C029 | Education layer flag | ✓ | | | ✓ |
-| FG-C030 | PostgreSQL no biomedical data | arch | | | |
+| FG-C030 | Education resource kind supported | ✓ | | | ✓ |
+| FG-C031 | Education resource required fields | ✓ | | | ✓ |
+| FG-C032 | PostgreSQL no biomedical data | arch | | | |
 
 ## Workflow State Transitions
 

@@ -77,7 +77,12 @@ export function DrugRowActions({ row }: DrugRowActionsProps) {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" aria-label={`Actions for ${row.slug}`}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+            aria-label={`Actions for ${row.slug}`}
+          >
             <MoreHorizontal className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>

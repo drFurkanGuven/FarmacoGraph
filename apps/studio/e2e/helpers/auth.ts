@@ -37,6 +37,6 @@ export async function authenticateStudio(page: Page): Promise<void> {
       cookieName: AUTH_COOKIE_NAME,
       sessionKey: SESSION_STORAGE_KEY,
       session: E2E_SESSION,
-    },
+    }
   );
 }

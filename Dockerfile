@@ -13,6 +13,9 @@ COPY openapi ./openapi
 COPY configs ./configs
 COPY architecture ./architecture
 COPY staging ./staging
+COPY alembic.ini ./
+COPY alembic ./alembic
+COPY scripts ./scripts
 
 RUN pip install --no-cache-dir -e ".[api,graph,db,auth,observability]"
 

@@ -45,7 +45,7 @@ export function isTokenExpired(expiresAt: number | null, skewMs = 60_000): boole
 
 export function sessionFromAccessToken(
   accessToken: string,
-  refreshToken: string | null = null,
+  refreshToken: string | null = null
 ): {
   accessToken: string;
   refreshToken: string | null;

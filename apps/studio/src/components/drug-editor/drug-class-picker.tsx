@@ -10,7 +10,10 @@ interface DrugClassPickerProps {
   selectedIds: string[];
   module?: string | null;
   disabled?: boolean;
-  onChange: (nextIds: string[], catalog: Array<{ id: string; slug: string; label: string }>) => void;
+  onChange: (
+    nextIds: string[],
+    catalog: Array<{ id: string; slug: string; label: string }>
+  ) => void;
 }
 
 export function DrugClassPicker({
@@ -31,7 +34,7 @@ export function DrugClassPicker({
       (row) =>
         row.label.toLowerCase().includes(q) ||
         row.slug.toLowerCase().includes(q) ||
-        row.id.toLowerCase().includes(q),
+        row.id.toLowerCase().includes(q)
     );
   }, [rows, search]);
 
@@ -41,7 +44,7 @@ export function DrugClassPicker({
   function emit(nextIds: string[]) {
     onChange(
       nextIds,
-      rows.map((row) => ({ id: row.id, slug: row.slug, label: row.label })),
+      rows.map((row) => ({ id: row.id, slug: row.slug, label: row.label }))
     );
   }
 
@@ -62,7 +65,10 @@ export function DrugClassPicker({
   return (
     <div className="space-y-4">
       <div className="space-y-1.5">
-        <label className="text-sm font-medium text-muted-foreground" htmlFor="drug-class-picker-search">
+        <label
+          className="text-sm font-medium text-muted-foreground"
+          htmlFor="drug-class-picker-search"
+        >
           Drug classes
         </label>
         <div className="relative">
@@ -77,7 +83,8 @@ export function DrugClassPicker({
           />
         </div>
         <p className="text-[0.8rem] text-muted-foreground">
-          Select DrugClass nodes from the curator catalog. BELONGS_TO stores canonical class entity IDs.
+          Select DrugClass nodes from the curator catalog. BELONGS_TO stores canonical class entity
+          IDs.
         </p>
       </div>
 
@@ -86,7 +93,11 @@ export function DrugClassPicker({
           {selectedRows.map((row) => (
             <Badge key={row.id} variant="secondary" className="gap-1.5">
               {row.label}
-              <button type="button" onClick={() => remove(row.id)} aria-label={`Remove ${row.label}`}>
+              <button
+                type="button"
+                onClick={() => remove(row.id)}
+                aria-label={`Remove ${row.label}`}
+              >
                 <X className="h-3 w-3" />
               </button>
             </Badge>

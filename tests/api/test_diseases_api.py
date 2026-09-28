@@ -77,29 +77,29 @@ async def test_create_disease_registers_and_opens_workflow(client: AsyncClient):
     response = await client.post(
         "/api/v1/curator/diseases",
         json={
-            "slug": "Heart Failure",
-            "label": "Heart failure",
-            "description": "Impaired cardiac output.",
-            "icd10": "I50",
+            "slug": "Dilated Cardiomyopathy",
+            "label": "Dilated cardiomyopathy",
+            "description": "Ventricular enlargement with impaired systolic function.",
+            "icd10": "I42.0",
         },
     )
     assert response.status_code == 201
     body = response.json()["data"]
-    assert body["entity"]["slug"] == "heart-failure"
-    assert body["entity"]["label"] == "Heart failure"
-    assert body["entity"]["icd10"] == "I50"
+    assert body["entity"]["slug"] == "dilated-cardiomyopathy"
+    assert body["entity"]["label"] == "Dilated cardiomyopathy"
+    assert body["entity"]["icd10"] == "I42.0"
     assert body["workflow"]["entity_type"] == "Disease"
     assert body["workflow"]["state"] == "draft"
-    assert body["package"]["entity_payload"]["slug"] == "heart-failure"
-    assert body["package"]["entity_payload"]["external_ids"]["icd10"] == "I50"
+    assert body["package"]["entity_payload"]["slug"] == "dilated-cardiomyopathy"
+    assert body["package"]["entity_payload"]["external_ids"]["icd10"] == "I42.0"
 
-    listed = await client.get("/api/v1/curator/diseases", params={"search": "heart"})
+    listed = await client.get("/api/v1/curator/diseases", params={"search": "dilated"})
     assert listed.status_code == 200
-    assert any(row["slug"] == "heart-failure" for row in listed.json()["data"])
+    assert any(row["slug"] == "dilated-cardiomyopathy" for row in listed.json()["data"])
 
-    public = await client.get("/api/v1/diseases", params={"search": "heart-failure"})
+    public = await client.get("/api/v1/diseases", params={"search": "dilated-cardiomyopathy"})
     assert public.status_code == 200
-    assert any(row["slug"] == "heart-failure" for row in public.json()["data"])
+    assert any(row["slug"] == "dilated-cardiomyopathy" for row in public.json()["data"])
 
 
 @pytest.mark.asyncio

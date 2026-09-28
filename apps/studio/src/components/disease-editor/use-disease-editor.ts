@@ -59,7 +59,7 @@ export function useDiseaseEditor({ diseaseSlug }: { diseaseSlug: string }) {
           setSnapshot((current) => ({ ...current, validationPending: false }));
         }
       }, VALIDATION_DEBOUNCE_MS),
-    [client],
+    [client]
   );
 
   const runSave = useMemo(
@@ -78,7 +78,9 @@ export function useDiseaseEditor({ diseaseSlug }: { diseaseSlug: string }) {
             validation: result.validation ?? current.validation,
             dirtySections: clearDirtySection(current.dirtySections, sectionId),
           }));
-          await queryClient.invalidateQueries({ queryKey: apiQueryKeys.diseasePackage(diseaseSlug) });
+          await queryClient.invalidateQueries({
+            queryKey: apiQueryKeys.diseasePackage(diseaseSlug),
+          });
           await queryClient.invalidateQueries({ queryKey: apiQueryKeys.curatorQueue("draft") });
           if (workflowRef.current?.id) {
             await queryClient.invalidateQueries({
@@ -89,11 +91,16 @@ export function useDiseaseEditor({ diseaseSlug }: { diseaseSlug: string }) {
           setSnapshot((current) => ({
             ...current,
             saveStatus: "error",
-            saveError: error instanceof ApiError ? error.message : error instanceof Error ? error.message : "Save failed.",
+            saveError:
+              error instanceof ApiError
+                ? error.message
+                : error instanceof Error
+                  ? error.message
+                  : "Save failed.",
           }));
         }
       }, AUTOSAVE_DEBOUNCE_MS),
-    [client, diseaseSlug, queryClient],
+    [client, diseaseSlug, queryClient]
   );
 
   useEffect(() => {
@@ -145,7 +152,11 @@ export function useDiseaseEditor({ diseaseSlug }: { diseaseSlug: string }) {
   const onFieldChange = useCallback(
     (fieldPath: string, value: string) => {
       setSnapshot((current) => {
-        const nextPackage = applyFieldChange(current.package as DiseasePublishPackage, fieldPath, value);
+        const nextPackage = applyFieldChange(
+          current.package as DiseasePublishPackage,
+          fieldPath,
+          value
+        );
         packageRef.current = nextPackage;
         const section = getSectionById(current.activeSectionId);
         const dirtySections = mergeDirtySections(current.dirtySections, section.id);
@@ -159,7 +170,7 @@ export function useDiseaseEditor({ diseaseSlug }: { diseaseSlug: string }) {
         };
       });
     },
-    [runSave, runValidation],
+    [runSave, runValidation]
   );
 
   const retrySave = useCallback(() => {

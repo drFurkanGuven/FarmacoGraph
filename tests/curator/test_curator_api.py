@@ -48,7 +48,11 @@ async def client():
 
 @pytest.mark.asyncio
 async def test_curator_full_workflow(client: AsyncClient):
-    """draft → review → approved → published with structural stub package."""
+    """draft → review → approved, then publish requires a connected graph.
+
+    New publish contract: without Neo4j the endpoint answers 503, the workflow
+    stays approved for retry, and no snapshot/event is emitted as published.
+    """
     package = build_cardiovascular_publish_package()
     r = await client.post(
         "/api/v1/curator/workflows",
@@ -68,11 +72,10 @@ async def test_curator_full_workflow(client: AsyncClient):
         f"/api/v1/curator/workflows/{workflow_id}/publish",
         json=package,
     )
-    assert r.status_code == 200
-    body = r.json()["data"]
-    assert body["workflow"]["state"] == "published"
-    assert body["graph_write"]["status"] in ("success", "skipped")
-    assert "validation_summary" in body
+    assert r.status_code == 503
+
+    state = await client.get(f"/api/v1/curator/workflows/{workflow_id}")
+    assert state.json()["data"]["state"] == "approved"
 
 
 @pytest.mark.asyncio
@@ -116,6 +119,15 @@ async def test_return_approved_workflow_to_draft_allows_package_edits(client: As
 
 
 async def _publish_stub_workflow(client: AsyncClient) -> str:
+    """Approved via API, then forced to published at the repository level.
+
+    Setup-only shortcut for unpublish/deprecate tests: the publish endpoint
+    itself requires a connected graph (503 otherwise), so reaching "published"
+    here bypasses graph I/O deliberately — these tests exercise post-publish
+    transitions, not the graph write.
+    """
+    from farmacograph.core.container import get_container
+
     package = build_cardiovascular_publish_package()
     r = await client.post(
         "/api/v1/curator/workflows",
@@ -125,12 +137,8 @@ async def _publish_stub_workflow(client: AsyncClient) -> str:
     await client.put(f"/api/v1/curator/workflows/{workflow_id}/package", json=package)
     await client.post(f"/api/v1/curator/workflows/{workflow_id}/submit")
     await client.post(f"/api/v1/curator/workflows/{workflow_id}/approve")
-    published = await client.post(
-        f"/api/v1/curator/workflows/{workflow_id}/publish",
-        json=package,
-    )
-    assert published.status_code == 200
-    assert published.json()["data"]["workflow"]["state"] == "published"
+    container = get_container()
+    await container.curator_repo.transition(uuid.UUID(workflow_id), "published")
     return workflow_id
 
 

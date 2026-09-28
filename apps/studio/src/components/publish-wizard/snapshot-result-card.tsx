@@ -67,9 +67,7 @@ export function SnapshotResultCard({ result, workflowState, slug }: SnapshotResu
         {result?.validation_summary && (
           <div className="flex justify-between gap-2">
             <span className="text-muted-foreground">Validation</span>
-            <span className="text-xs">
-              {result.validation_summary.valid ? "Passed" : "Failed"}
-            </span>
+            <span className="text-xs">{result.validation_summary.valid ? "Passed" : "Failed"}</span>
           </div>
         )}
         {!result && !snapshot && (

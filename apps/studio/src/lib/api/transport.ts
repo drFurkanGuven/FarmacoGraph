@@ -1,7 +1,11 @@
 import { handleUnauthorized } from "./auth";
 import { createApiError, parseErrorBody } from "./errors";
 import { extractResponseTraceMeta, mergeTraceMetaIntoEnvelope } from "./headers";
-import { createDefaultInterceptors, InterceptorRegistry, type RequestContext } from "./interceptors";
+import {
+  createDefaultInterceptors,
+  InterceptorRegistry,
+  type RequestContext,
+} from "./interceptors";
 import { withRetry } from "./retry";
 import type { ApiEnvelope, AuthSession } from "./types";
 
@@ -67,10 +71,13 @@ export class ApiTransport {
   private async requestOnce<T>(
     path: string,
     options: TransportRequestOptions,
-    allowRefresh: boolean,
+    allowRefresh: boolean
   ): Promise<ApiEnvelope<T>> {
-    const { body, params, retries = this.defaultRetries, headers, datasetVersion, ...init } = options;
+    const { body, params, retries, headers, datasetVersion, ...init } = options;
     const url = buildUrl(this.baseUrl, path, params);
+    const method = (init.method || "GET").toUpperCase();
+    const isMutation = ["POST", "PATCH", "DELETE"].includes(method);
+    const effectiveRetries = retries !== undefined ? retries : isMutation ? 0 : this.defaultRetries;
 
     return withRetry(
       async (attempt) => {
@@ -106,8 +113,23 @@ export class ApiTransport {
               if (refreshed) return this.requestOnce<T>(path, options, false);
             }
             handleUnauthorized(response.status, this.onUnauthorized);
-            const error = createApiError(response.status, parsed, trace.traceId);
-            await this.interceptors.runError(error, ctx);
+
+            let retryAfterMs: number | null = null;
+            const retryAfterHeader = response.headers.get("Retry-After");
+            if (retryAfterHeader) {
+              const seconds = Number.parseInt(retryAfterHeader, 10);
+              if (!Number.isNaN(seconds)) {
+                retryAfterMs = seconds * 1000;
+              } else {
+                const parsedDate = Date.parse(retryAfterHeader);
+                if (!Number.isNaN(parsedDate)) {
+                  retryAfterMs = Math.max(0, parsedDate - Date.now());
+                }
+              }
+            }
+
+            const error = createApiError(response.status, parsed, trace.traceId, retryAfterMs);
+            // Error is handled in the catch block to avoid duplicate runError invocation
             throw error;
           }
 
@@ -128,7 +150,7 @@ export class ApiTransport {
           throw error;
         }
       },
-      { retries },
+      { retries: effectiveRetries }
     );
   }
 }

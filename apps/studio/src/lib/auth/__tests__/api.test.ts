@@ -18,8 +18,8 @@ describe("authApi.introspect", () => {
           auth_method: "jwt",
           expires_at: 1_700_000_000,
         }),
-        { status: 200, headers: { "Content-Type": "application/json" } },
-      ),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      )
     );
 
     const result = await authApi.introspect({ accessToken: "jwt-token" });
@@ -41,8 +41,8 @@ describe("authApi.introspect", () => {
           token_type: "api_key",
           auth_method: "api_key",
         }),
-        { status: 200, headers: { "Content-Type": "application/json" } },
-      ),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      )
     );
 
     await authApi.introspectApiKey("fg_abcdefgh_secret");

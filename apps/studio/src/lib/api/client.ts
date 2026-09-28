@@ -98,7 +98,8 @@ export class FarmacoGraphClient {
   }
 
   drugs(
-    moduleOrOptions?: string | (PaginationParams & { module?: string; datasetVersion?: string | null }),
+    moduleOrOptions?:
+      string | (PaginationParams & { module?: string; datasetVersion?: string | null })
   ) {
     const options =
       typeof moduleOrOptions === "string" ? { module: moduleOrOptions } : (moduleOrOptions ?? {});
@@ -113,6 +114,17 @@ export class FarmacoGraphClient {
     const params: Record<string, string | number | boolean | undefined> = {};
     if (datasetVersion) params.dataset_version = datasetVersion;
     return this.request<Record<string, unknown>>(`/drugs/${drugId}`, {
+      params,
+      datasetVersion,
+    });
+  }
+
+  listDrugEvidence(drugId: string, datasetVersion?: string | null) {
+    const params: Record<string, string | number | boolean | undefined> = {};
+    if (datasetVersion) params.dataset_version = datasetVersion;
+    return this.request<
+      Array<{ evidence_id: string; evidence: Record<string, unknown>; assertion?: unknown }>
+    >(`/drugs/${drugId}/evidence`, {
       params,
       datasetVersion,
     });
@@ -144,10 +156,7 @@ export class FarmacoGraphClient {
     return this.request<StudyViewData>(`/drugs/${drugRef}/study`);
   }
 
-  getDrugGraph(
-    drugId: string,
-    options?: { depth?: number; datasetVersion?: string | null },
-  ) {
+  getDrugGraph(drugId: string, options?: { depth?: number; datasetVersion?: string | null }) {
     const { depth, datasetVersion } = options ?? {};
     const params: Record<string, string | number | boolean | undefined> = {};
     if (depth) params.depth = depth;
@@ -206,15 +215,21 @@ export class FarmacoGraphClient {
   }
 
   submitWorkflow(workflowId: string) {
-    return this.request<WorkflowItem>(`/curator/workflows/${workflowId}/submit`, { method: "POST" });
+    return this.request<WorkflowItem>(`/curator/workflows/${workflowId}/submit`, {
+      method: "POST",
+    });
   }
 
   approveWorkflow(workflowId: string) {
-    return this.request<WorkflowItem>(`/curator/workflows/${workflowId}/approve`, { method: "POST" });
+    return this.request<WorkflowItem>(`/curator/workflows/${workflowId}/approve`, {
+      method: "POST",
+    });
   }
 
   returnWorkflowToDraft(workflowId: string) {
-    return this.request<WorkflowItem>(`/curator/workflows/${workflowId}/return-to-draft`, { method: "POST" });
+    return this.request<WorkflowItem>(`/curator/workflows/${workflowId}/return-to-draft`, {
+      method: "POST",
+    });
   }
 
   requestUnpublish(workflowId: string, body: { notes: string }) {
@@ -244,16 +259,20 @@ export class FarmacoGraphClient {
   }
 
   deprecateWorkflow(workflowId: string) {
-    return this.request<WorkflowItem>(`/curator/workflows/${workflowId}/deprecate`, { method: "POST" });
+    return this.request<WorkflowItem>(`/curator/workflows/${workflowId}/deprecate`, {
+      method: "POST",
+    });
   }
 
-  curatorDrugs(options?: {
-    module?: string;
-    search?: string;
-    status?: string;
-    workflowState?: string;
-    sort?: string;
-  } & PaginationParams) {
+  curatorDrugs(
+    options?: {
+      module?: string;
+      search?: string;
+      status?: string;
+      workflowState?: string;
+      sort?: string;
+    } & PaginationParams
+  ) {
     const { module, search, status, workflowState, sort, ...pagination } = options ?? {};
     return this.request<DrugBrowseItem[]>("/curator/drugs", {
       params: {
@@ -274,12 +293,14 @@ export class FarmacoGraphClient {
     });
   }
 
-  curatorDiseases(options?: {
-    search?: string;
-    status?: string;
-    workflowState?: string;
-    sort?: string;
-  } & PaginationParams) {
+  curatorDiseases(
+    options?: {
+      search?: string;
+      status?: string;
+      workflowState?: string;
+      sort?: string;
+    } & PaginationParams
+  ) {
     const { search, status, workflowState, sort, ...pagination } = options ?? {};
     return this.request<DiseaseBrowseItem[]>("/curator/diseases", {
       params: {
@@ -366,7 +387,13 @@ export class FarmacoGraphClient {
     });
   }
 
-  createMechanismFragment(input: { slug: string; label: string; description?: string }) {
+  createMechanismFragment(input: {
+    slug: string;
+    label: string;
+    description?: string;
+    fragment_type?: string;
+    direction?: string;
+  }) {
     return this.request<{
       entity: {
         id: string;
@@ -374,6 +401,8 @@ export class FarmacoGraphClient {
         label: string;
         entity_type: string;
         description?: string | null;
+        fragment_type?: string | null;
+        direction?: string | null;
         status?: string;
       };
     }>("/curator/mechanism-fragments", { method: "POST", body: input });
@@ -422,7 +451,7 @@ export class FarmacoGraphClient {
   saveWorkflowPackage(workflowId: string, body: PublishPackageInput) {
     return this.request<{ workflow: WorkflowItem; validation: PackageValidation }>(
       `/curator/workflows/${workflowId}/package`,
-      { method: "PUT", body },
+      { method: "PUT", body }
     );
   }
 
@@ -464,6 +493,25 @@ export class FarmacoGraphClient {
 
   compare(body: CompareInput) {
     return this.request<Record<string, unknown>>("/compare", { method: "POST", body });
+  }
+
+  checkInteractions(body: { drug_ids?: string[]; slugs?: string[] }) {
+    return this.request<{
+      interactions: Array<{
+        drug_a_id: string;
+        drug_b_id: string;
+        severity: "contraindicated" | "major" | "moderate" | "minor" | "beneficial_synergy";
+        title: string;
+        mechanism_explanation: string;
+        clinical_action: string;
+        pathway_overlap: string[];
+      }>;
+      checked_drugs: Array<{
+        id: string;
+        slug: string;
+        label: string;
+      }>;
+    }>("/interactions", { method: "POST", body });
   }
 
   listUsers(options?: PaginationParams & { search?: string }) {
@@ -513,7 +561,7 @@ export class FarmacoGraphClient {
       role?: string;
       scopes?: string[];
       is_active?: boolean;
-    },
+    }
   ) {
     return this.request<AdminUser>(`/users/${userId}`, { method: "PATCH", body });
   }

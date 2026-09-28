@@ -3,6 +3,13 @@ export { composeDashboardFallback, fetchDashboard, resolveModuleSlug } from "./d
 export { FarmacoGraphClient, createApiClient } from "./client";
 export type { ClientConfig, RequestOptions } from "./client";
 
+import { createApiClient } from "./client";
+import { resolveStudioApiUrl } from "./base-url";
+
+export const apiClient = createApiClient({
+  baseUrl: resolveStudioApiUrl(),
+});
+
 export { ApiTransport, createTransport } from "./transport";
 export type { TransportConfig, TransportRequestOptions } from "./transport";
 
@@ -53,10 +60,7 @@ export type { ResponseTraceMeta } from "./headers";
 export { applyAuthHeaders, createAuthMiddleware, handleUnauthorized } from "./auth";
 export type { AuthMiddleware } from "./auth";
 
-export {
-  InterceptorRegistry,
-  createDefaultInterceptors,
-} from "./interceptors";
+export { InterceptorRegistry, createDefaultInterceptors } from "./interceptors";
 export type {
   DefaultInterceptorOptions,
   ErrorInterceptor,

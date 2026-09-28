@@ -6,7 +6,11 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from farmacograph.core.exceptions import NotFoundError, ValidationError
+from farmacograph.core.exceptions import (
+    NotFoundError,
+    ServiceUnavailableError,
+    ValidationError,
+)
 from farmacograph.curator.disease_package import (
     CV_DISEASES_DIR,
     build_disease_entry_package,
@@ -379,12 +383,27 @@ class CuratorService:
             education=education,
         )
 
-        if self._writer.is_available:
+        # Publish invariant: without a graph write there is no publish.
+        # The workflow stays "approved", nothing else happens (no snapshot, no
+        # outbox/event), and the caller must retry the same POST once Neo4j is
+        # back — package MERGEs are idempotent.
+        if not self._writer.is_available:
+            raise ServiceUnavailableError(
+                "Cannot publish: graph database is not connected. "
+                "Workflow stays approved; retry publish after Neo4j recovers."
+            )
+        try:
             await self._writer.publish_package(
                 entity_payload,
                 related_entities=related_entities,
                 relationships=relationships,
             )
+        except ServiceUnavailableError:
+            raise
+        except Exception as exc:
+            raise ServiceUnavailableError(
+                f"Graph write failed, workflow stays approved and can be retried: {exc}"
+            ) from exc
 
         updated = await self._transition(
             workflow_id, "published", action="curator.published", actor_id=actor_id
@@ -410,19 +429,31 @@ class CuratorService:
                 await self._jobs.mark_failed(job.id, str(exc))
 
         if create_snapshot and module:
-            await self._snapshots.create_module_snapshot(
-                module,
-                dataset_version,
-                actor_id=actor_id,
-                structural_stub=entity_payload.get("slug", "").endswith("structural-stub"),
-            )
-            await self._audit.log(
-                "curator.snapshot_created",
-                WORKFLOW_RESOURCE_TYPE,
-                resource_id=str(workflow_id),
-                actor_id=actor_id,
-                diff={"version_tag": dataset_version, "module": module},
-            )
+            # Secondary effect: a snapshot failure must not roll back an already
+            # written graph publish. It is logged and surfaced via the snapshot
+            # reference (null) so it can be rebuilt explicitly.
+            try:
+                await self._snapshots.create_module_snapshot(
+                    module,
+                    dataset_version,
+                    actor_id=actor_id,
+                    structural_stub=entity_payload.get("slug", "").endswith("structural-stub"),
+                )
+                await self._audit.log(
+                    "curator.snapshot_created",
+                    WORKFLOW_RESOURCE_TYPE,
+                    resource_id=str(workflow_id),
+                    actor_id=actor_id,
+                    diff={"version_tag": dataset_version, "module": module},
+                )
+            except Exception as exc:
+                await self._audit.log(
+                    "curator.snapshot_failed",
+                    WORKFLOW_RESOURCE_TYPE,
+                    resource_id=str(workflow_id),
+                    actor_id=actor_id,
+                    diff={"version_tag": dataset_version, "error": str(exc)},
+                )
 
         event = self._bus.build_event(
             "DrugPublished" if label == "Drug" else "KnowledgeValidated",
@@ -739,12 +770,63 @@ class CuratorService:
         slug: str,
         label: str,
         description: str | None = None,
+        fragment_type: str | None = None,
+        direction: str | None = None,
     ) -> dict[str, Any]:
         try:
             return register_mechanism_fragment(
                 slug=slug,
                 label=label,
                 description=description,
+                fragment_type=fragment_type,
+                direction=direction,
+            )
+        except ValueError as exc:
+            raise ValidationError(str(exc)) from exc
+
+    async def list_targets_browser(
+        self,
+        *,
+        search: str = "",
+        entity_type: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
+        sort: str = "slug",
+    ) -> tuple[list[dict[str, Any]], int]:
+        from farmacograph.curator.target_catalog import list_target_catalog
+
+        items, total = list_target_catalog(
+            search=search,
+            entity_type=entity_type,
+            limit=limit,
+            offset=offset,
+        )
+        return items, total
+
+    async def create_target(
+        self,
+        *,
+        entity_type: str,
+        slug: str,
+        label: str,
+        description: str | None = None,
+        gene_symbol: str | None = None,
+        is_cyp: bool = False,
+        cyp_family: str | None = None,
+        family: str | None = None,
+    ) -> dict[str, Any]:
+        from farmacograph.curator.target_catalog import register_target
+
+        try:
+            return register_target(
+                entity_type=entity_type,
+                slug=slug,
+                label=label,
+                description=description,
+                gene_symbol=gene_symbol,
+                is_cyp=is_cyp,
+                cyp_family=cyp_family,
+                family=family,
             )
         except ValueError as exc:
             raise ValidationError(str(exc)) from exc

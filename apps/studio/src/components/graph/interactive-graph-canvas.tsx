@@ -16,12 +16,19 @@ import {
 import "@xyflow/react/dist/style.css";
 import { cn } from "@/lib/utils";
 import type { GraphEdgeData, GraphNodeData } from "@/lib/api";
-import { buildRadialLayout, nodeLabel } from "./graph-canvas";
+import { buildSmartLayout, fragmentLevel, GraphLegend, nodeLabel } from "./graph-canvas";
 
-function toneClass(entityType: string | undefined): string {
+function toneClass(entityType: string | undefined, level: string | null): string {
   if (entityType === "Drug") return "border-emerald-500/70 bg-emerald-500/15";
   if (entityType === "Disease") return "border-rose-500/70 bg-rose-500/15";
-  if (entityType === "MechanismFragment") return "border-sky-500/70 bg-sky-500/15";
+  if (entityType === "MechanismFragment") {
+    if (level === "molecular") return "border-indigo-500/70 bg-indigo-500/15";
+    if (level === "cellular") return "border-cyan-500/70 bg-cyan-500/15";
+    if (level === "tissue") return "border-violet-500/70 bg-violet-500/15";
+    if (level === "organ") return "border-amber-500/70 bg-amber-500/15";
+    if (level === "clinical") return "border-emerald-500/70 bg-emerald-500/15";
+    return "border-sky-500/70 bg-sky-500/15";
+  }
   if (entityType === "EducationResource") return "border-amber-500/70 bg-amber-500/15";
   if (entityType === "Evidence") return "border-violet-500/70 bg-violet-500/15";
   return "border-border bg-card";
@@ -29,17 +36,18 @@ function toneClass(entityType: string | undefined): string {
 
 function GraphEntityNode({ data, selected }: NodeProps) {
   const entityType = String(data.entityType ?? "Node");
+  const level = typeof data.level === "string" ? data.level : null;
   return (
     <div
       className={cn(
         "min-w-[9rem] max-w-[12rem] rounded-md border px-3 py-2 shadow-sm",
-        toneClass(entityType),
-        selected && "ring-2 ring-foreground/40",
+        toneClass(entityType, level),
+        selected && "ring-2 ring-foreground/40"
       )}
     >
       <Handle type="target" position={Position.Left} className="!h-2 !w-2 !bg-muted-foreground" />
       <p className="truncate text-xs font-semibold">{String(data.label)}</p>
-      <p className="truncate text-[10px] text-muted-foreground">{entityType}</p>
+      <p className="truncate text-[10px] text-muted-foreground">{level ?? entityType}</p>
       <Handle type="source" position={Position.Right} className="!h-2 !w-2 !bg-muted-foreground" />
     </div>
   );
@@ -65,7 +73,7 @@ export function InteractiveGraphCanvas({
   emptyMessage = "No graph nodes published yet.",
 }: InteractiveGraphCanvasProps) {
   const flowNodes: Node[] = useMemo(() => {
-    const positioned = buildRadialLayout(nodes);
+    const positioned = buildSmartLayout(nodes);
     return positioned.map((node) => ({
       id: node.id,
       type: "entity",
@@ -74,6 +82,7 @@ export function InteractiveGraphCanvas({
       data: {
         label: nodeLabel(node),
         entityType: node.entity_type ?? node.labels?.[0] ?? "Node",
+        level: fragmentLevel(node),
       },
     }));
   }, [nodes, selectedNodeId]);
@@ -92,14 +101,14 @@ export function InteractiveGraphCanvas({
           ? edge.source_id === selectedNodeId || edge.target_id === selectedNodeId
           : false,
       })),
-    [edges, selectedNodeId],
+    [edges, selectedNodeId]
   );
 
   const onNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
       onSelectNode?.(node.id === selectedNodeId ? null : node.id);
     },
-    [onSelectNode, selectedNodeId],
+    [onSelectNode, selectedNodeId]
   );
 
   const onPaneClick = useCallback(() => {
@@ -115,7 +124,17 @@ export function InteractiveGraphCanvas({
   }
 
   return (
-    <div className={cn("h-[28rem] overflow-hidden rounded-md border bg-muted/20", className)}>
+    <div
+      className={cn("relative h-[28rem] overflow-hidden rounded-md border bg-muted/20", className)}
+    >
+      <div className="absolute left-3 top-3 z-10 rounded-md border bg-background/90 px-2.5 py-1.5 backdrop-blur">
+        <GraphLegend nodes={nodes} />
+      </div>
+      {edges.length > 48 && (
+        <div className="absolute right-3 top-3 z-10 rounded-md border bg-background/90 px-2.5 py-1.5 text-[11px] text-muted-foreground backdrop-blur">
+          Showing 48 of {edges.length} edges
+        </div>
+      )}
       <ReactFlow
         nodes={flowNodes}
         edges={flowEdges}

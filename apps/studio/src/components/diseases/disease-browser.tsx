@@ -39,7 +39,12 @@ export function DiseaseBrowser() {
               Validation
             </Link>
           </Button>
-          <Button variant="outline" size="sm" onClick={() => void browser.refetch()} disabled={browser.isFetching}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void browser.refetch()}
+            disabled={browser.isFetching}
+          >
             <RefreshCw className={`h-4 w-4 ${browser.isFetching ? "animate-spin" : ""}`} />
             Refresh
           </Button>
@@ -74,7 +79,11 @@ export function DiseaseBrowser() {
       {browser.isLoading ? (
         <TableSkeleton rows={4} />
       ) : browser.error ? (
-        <ErrorState title="Unable to load diseases" message={errorMessage} onRetry={() => void browser.refetch()} />
+        <ErrorState
+          title="Unable to load diseases"
+          message={errorMessage}
+          onRetry={() => void browser.refetch()}
+        />
       ) : browser.rows.length === 0 ? (
         <EmptyState
           icon={<Stethoscope className="h-6 w-6" />}

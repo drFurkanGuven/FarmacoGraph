@@ -9,7 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { KnowledgeSurface, commonKnowledgeLinks } from "@/components/knowledge/knowledge-surface";
 import { DrugFocusPicker } from "@/components/knowledge/drug-focus-picker";
-import { InteractiveGraphCanvas, relationshipLabel } from "@/components/graph";
+import { PresentationToggle, usePresentation } from "@/components/knowledge/presentation";
+import { InteractiveGraphCanvas, nodeLabel, relationshipLabel } from "@/components/graph";
+import { useLanguage } from "@/lib/i18n/context";
 import {
   GraphNeighborhoodEmptyState,
   resolveGraphEmptyReason,
@@ -22,9 +24,164 @@ function isUuid(value: string): boolean {
   return UUID_RE.test(value);
 }
 
+interface GraphPackageNode {
+  id: string;
+  labels: string[];
+  entity_type: string;
+  label: string;
+  slug?: string;
+  properties: Record<string, unknown>;
+}
+
+interface GraphPackageEdge {
+  id: string;
+  relationship_type: string;
+  source_id: string;
+  target_id: string;
+  source_type?: string;
+  target_type?: string;
+  properties: Record<string, unknown>;
+}
+
+function extractPackageGraph(
+  pkg:
+    | {
+        entity_payload?: Record<string, unknown> & {
+          id?: string;
+          label?: string;
+          generic_name?: string;
+          slug?: string;
+          relationships?: Record<string, string[]>;
+        };
+        related_entities?: Array<
+          Record<string, unknown> & {
+            id?: string;
+            entity_type?: string;
+            label?: string;
+            slug?: string;
+          }
+        >;
+        relationships?: Array<
+          Record<string, unknown> & {
+            source_id?: string;
+            target_id?: string;
+            relationship_type?: string;
+            source_type?: string;
+            target_type?: string;
+            properties?: Record<string, unknown>;
+          }
+        >;
+      }
+    | null
+    | undefined,
+  depth: number = 2
+) {
+  if (!pkg?.entity_payload) return { nodes: [], edges: [] };
+  const payload = pkg.entity_payload;
+  const drugId = String(payload.id);
+  const drugNode: GraphPackageNode = {
+    id: drugId,
+    labels: ["Drug"],
+    entity_type: "Drug",
+    label: String(payload.label || payload.generic_name || payload.slug || drugId),
+    slug: payload.slug,
+    properties: payload,
+  };
+
+  const allNodes: Record<string, GraphPackageNode> = { [drugId]: drugNode };
+  for (const ent of pkg.related_entities || []) {
+    const eid = String(ent.id);
+    const etype = ent.entity_type || "Entity";
+    allNodes[eid] = {
+      id: eid,
+      labels: [etype],
+      entity_type: etype,
+      label: String(ent.label || ent.slug || eid),
+      slug: ent.slug,
+      properties: ent,
+    };
+  }
+
+  const allEdges: GraphPackageEdge[] = [];
+  const seen = new Set<string>();
+
+  for (const rel of pkg.relationships || []) {
+    const s = String(rel.source_id);
+    const t = String(rel.target_id);
+    const type = String(rel.relationship_type || "RELATED_TO");
+    const k = `${s}-${type}->${t}`;
+    if (!seen.has(k)) {
+      seen.add(k);
+      allEdges.push({
+        id: k,
+        relationship_type: type,
+        source_id: s,
+        target_id: t,
+        source_type: rel.source_type,
+        target_type: rel.target_type,
+        properties: rel.properties || {},
+      });
+    }
+  }
+
+  const payloadRels = payload.relationships || {};
+  for (const [relType, targets] of Object.entries(payloadRels)) {
+    if (Array.isArray(targets)) {
+      for (const t of targets) {
+        const tid = String(t);
+        const k = `${drugId}-${relType}->${tid}`;
+        if (!seen.has(k)) {
+          seen.add(k);
+          allEdges.push({
+            id: k,
+            relationship_type: relType,
+            source_id: drugId,
+            target_id: tid,
+            source_type: "Drug",
+            target_type: allNodes[tid]?.entity_type,
+            properties: {},
+          });
+        }
+      }
+    }
+  }
+
+  const boundedDepth = Math.max(1, Math.min(depth, 3));
+  const adj: Record<string, string[]> = {};
+  for (const nid of Object.keys(allNodes)) adj[nid] = [];
+  for (const edge of allEdges) {
+    if (adj[edge.source_id] && adj[edge.target_id]) {
+      adj[edge.source_id].push(edge.target_id);
+      adj[edge.target_id].push(edge.source_id);
+    }
+  }
+
+  const visited = new Set<string>([drugId]);
+  const queue: [string, number][] = [[drugId, 0]];
+  while (queue.length > 0) {
+    const [curr, dist] = queue.shift()!;
+    if (dist < boundedDepth) {
+      for (const neighbor of adj[curr] || []) {
+        if (!visited.has(neighbor)) {
+          visited.add(neighbor);
+          queue.push([neighbor, dist + 1]);
+        }
+      }
+    }
+  }
+
+  const filteredNodes = Object.values(allNodes).filter((n) => visited.has(n.id));
+  const filteredEdges = allEdges.filter(
+    (e) => visited.has(e.source_id) && visited.has(e.target_id)
+  );
+
+  return { nodes: filteredNodes, edges: filteredEdges };
+}
+
 function FocusedGraphPanel({ drug }: { drug: string }) {
   const [depth, setDepth] = useState(2);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const { presentation } = usePresentation();
   const slugMode = !isUuid(drug);
   const workflowState = useDrugWorkflowState(slugMode ? drug : "");
   const resolvedDrugId = isUuid(drug) ? drug : (workflowState.data?.data.entity_id ?? "");
@@ -32,8 +189,12 @@ function FocusedGraphPanel({ drug }: { drug: string }) {
   const workflowStatus = workflowState.data?.data.status ?? null;
   const graphQuery = useDrugGraph(resolvedDrugId, depth);
   const graph = graphQuery.data?.data;
-  const nodes = graph?.nodes ?? [];
-  const edges = graph?.edges ?? [];
+  const publishedNodes = graph?.nodes ?? [];
+  const publishedEdges = graph?.edges ?? [];
+  const draftGraph = extractPackageGraph(workflowState.data?.data?.package, depth);
+  const nodes = publishedNodes.length > 0 ? publishedNodes : draftGraph.nodes;
+  const edges = publishedEdges.length > 0 ? publishedEdges : draftGraph.edges;
+  const isDraftFallback = publishedNodes.length === 0 && draftGraph.nodes.length > 0;
   const visibleEdges = selectedNodeId
     ? edges.filter((edge) => edge.source_id === selectedNodeId || edge.target_id === selectedNodeId)
     : edges;
@@ -44,7 +205,7 @@ function FocusedGraphPanel({ drug }: { drug: string }) {
 
   const waitingIdentity = slugMode && workflowState.isLoading;
   const emptyReason =
-    waitingIdentity || graphQuery.isLoading
+    waitingIdentity || (graphQuery.isLoading && !isDraftFallback)
       ? null
       : resolveGraphEmptyReason({
           identityResolved: slugMode
@@ -67,6 +228,14 @@ function FocusedGraphPanel({ drug }: { drug: string }) {
                 <CardTitle className="flex items-center gap-2 text-base">
                   <Network className="h-4 w-4" />
                   Drug neighborhood
+                  {isDraftFallback ? (
+                    <Badge
+                      variant="outline"
+                      className="border-amber-500/40 bg-amber-500/10 text-amber-500 text-xs font-normal"
+                    >
+                      Package Projection
+                    </Badge>
+                  ) : null}
                 </CardTitle>
                 <CardDescription>
                   Interactive projection from /drugs/{"{uuid}"}/graph — pan, zoom, and click nodes.
@@ -84,6 +253,7 @@ function FocusedGraphPanel({ drug }: { drug: string }) {
                     {value}
                   </Button>
                 ))}
+                <PresentationToggle />
               </div>
             </div>
           </CardHeader>
@@ -149,7 +319,7 @@ function FocusedGraphPanel({ drug }: { drug: string }) {
               <p className="text-xs text-muted-foreground">Opened as</p>
               <p className="mt-1 break-all text-sm">{drug}</p>
             </div>
-            {resolvedDrugId ? (
+            {resolvedDrugId && !presentation ? (
               <div className="rounded-md border bg-muted/30 p-3">
                 <p className="text-xs text-muted-foreground">Resolved UUID</p>
                 <p className="mt-1 break-all text-xs">{resolvedDrugId}</p>
@@ -205,37 +375,48 @@ function FocusedGraphPanel({ drug }: { drug: string }) {
           </CardHeader>
           <CardContent className="space-y-2">
             {visibleEdges.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No published relationships in this projection.</p>
+              <p className="text-sm text-muted-foreground">
+                No published relationships in this projection.
+              </p>
             ) : (
-              visibleEdges.slice(0, 10).map((edge) => (
-                <div key={edge.id} className="rounded-md border px-3 py-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="muted">{relationshipLabel(edge)}</Badge>
-                    {edge.target_type && <Badge variant="outline">{edge.target_type}</Badge>}
+              visibleEdges.slice(0, 10).map((edge) => {
+                const nodeById = new Map(nodes.map((node) => [node.id, node]));
+                const sourceLabel = nodeById.get(edge.source_id);
+                const targetLabel = nodeById.get(edge.target_id);
+                return (
+                  <div key={edge.id} className="rounded-md border px-3 py-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="muted">{relationshipLabel(edge)}</Badge>
+                      {edge.target_type && <Badge variant="outline">{edge.target_type}</Badge>}
+                    </div>
+                    <p className="mt-2 truncate text-xs text-muted-foreground">
+                      {sourceLabel ? nodeLabel(sourceLabel) : edge.source_id}
+                      {" → "}
+                      {targetLabel ? nodeLabel(targetLabel) : edge.target_id}
+                    </p>
                   </div>
-                  <p className="mt-2 break-all text-xs text-muted-foreground">
-                    {edge.source_id} {"->"} {edge.target_id}
-                  </p>
-                </div>
-              ))
+                );
+              })
             )}
           </CardContent>
         </Card>
 
-        <Card className="rounded-md">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Braces className="h-4 w-4" />
-              Graph JSON
-            </CardTitle>
-            <CardDescription>Native payload available to downstream apps.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <pre className="minimal-scrollbar max-h-96 overflow-auto rounded-md border bg-muted/30 p-3 text-xs">
-              {JSON.stringify(graph ?? { nodes: [], edges: [], depth }, null, 2)}
-            </pre>
-          </CardContent>
-        </Card>
+        {!presentation && (
+          <Card className="rounded-md">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Braces className="h-4 w-4" />
+                Graph JSON
+              </CardTitle>
+              <CardDescription>Native payload available to downstream apps.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <pre className="minimal-scrollbar max-h-96 overflow-auto rounded-md border bg-muted/30 p-3 text-xs">
+                {JSON.stringify(graph ?? { nodes: [], edges: [], depth }, null, 2)}
+              </pre>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
@@ -244,17 +425,25 @@ function FocusedGraphPanel({ drug }: { drug: string }) {
 function GraphSurface() {
   const searchParams = useSearchParams();
   const focusedDrug = searchParams.get("drug");
+  const { t } = useLanguage();
 
   return (
     <div className="space-y-6">
       <KnowledgeSurface
-        eyebrow="Graph explorer"
-        title="Graph Explorer"
+        eyebrow={t("knowledge.graph.eyebrow", "Graph explorer")}
+        title={t("knowledge.graph.title", "Graph Explorer")}
         status="MVP live"
-        description="Pick a drug below to load its published Neo4j neighborhood. Snapshot relationship diffs remain deferred."
+        description={t(
+          "knowledge.graph.description",
+          "Pick a drug to inspect its published Neo4j neighborhood."
+        )}
         primary={{
-          label: focusedDrug ? "Open editor" : "Open drug browser",
-          href: focusedDrug ? `/knowledge/drugs/${encodeURIComponent(focusedDrug)}` : "/knowledge/drugs",
+          label: focusedDrug
+            ? t("knowledge.graph.editPathway", "Open editor")
+            : t("knowledge.graph.openBrowser", "Open drug browser"),
+          href: focusedDrug
+            ? `/knowledge/drugs/${encodeURIComponent(focusedDrug)}`
+            : "/knowledge/drugs",
           icon: focusedDrug ? Pencil : GitBranch,
           description: focusedDrug
             ? "Return to the focused drug curation workspace."
@@ -273,7 +462,7 @@ function GraphSurface() {
         ]}
       />
       <DrugFocusPicker
-        title="Drug for graph projection"
+        title={t("knowledge.pickDrug", "Pick a drug")}
         description="Select a published drug to render /drugs/{uuid}/graph. Empty canvas usually means the drug is not yet in Neo4j."
       />
       {focusedDrug ? <FocusedGraphPanel drug={focusedDrug} /> : null}

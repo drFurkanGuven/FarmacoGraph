@@ -7,6 +7,10 @@ from typing import Any, Protocol, runtime_checkable
 from farmacograph.api.schemas.responses import ResponseMeta
 from farmacograph.models.enums import ContentLayer
 from farmacograph.repositories.snapshots import SnapshotRepository
+from farmacograph.search.staging_provider import (
+    PROVENANCE_STAGING_FALLBACK,
+    StagingSearchProvider,
+)
 
 
 @runtime_checkable
@@ -46,7 +50,7 @@ class SearchService:
     def set_provider(self, provider: SearchProvider) -> None:
         self._provider = provider
 
-    async def _meta(self) -> ResponseMeta:
+    async def _meta(self, provenance: str | None = None) -> ResponseMeta:
         dataset_version = "unpublished"
         if self._snapshots is not None:
             snapshot = await self._snapshots.get_latest_published()
@@ -56,6 +60,7 @@ class SearchService:
             dataset_version=dataset_version,
             ontology_version=self._ontology_version,
             content_layers=[ContentLayer.BIOMEDICAL],
+            provenance=provenance,
         )
 
     async def search(
@@ -66,8 +71,14 @@ class SearchService:
         types: list[str] | None = None,
     ) -> tuple[list[dict[str, Any]], ResponseMeta]:
         results = await self._provider.search(query, limit=limit, types=types)
-        return results, await self._meta()
+        provenance: str | None = None
+        if results and isinstance(self._provider, StagingSearchProvider):
+            provenance = PROVENANCE_STAGING_FALLBACK
+        return results, await self._meta(provenance)
 
     async def autocomplete(self, query: str, limit: int = 10) -> tuple[list[dict[str, Any]], ResponseMeta]:
         results = await self._provider.autocomplete(query, limit=limit)
-        return results, await self._meta()
+        provenance: str | None = None
+        if results and isinstance(self._provider, StagingSearchProvider):
+            provenance = PROVENANCE_STAGING_FALLBACK
+        return results, await self._meta(provenance)

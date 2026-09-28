@@ -99,7 +99,7 @@ const baseProps = {
     id: "wf-1",
     entity_id: "entity-1",
     entity_type: "Drug",
-    state: "draft",
+    state: "draft" as const,
     notes: null,
   },
   package: {
@@ -154,7 +154,7 @@ describe("PublishConfirmation", () => {
             onCancel={vi.fn()}
           />
         </DialogContent>
-      </Dialog>,
+      </Dialog>
     );
 
     expect(screen.getByText("Cannot proceed yet")).toBeInTheDocument();
@@ -175,7 +175,13 @@ describe("PublishResult error handling", () => {
               status: "error",
               action: "publish",
               message: "Cannot publish from state: review",
-              workflow: { id: "wf-1", entity_id: "e1", entity_type: "Drug", state: "review", notes: null },
+              workflow: {
+                id: "wf-1",
+                entity_id: "e1",
+                entity_type: "Drug",
+                state: "review",
+                notes: null,
+              },
             }}
             actionLabel="Publish to graph"
             slug="ramipril"
@@ -183,7 +189,7 @@ describe("PublishResult error handling", () => {
             onDone={vi.fn()}
           />
         </DialogContent>
-      </Dialog>,
+      </Dialog>
     );
 
     expect(screen.getByText("Publish to graph failed")).toBeInTheDocument();

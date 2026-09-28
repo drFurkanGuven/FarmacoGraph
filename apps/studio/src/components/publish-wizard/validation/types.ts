@@ -7,12 +7,7 @@ import type {
 
 /** Issue buckets surfaced in the publish wizard validation panel. */
 export type IssueGroupId =
-  | "schema"
-  | "ontology"
-  | "biomedical"
-  | "educational"
-  | "evidence"
-  | "workflow";
+  "schema" | "ontology" | "biomedical" | "educational" | "evidence" | "workflow";
 
 /** Validation levels from the API plus synthetic workflow issues. */
 export type PublishWizardIssueLevel = ValidationLevel | "workflow";

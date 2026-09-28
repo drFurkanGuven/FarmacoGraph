@@ -16,7 +16,7 @@ export function applyAuthHeaders(headers: Headers, session: AuthSession | null |
 }
 
 export function createAuthMiddleware(
-  getSession: () => AuthSession | null | undefined,
+  getSession: () => AuthSession | null | undefined
 ): AuthMiddleware {
   return (headers) => {
     applyAuthHeaders(headers, getSession() ?? null);

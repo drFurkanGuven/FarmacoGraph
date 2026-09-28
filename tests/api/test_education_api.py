@@ -63,18 +63,23 @@ async def curator_client() -> AsyncClient:
 async def test_drug_education_uuid_route_returns_education_envelope(
     api_client: AsyncClient,
 ) -> None:
+    # New contract (was: empty list without Neo4j): staging education is
+    # served and explicitly flagged staging-fallback.
     response = await api_client.get(f"/api/v1/drugs/{RAMIPRIL_ID}/education")
 
     assert response.status_code == 200
     body = response.json()
-    assert body["data"] == []
-    assert body["meta"]["count"] == 0
+    kinds = {item.get("kind") for item in body["data"]}
+    assert {"Flashcard", "BoardExamPearl", "CommonMistake", "Mnemonic"} <= kinds
+    assert body["meta"]["count"] == len(body["data"])
     assert body["meta"]["content_layers"] == ["education"]
+    assert body["meta"].get("provenance") == "staging-fallback"
 
     flashcards = await api_client.get(f"/api/v1/drugs/{RAMIPRIL_ID}/education/flashcards")
     assert flashcards.status_code == 200
-    assert flashcards.json()["data"] == []
+    assert len(flashcards.json()["data"]) >= 2
     assert flashcards.json()["meta"]["content_layers"] == ["education"]
+    assert flashcards.json()["meta"].get("provenance") == "staging-fallback"
 
     study = await api_client.get(f"/api/v1/drugs/{RAMIPRIL_ID}/study")
     assert study.status_code == 200

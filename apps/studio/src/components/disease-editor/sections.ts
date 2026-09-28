@@ -18,7 +18,12 @@ export const DISEASE_EDITOR_SECTIONS: EntityEditorSection[] = [
     title: "Clinical",
     description: "Terminology and prevalence notes.",
     fields: [
-      { key: "description", label: "Description", type: "textarea", path: "entity_payload.description" },
+      {
+        key: "description",
+        label: "Description",
+        type: "textarea",
+        path: "entity_payload.description",
+      },
       {
         key: "prevalence_note",
         label: "Prevalence note",
@@ -50,17 +55,19 @@ export const DISEASE_EDITOR_SECTIONS: EntityEditorSection[] = [
       {
         key: "curator_attestation",
         label: "Curator attestation",
-        type: "text",
+        type: "boolean",
         path: "entity_payload.provenance.curator_attestation",
-        description: "Set to true when a human curator attests the content.",
-        placeholder: "true",
+        description: "Check when a human curator attests the content.",
       },
     ],
   },
 ];
 
 export function getSectionById(sectionId: string): EntityEditorSection {
-  return DISEASE_EDITOR_SECTIONS.find((section) => section.id === sectionId) ?? DISEASE_EDITOR_SECTIONS[0];
+  return (
+    DISEASE_EDITOR_SECTIONS.find((section) => section.id === sectionId) ??
+    DISEASE_EDITOR_SECTIONS[0]
+  );
 }
 
 export type DiseasePublishPackage = EntityPublishPackage;

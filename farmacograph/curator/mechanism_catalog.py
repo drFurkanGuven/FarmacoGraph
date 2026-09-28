@@ -18,6 +18,8 @@ DEFAULT_MECHANISM_RUNTIME_PATH = (
 )
 MECHANISM_ENTITY_NAMESPACE = uuid.UUID("c1000001-0000-4000-8010-000000000000")
 _SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+ALLOWED_FRAGMENT_TYPES = ("molecular", "cellular", "tissue", "organ", "clinical")
+ALLOWED_FRAGMENT_DIRECTIONS = ("increase", "decrease", "inhibit", "activate", "unknown")
 
 
 def mechanism_runtime_path() -> Path:
@@ -121,6 +123,8 @@ def list_mechanism_fragment_catalog(
                 "label": label,
                 "entity_type": "MechanismFragment",
                 "description": entity.get("description"),
+                "fragment_type": entity.get("fragment_type"),
+                "direction": entity.get("direction"),
                 "status": entity.get("status", "published"),
             }
         )
@@ -134,12 +138,25 @@ def register_mechanism_fragment(
     slug: str,
     label: str,
     description: str | None = None,
+    fragment_type: str | None = None,
+    direction: str | None = None,
 ) -> dict[str, Any]:
     """Register a MechanismFragment in the runtime catalog (merged with nodes.index.json)."""
     normalized = validate_mechanism_slug(slug)
     clean_label = label.strip()
     if not clean_label:
         raise ValueError("Mechanism fragment label is required.")
+
+    clean_type = (fragment_type or "").strip().lower() or None
+    if clean_type is not None and clean_type not in ALLOWED_FRAGMENT_TYPES:
+        raise ValueError(
+            "fragment_type must be one of: " + ", ".join(ALLOWED_FRAGMENT_TYPES)
+        )
+    clean_direction = (direction or "").strip().lower() or None
+    if clean_direction is not None and clean_direction not in ALLOWED_FRAGMENT_DIRECTIONS:
+        raise ValueError(
+            "direction must be one of: " + ", ".join(ALLOWED_FRAGMENT_DIRECTIONS)
+        )
 
     existing = find_mechanism_in_index(normalized)
     if existing is not None:
@@ -151,6 +168,8 @@ def register_mechanism_fragment(
         "slug": normalized,
         "label": clean_label,
         "description": (description or "").strip() or None,
+        "fragment_type": clean_type,
+        "direction": clean_direction,
         "status": "draft",
         "source": "curator_runtime",
     }

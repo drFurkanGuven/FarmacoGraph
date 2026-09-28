@@ -1,7 +1,8 @@
 /** Normalized API error types and parsing helpers. */
 
 export interface ApiErrorBody {
-  detail?: string | { msg: string; loc?: string[]; type?: string }[] | { code?: string; message?: string };
+  detail?:
+    string | { msg: string; loc?: string[]; type?: string }[] | { code?: string; message?: string };
   message?: string;
   error?: {
     code: string;
@@ -14,18 +15,21 @@ export class ApiError extends Error {
   readonly body: ApiErrorBody | null;
   readonly traceId: string | null;
   readonly code: string | null;
+  readonly retryAfterMs: number | null;
 
   constructor(
     message: string,
     status: number,
     body: ApiErrorBody | null = null,
     traceId: string | null = null,
+    retryAfterMs: number | null = null
   ) {
     super(message);
     this.name = "ApiError";
     this.status = status;
     this.body = body;
     this.traceId = traceId;
+    this.retryAfterMs = retryAfterMs;
     this.code =
       body?.error?.code ??
       (body?.detail && !Array.isArray(body.detail) && typeof body.detail === "object"
@@ -59,8 +63,9 @@ export function createApiError(
   status: number,
   body: ApiErrorBody | null,
   traceId: string | null,
+  retryAfterMs?: number | null
 ): ApiError {
-  return new ApiError(normalizeErrorMessage(body, status), status, body, traceId);
+  return new ApiError(normalizeErrorMessage(body, status), status, body, traceId, retryAfterMs);
 }
 
 export function isApiError(error: unknown): error is ApiError {

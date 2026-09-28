@@ -42,7 +42,9 @@ describe("Badge components", () => {
 
 describe("Feedback components", () => {
   it("renders EmptyState with title", () => {
-    const html = renderToStaticMarkup(<EmptyState title="No items" description="Add one to get started." />);
+    const html = renderToStaticMarkup(
+      <EmptyState title="No items" description="Add one to get started." />
+    );
     expect(html).toContain("No items");
     expect(html).toContain("Add one to get started.");
   });

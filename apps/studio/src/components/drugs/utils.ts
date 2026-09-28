@@ -140,17 +140,28 @@ export function buildDrugRows(input: {
   return Array.from(bySlug.values());
 }
 
-export function filterDrugRows(rows: DrugBrowserRow[], filters: DrugBrowserFilters): DrugBrowserRow[] {
+export function filterDrugRows(
+  rows: DrugBrowserRow[],
+  filters: DrugBrowserFilters
+): DrugBrowserRow[] {
   return rows.filter((row) => {
     if (filters.module !== "all" && row.module && row.module !== filters.module) {
       return false;
     }
 
     if (filters.status !== "all") {
-      if (filters.status === "published" && row.status !== "published" && row.curriculumStatus !== "published") {
+      if (
+        filters.status === "published" &&
+        row.status !== "published" &&
+        row.curriculumStatus !== "published"
+      ) {
         return false;
       }
-      if (filters.status === "pending" && row.curriculumStatus !== "pending" && row.status !== "pending") {
+      if (
+        filters.status === "pending" &&
+        row.curriculumStatus !== "pending" &&
+        row.status !== "pending"
+      ) {
         return false;
       }
       if (filters.status === "draft" && row.workflowState !== "draft") {
@@ -177,7 +188,7 @@ function compareStrings(a: string, b: string, direction: SortDirection): number 
 function compareNullableNumbers(
   a: number | null,
   b: number | null,
-  direction: SortDirection,
+  direction: SortDirection
 ): number {
   if (a === null && b === null) return 0;
   if (a === null) return 1;
@@ -189,7 +200,7 @@ function compareNullableNumbers(
 export function sortDrugRows(
   rows: DrugBrowserRow[],
   field: SortField,
-  direction: SortDirection,
+  direction: SortDirection
 ): DrugBrowserRow[] {
   const sorted = [...rows];
   sorted.sort((a, b) => {
@@ -210,7 +221,11 @@ export function sortDrugRows(
   return sorted;
 }
 
-export function paginateDrugRows(rows: DrugBrowserRow[], page: number, pageSize: number): DrugBrowserRow[] {
+export function paginateDrugRows(
+  rows: DrugBrowserRow[],
+  page: number,
+  pageSize: number
+): DrugBrowserRow[] {
   const start = (page - 1) * pageSize;
   return rows.slice(start, start + pageSize);
 }

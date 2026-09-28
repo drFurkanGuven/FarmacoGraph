@@ -32,7 +32,11 @@ function SortIcon({
   direction: DiseaseSortDirection;
 }) {
   if (field !== activeField) return <ArrowUpDown className="h-3.5 w-3.5 opacity-40" />;
-  return direction === "asc" ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />;
+  return direction === "asc" ? (
+    <ArrowUp className="h-3.5 w-3.5" />
+  ) : (
+    <ArrowDown className="h-3.5 w-3.5" />
+  );
 }
 
 export function DiseaseTable({ rows, sortField, sortDirection, onSort }: DiseaseTableProps) {
@@ -47,12 +51,20 @@ export function DiseaseTable({ rows, sortField, sortDirection, onSort }: Disease
       <TableHeader>
         <TableRow>
           <TableHead>
-            <button type="button" className="inline-flex items-center gap-1.5" onClick={() => onSort("label")}>
+            <button
+              type="button"
+              className="inline-flex items-center gap-1.5"
+              onClick={() => onSort("label")}
+            >
               Disease <SortIcon field="label" activeField={sortField} direction={sortDirection} />
             </button>
           </TableHead>
           <TableHead>
-            <button type="button" className="inline-flex items-center gap-1.5" onClick={() => onSort("slug")}>
+            <button
+              type="button"
+              className="inline-flex items-center gap-1.5"
+              onClick={() => onSort("slug")}
+            >
               Slug <SortIcon field="slug" activeField={sortField} direction={sortDirection} />
             </button>
           </TableHead>
@@ -68,7 +80,10 @@ export function DiseaseTable({ rows, sortField, sortDirection, onSort }: Disease
             onClick={() => openEditor(row.slug)}
           >
             <TableCell>
-              <Link href={`/knowledge/diseases/${row.slug}`} className="font-medium hover:underline">
+              <Link
+                href={`/knowledge/diseases/${row.slug}`}
+                className="font-medium hover:underline"
+              >
                 {row.label}
               </Link>
             </TableCell>

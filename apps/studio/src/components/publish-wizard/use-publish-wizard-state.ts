@@ -31,7 +31,7 @@ export function usePublishWizardState(snapshot: DrugEditorSnapshot) {
   const summaryQuery = useApiQuery(
     publishValidationQueryKeys.summary(),
     () => client.request<ValidationSummaryData>("/curator/validation-summary"),
-    { ...defaultQueryOptions, enabled: Boolean(workflowId) },
+    { ...defaultQueryOptions, enabled: Boolean(workflowId) }
   );
 
   const packageValidation = useMemo(() => {
@@ -58,7 +58,7 @@ export function usePublishWizardState(snapshot: DrugEditorSnapshot) {
 
   const gateAction = useCallback(
     (action: PublishWizardAction) => gatePublishAction(action, validation, workflowStatus),
-    [validation, workflowStatus],
+    [validation, workflowStatus]
   );
 
   const refetch = useCallback(() => {

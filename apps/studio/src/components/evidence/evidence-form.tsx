@@ -260,7 +260,11 @@ export function EvidenceFormDialog({
                 <FormItem>
                   <FormLabel>Supports claim</FormLabel>
                   <FormControl>
-                    <Textarea rows={2} placeholder="What clinical assertion does this support?" {...field} />
+                    <Textarea
+                      rows={2}
+                      placeholder="What clinical assertion does this support?"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -274,9 +278,15 @@ export function EvidenceFormDialog({
                 <FormItem>
                   <FormLabel>Extract</FormLabel>
                   <FormControl>
-                    <Textarea rows={4} placeholder="Relevant quote or summary from the source" {...field} />
+                    <Textarea
+                      rows={4}
+                      placeholder="Relevant quote or summary from the source"
+                      {...field}
+                    />
                   </FormControl>
-                  <FormDescription>Only include text you can cite from a real source.</FormDescription>
+                  <FormDescription>
+                    Only include text you can cite from a real source.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -285,7 +295,9 @@ export function EvidenceFormDialog({
             {statusMessage && (
               <div
                 className={`flex items-start gap-2 rounded-md border p-3 text-sm ${
-                  statusOk ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-amber-200 bg-amber-50 text-amber-900"
+                  statusOk
+                    ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+                    : "border-amber-200 bg-amber-50 text-amber-900"
                 }`}
               >
                 {statusOk ? (

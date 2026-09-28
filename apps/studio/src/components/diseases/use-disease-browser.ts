@@ -21,7 +21,7 @@ export function useDiseaseBrowser(filters: DiseaseBrowserFilters) {
         search: filters.query || undefined,
         workflowState: filters.workflowState === "all" ? undefined : filters.workflowState,
         limit: 100,
-      }),
+      })
   );
 
   const rows = useMemo(() => {

@@ -43,7 +43,7 @@ export function usePublishReadiness({
   const summaryQuery = useApiQuery(
     publishValidationQueryKeys.summary(),
     () => client.request<ValidationSummaryData>("/curator/validation-summary"),
-    { ...defaultQueryOptions, refetchInterval: VALIDATION_REFRESH_MS, enabled },
+    { ...defaultQueryOptions, refetchInterval: VALIDATION_REFRESH_MS, enabled }
   );
 
   const packageQuery = useApiQuery(
@@ -60,7 +60,7 @@ export function usePublishReadiness({
       enabled: isEnabled && !useEditorValidation,
       staleTime: 5_000,
       refetchInterval: isEnabled && !useEditorValidation ? VALIDATION_REFRESH_MS : false,
-    },
+    }
   );
 
   const summary = summaryQuery.data?.data;
@@ -94,11 +94,13 @@ export function usePublishReadiness({
 
   const gateAction = useCallback(
     (action: PublishWizardAction) => gatePublishAction(action, validation, workflowState),
-    [validation, workflowState],
+    [validation, workflowState]
   );
 
-  const loading = summaryQuery.isLoading || (isEnabled && !useEditorValidation && packageQuery.isLoading);
-  const validating = isEnabled && !useEditorValidation && packageQuery.isFetching && !packageQuery.isLoading;
+  const loading =
+    summaryQuery.isLoading || (isEnabled && !useEditorValidation && packageQuery.isLoading);
+  const validating =
+    isEnabled && !useEditorValidation && packageQuery.isFetching && !packageQuery.isLoading;
   const error = (summaryQuery.error ?? packageQuery.error) as Error | null;
 
   return {

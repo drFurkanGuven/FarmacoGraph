@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { gatePublishAction, computePublishValidationState, toPackageValidationSnapshot } from "../validation/publish-validation";
+import {
+  gatePublishAction,
+  computePublishValidationState,
+  toPackageValidationSnapshot,
+} from "../validation/publish-validation";
 import { resolveSectionForField } from "../issue-section-map";
 
 const basePackage = {
@@ -15,7 +19,9 @@ const basePackage = {
 
 describe("resolveSectionForField", () => {
   it("maps provenance fields to provenance section", () => {
-    expect(resolveSectionForField("entity_payload.provenance.curator_attestation")).toBe("provenance");
+    expect(resolveSectionForField("entity_payload.provenance.curator_attestation")).toBe(
+      "provenance"
+    );
   });
 
   it("maps provenance source fields to provenance section", () => {
@@ -31,7 +37,7 @@ describe("gatePublishAction", () => {
   it("blocks publish when validation fails", () => {
     const packageValidation = toPackageValidationSnapshot(
       { valid: false, issues: [{ message: "Missing label", severity: "error", level: "schema" }] },
-      basePackage,
+      basePackage
     );
     const state = computePublishValidationState({
       packageValidation,
@@ -67,8 +73,11 @@ describe("gatePublishAction", () => {
 
   it("allows return to draft from approved even when publish validation is blocked", () => {
     const packageValidation = toPackageValidationSnapshot(
-      { valid: false, issues: [{ message: "Missing indication", severity: "error", level: "biomedical" }] },
-      basePackage,
+      {
+        valid: false,
+        issues: [{ message: "Missing indication", severity: "error", level: "biomedical" }],
+      },
+      basePackage
     );
     const state = computePublishValidationState({
       packageValidation,
@@ -101,7 +110,7 @@ describe("computePublishValidationState", () => {
     };
     const packageValidation = toPackageValidationSnapshot(
       { valid: true, issues: [] },
-      unattestedPackage,
+      unattestedPackage
     );
     const state = computePublishValidationState({
       packageValidation,

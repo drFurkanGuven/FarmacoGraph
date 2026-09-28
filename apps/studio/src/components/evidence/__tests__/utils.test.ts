@@ -39,7 +39,12 @@ describe("evidence utils", () => {
       searchHitToRow(sampleHit),
       searchHitToRow({
         ...sampleHit,
-        entity: { ...sampleHit.entity, id: "evidence:2", evidence_type: "textbook", quality_score: 0.2 },
+        entity: {
+          ...sampleHit.entity,
+          id: "evidence:2",
+          evidence_type: "textbook",
+          quality_score: 0.2,
+        },
       }),
     ];
     const filters: EvidenceBrowserFilters = {

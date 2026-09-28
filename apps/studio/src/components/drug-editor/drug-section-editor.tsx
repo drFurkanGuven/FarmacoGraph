@@ -3,12 +3,18 @@
 import { cn } from "@/lib/utils";
 import { PropertyEditor, type PropertyEditorField } from "@/components/ui";
 import type { ValidationResult } from "@/lib/api";
+import { useSectionText } from "@/lib/i18n/context";
 import { DrugEvidenceSection } from "./drug-evidence-section";
 import { EducationSection } from "./education-section";
 import { ClassificationSection } from "./classification-section";
 import { IndicationsSection } from "./indications-section";
 import { MechanismSection } from "./mechanism-section";
 import { sectionFieldValues } from "./package";
+import {
+  listTreatsDiseaseIds,
+  readTreatsIndication,
+  setTreatsEvidenceIds,
+} from "./treats-relationships";
 import type { DrugEditorSection, DrugPublishPackage } from "./types";
 
 export interface DrugSectionEditorProps {
@@ -32,11 +38,27 @@ export function DrugSectionEditor({
   onPackageChange,
   className,
 }: DrugSectionEditorProps) {
+  const { title: sectionTitle, description: sectionDescription } = useSectionText(section);
   if (section.kind === "evidence" || section.id === "evidence") {
     const entityId = String(pkg.entity_payload.id ?? drugId);
-    const slug = typeof pkg.entity_payload.slug === "string" && pkg.entity_payload.slug
-      ? pkg.entity_payload.slug
-      : null;
+    const slug =
+      typeof pkg.entity_payload.slug === "string" && pkg.entity_payload.slug
+        ? pkg.entity_payload.slug
+        : null;
+    const labelByDiseaseId = new Map<string, string>();
+    for (const row of pkg.related_entities ?? []) {
+      const record = row as Record<string, unknown>;
+      if (record.entity_type === "Disease" && typeof record.id === "string") {
+        labelByDiseaseId.set(
+          record.id,
+          typeof record.label === "string" && record.label ? record.label : record.id
+        );
+      }
+    }
+    const treatsOptions = listTreatsDiseaseIds(pkg).map((diseaseId) => ({
+      id: diseaseId,
+      label: labelByDiseaseId.get(diseaseId) ?? diseaseId,
+    }));
 
     return (
       <DrugEvidenceSection
@@ -46,6 +68,14 @@ export function DrugSectionEditor({
         validation={validation}
         disabled={disabled}
         className={className}
+        treatsOptions={treatsOptions}
+        onLinkToIndication={(evidenceId, diseaseId) => {
+          const current = readTreatsIndication(pkg, entityId, diseaseId).evidence_ids ?? [];
+          if (current.includes(evidenceId)) return;
+          onPackageChange?.(
+            setTreatsEvidenceIds(pkg, entityId, diseaseId, [...current, evidenceId])
+          );
+        }}
       />
     );
   }
@@ -54,8 +84,10 @@ export function DrugSectionEditor({
     return (
       <div className={cn("space-y-4", className)}>
         <div>
-          <h2 className="text-lg font-semibold tracking-tight">{section.title}</h2>
-          {section.description && <p className="mt-1 text-sm text-muted-foreground">{section.description}</p>}
+          <h2 className="text-lg font-semibold tracking-tight">{sectionTitle}</h2>
+          {sectionDescription && (
+            <p className="mt-1 text-sm text-muted-foreground">{sectionDescription}</p>
+          )}
         </div>
         <ClassificationSection
           pkg={pkg}
@@ -68,15 +100,18 @@ export function DrugSectionEditor({
   }
 
   if (section.id === "indications") {
-    const slug = typeof pkg.entity_payload.slug === "string" && pkg.entity_payload.slug
-      ? pkg.entity_payload.slug
-      : null;
+    const slug =
+      typeof pkg.entity_payload.slug === "string" && pkg.entity_payload.slug
+        ? pkg.entity_payload.slug
+        : null;
 
     return (
       <div className={cn("space-y-4", className)}>
         <div>
-          <h2 className="text-lg font-semibold tracking-tight">{section.title}</h2>
-          {section.description && <p className="mt-1 text-sm text-muted-foreground">{section.description}</p>}
+          <h2 className="text-lg font-semibold tracking-tight">{sectionTitle}</h2>
+          {sectionDescription && (
+            <p className="mt-1 text-sm text-muted-foreground">{sectionDescription}</p>
+          )}
         </div>
         <IndicationsSection
           pkg={pkg}
@@ -94,8 +129,10 @@ export function DrugSectionEditor({
     return (
       <div className={cn("space-y-4", className)}>
         <div>
-          <h2 className="text-lg font-semibold tracking-tight">{section.title}</h2>
-          {section.description && <p className="mt-1 text-sm text-muted-foreground">{section.description}</p>}
+          <h2 className="text-lg font-semibold tracking-tight">{sectionTitle}</h2>
+          {sectionDescription && (
+            <p className="mt-1 text-sm text-muted-foreground">{sectionDescription}</p>
+          )}
         </div>
         <MechanismSection
           pkg={pkg}
@@ -131,8 +168,10 @@ export function DrugSectionEditor({
   return (
     <div className={cn("space-y-4", className)}>
       <div>
-        <h2 className="text-lg font-semibold tracking-tight">{section.title}</h2>
-        {section.description && <p className="mt-1 text-sm text-muted-foreground">{section.description}</p>}
+        <h2 className="text-lg font-semibold tracking-tight">{sectionTitle}</h2>
+        {sectionDescription && (
+          <p className="mt-1 text-sm text-muted-foreground">{sectionDescription}</p>
+        )}
       </div>
       <PropertyEditor
         fields={fields}

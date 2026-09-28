@@ -6,11 +6,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { EmptyState } from "@/components/ui/empty-state";
 import { ListSkeleton, ValidationBadge } from "@/components/ui";
 import { formatIssueLocation } from "@/components/validation/validation-utils";
+import { useLanguage } from "@/lib/i18n/context";
+import { getConstraintHint } from "@/lib/i18n/dictionaries";
 import { resolveSectionForField } from "../issue-section-map";
-import {
-  getNonemptyEvidenceCategories,
-  getNonemptyIssueGroups,
-} from "./issue-grouping";
+import { getNonemptyEvidenceCategories, getNonemptyIssueGroups } from "./issue-grouping";
 import {
   EVIDENCE_CATEGORY_LABELS,
   ISSUE_GROUP_LABELS,
@@ -33,16 +32,18 @@ function readinessBadgeStatus(status: PublishValidationState["status"]) {
   }
 }
 
-function readinessLabel(status: PublishValidationState["status"]) {
+/** Translated readiness badge text (TR default). */
+function useReadinessLabel(status: PublishValidationState["status"]): string {
+  const { t } = useLanguage();
   switch (status) {
     case "ready":
-      return "Ready";
+      return t("wizard.ready", "Ready");
     case "blocked":
-      return "Blocked";
+      return t("wizard.blocked", "Blocked");
     case "pending":
-      return "Pending";
+      return t("wizard.pending", "Pending");
     default:
-      return "Unknown";
+      return t("wizard.unknown", "Unknown");
   }
 }
 
@@ -70,11 +71,13 @@ function IssueRow({
   issue: PublishWizardIssue;
   onNavigateSection?: (sectionId: string) => void;
 }) {
+  const { t, locale } = useLanguage();
   const location = formatIssueLocation({
     ...issue,
     level: issue.level === "workflow" ? "schema" : issue.level,
   });
   const sectionId = resolveSectionForField(issue.field);
+  const hint = getConstraintHint(issue.constraint_id, locale);
 
   return (
     <li className="rounded-md border px-3 py-2 text-sm">
@@ -95,11 +98,12 @@ function IssueRow({
             className="ml-auto h-auto p-0 text-xs"
             onClick={() => onNavigateSection(sectionId)}
           >
-            Go to section
+            {t("wizard.goToSection", "Go to section")}
           </Button>
         )}
       </div>
       <p className="mt-1">{issue.message}</p>
+      {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
       {location && <p className="mt-1 font-mono text-xs text-muted-foreground">{location}</p>}
     </li>
   );
@@ -118,6 +122,8 @@ export function ValidationReadinessPanel({
 }: ValidationReadinessPanelProps) {
   const { validation, loading, validating, error } = readiness;
   const evidence = validation?.evidence;
+  const { t } = useLanguage();
+  const badgeLabel = useReadinessLabel(validation?.status ?? "pending");
 
   return (
     <Card>
@@ -127,7 +133,7 @@ export function ValidationReadinessPanel({
           {!loading && validation && (
             <ValidationBadge
               status={readinessBadgeStatus(validation.status)}
-              label={readinessLabel(validation.status)}
+              label={badgeLabel}
               className="ml-auto"
             />
           )}
@@ -155,36 +161,54 @@ export function ValidationReadinessPanel({
             <p className="text-sm text-muted-foreground">{validation.message}</p>
             <dl className="grid gap-2 text-sm sm:grid-cols-2">
               <div className="flex justify-between rounded-md border px-3 py-2">
-                <dt className="text-muted-foreground">Blocking errors</dt>
+                <dt className="text-muted-foreground">
+                  {t("validation.blockingErrors", "Blocking errors")}
+                </dt>
                 <dd className="font-semibold tabular-nums">{validation.blockingErrorCount}</dd>
               </div>
               <div className="flex justify-between rounded-md border px-3 py-2">
-                <dt className="text-muted-foreground">Evidence blockers</dt>
+                <dt className="text-muted-foreground">
+                  {t("validation.evidenceBlockers", "Evidence blockers")}
+                </dt>
                 <dd className="font-semibold tabular-nums">{evidence?.blockerCount ?? 0}</dd>
               </div>
               <div className="flex justify-between rounded-md border px-3 py-2">
-                <dt className="text-muted-foreground">Missing evidence</dt>
+                <dt className="text-muted-foreground">
+                  {t("validation.missingEvidence", "Missing evidence")}
+                </dt>
                 <dd className="font-semibold tabular-nums">{evidence?.missingCount ?? 0}</dd>
               </div>
               <div className="flex justify-between rounded-md border px-3 py-2">
-                <dt className="text-muted-foreground">Low-confidence</dt>
+                <dt className="text-muted-foreground">
+                  {t("validation.lowConfidence", "Low-confidence")}
+                </dt>
                 <dd className="font-semibold tabular-nums">{evidence?.lowConfidenceCount ?? 0}</dd>
               </div>
               <div className="flex justify-between rounded-md border px-3 py-2">
-                <dt className="text-muted-foreground">Evidence warnings</dt>
+                <dt className="text-muted-foreground">
+                  {t("validation.evidenceWarnings", "Evidence warnings")}
+                </dt>
                 <dd className="font-semibold tabular-nums">{evidence?.warningCount ?? 0}</dd>
               </div>
               <div className="flex justify-between rounded-md border px-3 py-2">
-                <dt className="text-muted-foreground">Graph failures</dt>
+                <dt className="text-muted-foreground">
+                  {t("validation.graphFailures", "Graph failures")}
+                </dt>
                 <dd className="font-semibold tabular-nums">{validation.graphFailures}</dd>
               </div>
               <div className="flex justify-between rounded-md border px-3 py-2">
-                <dt className="text-muted-foreground">Graph pending</dt>
+                <dt className="text-muted-foreground">
+                  {t("validation.graphPending", "Graph pending")}
+                </dt>
                 <dd className="font-semibold tabular-nums">{validation.graphPending}</dd>
               </div>
               <div className="flex justify-between rounded-md border px-3 py-2">
-                <dt className="text-muted-foreground">Publish ready</dt>
-                <dd className="font-semibold">{validation.publishReady ? "Yes" : "No"}</dd>
+                <dt className="text-muted-foreground">
+                  {t("validation.publishReady", "Publish ready")}
+                </dt>
+                <dd className="font-semibold">
+                  {validation.publishReady ? t("validation.yes", "Yes") : t("validation.no", "No")}
+                </dd>
               </div>
             </dl>
           </>
@@ -195,12 +219,16 @@ export function ValidationReadinessPanel({
         {onRefresh && (
           <Button variant="outline" size="sm" onClick={onRefresh} disabled={loading || validating}>
             <RefreshCw className="h-4 w-4" />
-            Refresh validation
+            {t("wizard.refreshValidation", "Refresh validation")}
           </Button>
         )}
 
         {validation && !loading && !error ? (
-          <EvidenceReadinessPanel readiness={readiness} onNavigateSection={onNavigateSection} embedded />
+          <EvidenceReadinessPanel
+            readiness={readiness}
+            onNavigateSection={onNavigateSection}
+            embedded
+          />
         ) : null}
       </CardContent>
     </Card>
@@ -240,7 +268,9 @@ export function EvidenceReadinessPanel({
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               {EVIDENCE_CATEGORY_LABELS[category.id]}
             </p>
-            <p className="text-xs text-muted-foreground">{evidenceCategoryDescription(category.id)}</p>
+            <p className="text-xs text-muted-foreground">
+              {evidenceCategoryDescription(category.id)}
+            </p>
           </div>
           <ul className="space-y-2">
             {category.issues.map((issue, index) => (
@@ -275,7 +305,8 @@ export function EvidenceReadinessPanel({
       <CardHeader className="pb-3">
         <CardTitle className="text-base">Evidence readiness</CardTitle>
         <CardDescription>
-          Evidence blockers, warnings, missing metadata, and low-confidence assertions from validation.
+          Evidence blockers, warnings, missing metadata, and low-confidence assertions from
+          validation.
         </CardDescription>
       </CardHeader>
       <CardContent>{content}</CardContent>
@@ -288,7 +319,10 @@ interface MissingRequirementsPanelProps {
   onNavigateSection?: (sectionId: string) => void;
 }
 
-export function MissingRequirementsPanel({ readiness, onNavigateSection }: MissingRequirementsPanelProps) {
+export function MissingRequirementsPanel({
+  readiness,
+  onNavigateSection,
+}: MissingRequirementsPanelProps) {
   const { validation, loading } = readiness;
   const groups = validation ? getNonemptyIssueGroups(validation.grouped) : [];
 
@@ -296,7 +330,9 @@ export function MissingRequirementsPanel({ readiness, onNavigateSection }: Missi
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="text-base">Missing requirements</CardTitle>
-        <CardDescription>Issues that must be resolved before the next workflow step.</CardDescription>
+        <CardDescription>
+          Issues that must be resolved before the next workflow step.
+        </CardDescription>
       </CardHeader>
       <CardContent>
         {loading ? (

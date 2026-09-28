@@ -55,7 +55,8 @@ export function DrugBrowser() {
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">Drug browser</h2>
           <p className="text-sm text-muted-foreground">
-            Curriculum drugs, curator workflows, and package validation — powered by the curator API.
+            Curriculum drugs, curator workflows, and package validation — powered by the curator
+            API.
           </p>
           {browser.curriculumStats && (
             <p className="mt-1 text-xs text-muted-foreground">
@@ -106,7 +107,11 @@ export function DrugBrowser() {
         </CardHeader>
         <CardContent className="space-y-4">
           {browser.error && (
-            <ErrorState message={errorMessage} onRetry={() => void browser.refetch()} variant="inline" />
+            <ErrorState
+              message={errorMessage}
+              onRetry={() => void browser.refetch()}
+              variant="inline"
+            />
           )}
 
           {browser.isLoading ? (

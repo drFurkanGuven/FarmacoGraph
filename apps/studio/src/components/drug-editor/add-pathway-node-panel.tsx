@@ -25,6 +25,8 @@ export interface AddPathwayNodePanelProps {
     slug: string;
     label: string;
     description?: string | null;
+    fragment_type?: string | null;
+    direction?: string | null;
   }) => void;
 }
 
@@ -57,8 +59,8 @@ export function AddPathwayNodePanel({
         <DialogHeader>
           <DialogTitle>Add mechanism fragment</DialogTitle>
           <DialogDescription>
-            Place a fragment on the canvas. Mark it as a root from the selection toolbar after adding,
-            or connect from the Drug node.
+            Place a fragment on the canvas. Mark it as a root from the selection toolbar after
+            adding, or connect from the Drug node.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
@@ -80,6 +82,8 @@ export function AddPathwayNodePanel({
                   slug: entity.slug,
                   label: entity.label,
                   description: entity.description,
+                  fragment_type: entity.fragment_type,
+                  direction: entity.direction,
                 });
                 setOpen(false);
               }}
@@ -103,6 +107,11 @@ export function AddPathwayNodePanel({
                   >
                     <span className="min-w-0 truncate text-sm">
                       {row.label}
+                      {row.fragment_type && (
+                        <Badge variant="outline" className="ml-2">
+                          {row.fragment_type}
+                        </Badge>
+                      )}
                       {rootIds.has(row.entity_id) && (
                         <Badge variant="secondary" className="ml-2">
                           root

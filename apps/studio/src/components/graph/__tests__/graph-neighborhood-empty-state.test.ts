@@ -12,7 +12,7 @@ describe("resolveGraphEmptyReason", () => {
         graphError: new ApiError("bad", 422),
         nodeCount: 0,
         edgeCount: 0,
-      }),
+      })
     ).toBe("invalid_identity");
   });
 
@@ -25,7 +25,7 @@ describe("resolveGraphEmptyReason", () => {
         graphError: null,
         nodeCount: 0,
         edgeCount: 0,
-      }),
+      })
     ).toBe("neo4j_unavailable");
   });
 
@@ -38,7 +38,7 @@ describe("resolveGraphEmptyReason", () => {
         graphError: null,
         nodeCount: 0,
         edgeCount: 0,
-      }),
+      })
     ).toBe("draft");
 
     expect(
@@ -49,7 +49,7 @@ describe("resolveGraphEmptyReason", () => {
         graphError: null,
         nodeCount: 0,
         edgeCount: 0,
-      }),
+      })
     ).toBe("approved");
   });
 
@@ -67,7 +67,7 @@ describe("resolveGraphEmptyReason", () => {
         graphError: null,
         nodeCount: 1,
         edgeCount: 0,
-      }),
+      })
     ).toBe("no_relationships");
   });
 
@@ -85,7 +85,7 @@ describe("resolveGraphEmptyReason", () => {
         graphError: null,
         nodeCount: 1,
         edgeCount: 1,
-      }),
+      })
     ).toBeNull();
   });
 });

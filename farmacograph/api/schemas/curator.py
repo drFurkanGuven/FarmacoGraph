@@ -53,6 +53,28 @@ class CreateMechanismFragmentRequest(BaseModel):
     slug: str = Field(description="Lowercase kebab-case fragment slug, e.g. ace-inhibition")
     label: str = Field(description="Display label")
     description: str | None = None
+    fragment_type: str | None = Field(
+        default=None,
+        description="Biological scale: molecular | cellular | tissue | organ | clinical",
+    )
+    direction: str | None = Field(
+        default=None,
+        description="Effect direction: increase | decrease | inhibit | activate | unknown",
+    )
+
+
+class CreateTargetRequest(BaseModel):
+    entity_type: str = Field(
+        default="TargetProtein",
+        description="TargetProtein, Receptor, or Enzyme",
+    )
+    slug: str = Field(description="Lowercase kebab-case target slug, e.g. adrb1, cyp2d6")
+    label: str = Field(description="Display label, e.g. Beta-1 Adrenergic Receptor")
+    description: str | None = None
+    gene_symbol: str | None = None
+    is_cyp: bool = False
+    cyp_family: str | None = None
+    family: str | None = None
 
 
 class PublishRequest(BaseModel):

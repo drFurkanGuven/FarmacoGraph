@@ -65,6 +65,12 @@ describe("matchRouteGuard", () => {
     expect(guard?.scopes).toContain("curator:write");
   });
 
+  it("returns curator guard for activity feed", () => {
+    const guard = matchRouteGuard("/activity");
+    expect(guard?.requireAuth).toBe(true);
+    expect(guard?.scopes).toContain("curator:write");
+  });
+
   it("returns admin guard for users", () => {
     const guard = matchRouteGuard("/users");
     expect(guard?.roles).toContain("administrator");
@@ -121,9 +127,9 @@ describe("resolveAuthMiddleware (login-loop regression)", () => {
       const decision = resolveAuthMiddleware(path, false);
       if (decision.action === "redirect") {
         expect(decision.returnTo).not.toMatch(/login/i);
-        expect(isLoginLoopLocation(`/login/?returnTo=${encodeURIComponent(decision.returnTo ?? "")}`)).toBe(
-          false,
-        );
+        expect(
+          isLoginLoopLocation(`/login/?returnTo=${encodeURIComponent(decision.returnTo ?? "")}`)
+        ).toBe(false);
       }
     }
   });
@@ -149,6 +155,32 @@ describe("resolveAuthMiddleware (login-loop regression)", () => {
   it("allows authenticated traffic through protected routes", () => {
     expect(resolveAuthMiddleware("/", true)).toEqual({ action: "next" });
     expect(resolveAuthMiddleware("/settings/", true)).toEqual({ action: "next" });
+  });
+
+  it("enforces scope requirements for authenticated users", () => {
+    // Has curator:write -> allowed on /activity
+    expect(resolveAuthMiddleware("/activity", true, ["curator:write"])).toEqual({
+      action: "next",
+    });
+    // Missing curator:write -> redirected to safe landing
+    expect(resolveAuthMiddleware("/activity", true, ["knowledge:read"])).toEqual({
+      action: "redirect",
+      loginPath: "/",
+      returnTo: undefined,
+    });
+  });
+
+  it("enforces role requirements for authenticated users", () => {
+    // Administrator -> allowed on /users
+    expect(resolveAuthMiddleware("/users", true, ["admin:org"], ["administrator"])).toEqual({
+      action: "next",
+    });
+    // Curator without administrator role -> redirected to safe landing
+    expect(resolveAuthMiddleware("/users", true, ["curator:write"], ["curator"])).toEqual({
+      action: "redirect",
+      loginPath: "/",
+      returnTo: undefined,
+    });
   });
 
   it("treats basePath-prefixed login as public when NEXT_PUBLIC_BASE_PATH is set", () => {

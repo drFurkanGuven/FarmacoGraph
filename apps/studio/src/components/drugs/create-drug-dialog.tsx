@@ -206,12 +206,19 @@ export function CreateDrugDialog() {
           </div>
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={submitting}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              disabled={submitting}
+            >
               Cancel
             </Button>
             <Button
               type="submit"
-              disabled={submitting || !label.trim() || !slug.trim() || !drugClassSlug || !moduleSlug}
+              disabled={
+                submitting || !label.trim() || !slug.trim() || !drugClassSlug || !moduleSlug
+              }
             >
               {submitting ? "Creating…" : "Create & open"}
             </Button>

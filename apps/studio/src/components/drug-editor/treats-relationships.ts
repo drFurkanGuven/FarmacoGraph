@@ -120,21 +120,21 @@ function relationshipRows(pkg: DrugPublishPackage): PackageRelationshipRow[] {
 function findTreatsEdge(
   pkg: DrugPublishPackage,
   drugEntityId: string,
-  diseaseId: string,
+  diseaseId: string
 ): PackageRelationshipRow | undefined {
   const rows = relationshipRows(pkg);
   return rows.find(
     (row) =>
       row.relationship_type === "TREATS" &&
       String(row.source_id) === drugEntityId &&
-      String(row.target_id) === diseaseId,
+      String(row.target_id) === diseaseId
   );
 }
 
 export function readTreatsIndication(
   pkg: DrugPublishPackage,
   drugEntityId: string,
-  diseaseId: string,
+  diseaseId: string
 ): TreatsIndicationProperties {
   const edge = findTreatsEdge(pkg, drugEntityId, diseaseId);
   return normalizeProperties(edge?.properties);
@@ -153,7 +153,7 @@ function touchProvenance(pkg: DrugPublishPackage): void {
 export function syncTreatsSelection(
   pkg: DrugPublishPackage,
   drugEntityId: string,
-  selectedIds: string[],
+  selectedIds: string[]
 ): DrugPublishPackage {
   const next = clonePackage(pkg);
   const uniqueIds = [...new Set(selectedIds.map((id) => id.trim()).filter(Boolean))];
@@ -177,7 +177,7 @@ export function syncTreatsSelection(
   const existingTargets = new Set(
     preserved
       .filter((row) => row.relationship_type === "TREATS" && String(row.source_id) === drugEntityId)
-      .map((row) => String(row.target_id)),
+      .map((row) => String(row.target_id))
   );
 
   for (const diseaseId of uniqueIds) {
@@ -202,7 +202,7 @@ export function updateTreatsIndication(
   pkg: DrugPublishPackage,
   drugEntityId: string,
   diseaseId: string,
-  patch: Partial<TreatsIndicationProperties>,
+  patch: Partial<TreatsIndicationProperties>
 ): DrugPublishPackage {
   const selectedIds = listTreatsDiseaseIds(pkg);
   const withSelection = selectedIds.includes(diseaseId)
@@ -215,13 +215,11 @@ export function updateTreatsIndication(
     (row) =>
       row.relationship_type === "TREATS" &&
       String(row.source_id) === drugEntityId &&
-      String(row.target_id) === diseaseId,
+      String(row.target_id) === diseaseId
   );
 
   const current =
-    index >= 0
-      ? normalizeProperties(rows[index]?.properties)
-      : defaultTreatsIndicationProperties();
+    index >= 0 ? normalizeProperties(rows[index]?.properties) : defaultTreatsIndicationProperties();
 
   const updated: PackageRelationshipRow = {
     relationship_type: "TREATS",
@@ -255,7 +253,7 @@ export function setTreatsEvidenceIds(
   pkg: DrugPublishPackage,
   drugEntityId: string,
   diseaseId: string,
-  evidenceIds: string[],
+  evidenceIds: string[]
 ): DrugPublishPackage {
   return updateTreatsIndication(pkg, drugEntityId, diseaseId, {
     evidence_ids: normalizeEvidenceIds(evidenceIds),

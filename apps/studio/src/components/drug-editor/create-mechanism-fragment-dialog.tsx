@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ApiError } from "@/lib/api";
+import { useLanguage } from "@/lib/i18n/context";
 import { apiQueryKeys } from "@/lib/api/react-query/keys";
 import { useApiClient } from "@/lib/hooks/use-api-client";
 
@@ -31,12 +32,30 @@ function slugify(value: string): string {
     .replace(/^-|-$/g, "");
 }
 
+export const MECHANISM_FRAGMENT_TYPES = [
+  "molecular",
+  "cellular",
+  "tissue",
+  "organ",
+  "clinical",
+] as const;
+
+export const MECHANISM_FRAGMENT_DIRECTIONS = [
+  "increase",
+  "decrease",
+  "inhibit",
+  "activate",
+  "unknown",
+] as const;
+
 export interface CreateMechanismFragmentDialogProps {
   onCreated?: (entity: {
     id: string;
     slug: string;
     label: string;
     description?: string | null;
+    fragment_type?: string | null;
+    direction?: string | null;
   }) => void;
   triggerLabel?: string;
 }
@@ -47,11 +66,14 @@ export function CreateMechanismFragmentDialog({
 }: CreateMechanismFragmentDialogProps) {
   const client = useApiClient();
   const queryClient = useQueryClient();
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const [label, setLabel] = useState("");
   const [slug, setSlug] = useState("");
   const [slugTouched, setSlugTouched] = useState(false);
   const [description, setDescription] = useState("");
+  const [fragmentType, setFragmentType] = useState<string>("cellular");
+  const [direction, setDirection] = useState<string>("unknown");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -64,6 +86,8 @@ export function CreateMechanismFragmentDialog({
     setSlug("");
     setSlugTouched(false);
     setDescription("");
+    setFragmentType("cellular");
+    setDirection("unknown");
     setError(null);
     setSubmitting(false);
   }
@@ -77,6 +101,8 @@ export function CreateMechanismFragmentDialog({
         slug,
         label,
         description: description.trim() || undefined,
+        fragment_type: fragmentType || undefined,
+        direction: direction || undefined,
       });
       await queryClient.invalidateQueries({
         queryKey: [...apiQueryKeys.all, "curator-mechanism-fragments"],
@@ -107,13 +133,16 @@ export function CreateMechanismFragmentDialog({
       <DialogContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <DialogHeader>
-            <DialogTitle>New mechanism fragment</DialogTitle>
+            <DialogTitle>{t("mechanism.newFragment", "New mechanism fragment")}</DialogTitle>
             <DialogDescription>
-              Registers a MechanismFragment in the curator catalog for pathway authoring.
+              {t(
+                "mechanism.newFragmentHint",
+                "Registers a MechanismFragment in the curator catalog for pathway authoring."
+              )}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
-            <Label htmlFor="mechanism-fragment-label">Label</Label>
+            <Label htmlFor="mechanism-fragment-label">{t("mechanism.label", "Label")}</Label>
             <Input
               id="mechanism-fragment-label"
               value={label}
@@ -123,7 +152,7 @@ export function CreateMechanismFragmentDialog({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="mechanism-fragment-slug">Slug</Label>
+            <Label htmlFor="mechanism-fragment-slug">{t("mechanism.slug", "Slug")}</Label>
             <Input
               id="mechanism-fragment-slug"
               value={slug}
@@ -135,23 +164,72 @@ export function CreateMechanismFragmentDialog({
               required
             />
           </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="mechanism-fragment-type">
+                {t("mechanism.fragmentType", "Fragment level")}
+              </Label>
+              <select
+                id="mechanism-fragment-type"
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+                value={fragmentType}
+                onChange={(event) => setFragmentType(event.target.value)}
+                required
+              >
+                {MECHANISM_FRAGMENT_TYPES.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="mechanism-fragment-direction">
+                {t("mechanism.direction", "Direction")}
+              </Label>
+              <select
+                id="mechanism-fragment-direction"
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+                value={direction}
+                onChange={(event) => setDirection(event.target.value)}
+              >
+                {MECHANISM_FRAGMENT_DIRECTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="rounded-md border bg-muted/30 px-3 py-2 text-xs text-muted-foreground space-y-1">
+            <p className="font-semibold text-foreground">
+              {t("mechanism.levelGuideTitle", "Which level?")}
+            </p>
+            {MECHANISM_FRAGMENT_TYPES.map((option) => (
+              <p key={option}>{t(`mechanism.level.${option}`, option)}</p>
+            ))}
+          </div>
           <div className="space-y-2">
-            <Label htmlFor="mechanism-fragment-description">Description</Label>
+            <Label htmlFor="mechanism-fragment-description">
+              {t("mechanism.description", "Description")}
+            </Label>
             <Textarea
               id="mechanism-fragment-description"
               value={description}
               onChange={(event) => setDescription(event.target.value)}
-              placeholder="Optional curator note"
+              placeholder={t("mechanism.descriptionPlaceholder", "Optional curator note")}
               rows={3}
             />
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Cancel
+              {t("evidence.cancel", "Cancel")}
             </Button>
             <Button type="submit" disabled={submitting || !label.trim() || !slug.trim()}>
-              {submitting ? "Creating..." : "Create fragment"}
+              {submitting
+                ? t("mechanism.creating", "Creating…")
+                : t("mechanism.create", "Create fragment")}
             </Button>
           </DialogFooter>
         </form>

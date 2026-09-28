@@ -29,7 +29,12 @@ function Timeline({ items, className, ...props }: TimelineProps) {
 
         return (
           <li key={item.id} className="relative flex gap-4 pb-8 last:pb-0">
-            {!isLast && <span className="absolute left-[15px] top-8 h-[calc(100%-1rem)] w-px bg-border" aria-hidden />}
+            {!isLast && (
+              <span
+                className="absolute left-[15px] top-8 h-[calc(100%-1rem)] w-px bg-border"
+                aria-hidden
+              />
+            )}
             <div className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-background text-muted-foreground">
               {item.icon ?? <span className="h-2 w-2 rounded-full bg-primary" />}
             </div>
@@ -37,10 +42,14 @@ function Timeline({ items, className, ...props }: TimelineProps) {
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <p className="text-sm font-medium leading-none">{item.title}</p>
                 {item.timestamp && (
-                  <time className="shrink-0 text-xs text-muted-foreground tabular-nums">{item.timestamp}</time>
+                  <time className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                    {item.timestamp}
+                  </time>
                 )}
               </div>
-              {item.description && <p className="mt-1 text-sm text-muted-foreground">{item.description}</p>}
+              {item.description && (
+                <p className="mt-1 text-sm text-muted-foreground">{item.description}</p>
+              )}
             </div>
           </li>
         );

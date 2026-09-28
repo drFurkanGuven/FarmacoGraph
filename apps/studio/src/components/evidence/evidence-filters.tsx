@@ -93,11 +93,14 @@ export function EvidenceFilters({
             </p>
           )}
           {isIdLookup && (
-            <p className="mt-1 text-xs text-muted-foreground">Direct lookup via GET /evidence/{"{id}"}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Direct lookup via GET /evidence/{"{id}"}
+            </p>
           )}
           {evidenceCount !== null && (
             <p className="mt-1 text-xs text-muted-foreground">
-              Dataset contains {evidenceCount} evidence {evidenceCount === 1 ? "node" : "nodes"} (GET /statistics)
+              Dataset contains {evidenceCount} evidence {evidenceCount === 1 ? "node" : "nodes"}{" "}
+              (GET /statistics)
             </p>
           )}
         </div>

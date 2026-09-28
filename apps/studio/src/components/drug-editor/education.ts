@@ -1,11 +1,7 @@
 import type { DrugPublishPackage } from "./types";
 
 export type EducationKind =
-  | "FiveSecondSummary"
-  | "BoardExamPearl"
-  | "Mnemonic"
-  | "CommonMistake"
-  | "Flashcard";
+  "FiveSecondSummary" | "BoardExamPearl" | "Mnemonic" | "CommonMistake" | "Flashcard";
 
 export interface EducationItem {
   id: string;
@@ -61,10 +57,10 @@ function kindLabel(kind: EducationKind): string {
 function defaultEducationItem(
   pkg: DrugPublishPackage,
   drugEntityId: string,
-  kind: EducationKind,
+  kind: EducationKind
 ): EducationItem {
   const drugLabel = String(
-    pkg.entity_payload.label || pkg.entity_payload.generic_name || pkg.entity_payload.slug || "Drug",
+    pkg.entity_payload.label || pkg.entity_payload.generic_name || pkg.entity_payload.slug || "Drug"
   );
   return {
     id: educationId(pkg, drugEntityId, kind),
@@ -101,7 +97,7 @@ function hasEducationContent(item: EducationItem | Record<string, unknown>): boo
 export function readEducationItem(
   pkg: DrugPublishPackage,
   drugEntityId: string,
-  kind: EducationKind,
+  kind: EducationKind
 ): EducationItem {
   const items = Array.isArray(pkg.education) ? pkg.education : [];
   const found = items.find((item) => isRecord(item) && item.kind === kind);
@@ -125,7 +121,9 @@ export function readEducationItem(
     back: typeof found.back === "string" ? found.back : "",
     hint: typeof found.hint === "string" ? found.hint : "",
     content_layer: "education",
-    audience: normalizeList(found.audience).length ? normalizeList(found.audience) : fallback.audience,
+    audience: normalizeList(found.audience).length
+      ? normalizeList(found.audience)
+      : fallback.audience,
     difficulty_level:
       typeof found.difficulty_level === "string" && found.difficulty_level
         ? found.difficulty_level
@@ -143,7 +141,7 @@ export function updateEducationItem(
   pkg: DrugPublishPackage,
   drugEntityId: string,
   kind: EducationKind,
-  patch: Partial<EducationItem>,
+  patch: Partial<EducationItem>
 ): DrugPublishPackage {
   const next: DrugPublishPackage = structuredClone(pkg);
   const current = readEducationItem(next, drugEntityId, kind);
@@ -172,7 +170,7 @@ export function updateEducationItem(
 
 export function syncEducationGraphRows(
   pkg: DrugPublishPackage,
-  drugEntityId: string,
+  drugEntityId: string
 ): DrugPublishPackage {
   const education = Array.isArray(pkg.education)
     ? pkg.education.filter((item) => isRecord(item) && hasEducationContent(item))
@@ -186,7 +184,7 @@ export function syncEducationGraphRows(
           isRecord(item) &&
           item.entity_type === "EducationResource" &&
           normalizeList(item.linked_entity_ids).includes(drugEntityId)
-        ),
+        )
     ),
     ...education,
   ];
@@ -198,7 +196,7 @@ export function syncEducationGraphRows(
         isRecord(row) &&
         row.relationship_type === "HAS_EDUCATION" &&
         String(row.source_id) === drugEntityId
-      ),
+      )
   );
   pkg.relationships = [
     ...preserved,

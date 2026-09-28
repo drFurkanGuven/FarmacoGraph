@@ -26,7 +26,10 @@ function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-export function createEmptyDrugPackage(drugId: string, module = "cardiovascular"): DrugPublishPackage {
+export function createEmptyDrugPackage(
+  drugId: string,
+  module = "cardiovascular"
+): DrugPublishPackage {
   const timestamp = nowIso();
   return {
     entity_payload: {
@@ -70,7 +73,7 @@ export function createEmptyDrugPackage(drugId: string, module = "cardiovascular"
 export function drugRecordToPackage(
   drugId: string,
   record: Record<string, unknown>,
-  module?: string | null,
+  module?: string | null
 ): DrugPublishPackage {
   const drug = normalizeDrugRecord(record);
   const resolvedModule = String(drug.module ?? module ?? "cardiovascular");
@@ -86,6 +89,14 @@ export function drugRecordToPackage(
     generic_name: String(drug.generic_name ?? drug.label ?? ""),
     module: resolvedModule,
     routes: Array.isArray(drug.routes) ? drug.routes : [],
+    half_life: typeof drug.half_life === "string" ? drug.half_life : undefined,
+    bioavailability: typeof drug.bioavailability === "string" ? drug.bioavailability : undefined,
+    protein_binding: typeof drug.protein_binding === "string" ? drug.protein_binding : undefined,
+    onset: typeof drug.onset === "string" ? drug.onset : undefined,
+    duration: typeof drug.duration === "string" ? drug.duration : undefined,
+    has_black_box_warning: drug.has_black_box_warning === true,
+    black_box_text: typeof drug.black_box_text === "string" ? drug.black_box_text : undefined,
+    is_high_alert: drug.is_high_alert === true,
     status: String(drug.status ?? "published"),
     dataset_version: String(drug.dataset_version ?? base.dataset_version),
     provenance: {
@@ -146,15 +157,23 @@ export function formatUuidList(value: unknown): string {
   return value.map((entry) => String(entry)).join("\n");
 }
 
-export function formatFieldValue(value: unknown, type: DrugEditorSection["fields"][number]["type"]): string {
+export function formatFieldValue(
+  value: unknown,
+  type: DrugEditorSection["fields"][number]["type"]
+): string {
   if (type === "uuid-list") return formatUuidList(value);
+  if (type === "boolean") {
+    if (value === true || value === "true") return "true";
+    if (value === false || value === "false") return "false";
+    return "";
+  }
   if (value === null || value === undefined) return "";
   return String(value);
 }
 
 export function parseFieldValue(
   raw: string,
-  type: DrugEditorSection["fields"][number]["type"],
+  type: DrugEditorSection["fields"][number]["type"]
 ): string | string[] | boolean {
   if (type === "uuid-list") return parseUuidList(raw);
   if (type === "readonly") return raw;
@@ -167,7 +186,7 @@ export function applyFieldChange(
   pkg: DrugPublishPackage,
   path: string,
   rawValue: string,
-  type: DrugEditorSection["fields"][number]["type"],
+  type: DrugEditorSection["fields"][number]["type"]
 ): DrugPublishPackage {
   const next: DrugPublishPackage = structuredClone(pkg);
   const parsed = parseFieldValue(rawValue, type);
@@ -182,7 +201,7 @@ export function applyFieldChange(
 
 export function sectionFieldValues(
   pkg: DrugPublishPackage,
-  section: DrugEditorSection,
+  section: DrugEditorSection
 ): Record<string, string> {
   const values: Record<string, string> = {};
   for (const field of section.fields) {
@@ -192,7 +211,9 @@ export function sectionFieldValues(
 }
 
 export function relationshipCounts(pkg: DrugPublishPackage): Record<string, number> {
-  const relationships = isRecord(pkg.entity_payload.relationships) ? pkg.entity_payload.relationships : {};
+  const relationships = isRecord(pkg.entity_payload.relationships)
+    ? pkg.entity_payload.relationships
+    : {};
   return {
     classes: Array.isArray(relationships.BELONGS_TO) ? relationships.BELONGS_TO.length : 0,
     indications: Array.isArray(relationships.TREATS) ? relationships.TREATS.length : 0,

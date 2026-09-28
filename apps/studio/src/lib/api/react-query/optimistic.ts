@@ -24,17 +24,19 @@ export interface OptimisticUpdateConfig<TVariables, TCache> {
 export function applyOptimisticUpdate<TVariables, TCache>(
   queryClient: QueryClient,
   config: OptimisticUpdateConfig<TVariables, TCache>,
-  variables: TVariables,
+  variables: TVariables
 ): OptimisticContext<TCache> {
   const previous = queryClient.getQueryData<TCache>(config.queryKey);
-  queryClient.setQueryData<TCache>(config.queryKey, (current) => config.updater(current, variables));
+  queryClient.setQueryData<TCache>(config.queryKey, (current) =>
+    config.updater(current, variables)
+  );
   return { previous };
 }
 
 export function rollbackOptimisticUpdate<TCache>(
   queryClient: QueryClient,
   queryKey: QueryKey,
-  context?: OptimisticContext<TCache>,
+  context?: OptimisticContext<TCache>
 ): void {
   if (context?.previous !== undefined) {
     queryClient.setQueryData(queryKey, context.previous);
@@ -71,7 +73,7 @@ export function useOptimisticMutation<TData, TVariables, TCache = ApiEnvelope<un
   options: UseMutationOptions<TData, Error, TVariables, OptimisticContext<TCache>> & {
     optimistic?: OptimisticUpdateConfig<TVariables, TCache>;
     invalidateKeys?: QueryKey[];
-  },
+  }
 ): UseMutationResult<TData, Error, TVariables, OptimisticContext<TCache>> {
   const queryClient = useQueryClient();
   const { optimistic, invalidateKeys, ...mutationOptions } = options;
@@ -109,7 +111,7 @@ export function useOptimisticMutation<TData, TVariables, TCache = ApiEnvelope<un
 export function useApiQuery<TData>(
   queryKey: QueryKey,
   queryFn: () => Promise<ApiEnvelope<TData>>,
-  options?: Omit<UseQueryOptions<ApiEnvelope<TData>>, "queryKey" | "queryFn">,
+  options?: Omit<UseQueryOptions<ApiEnvelope<TData>>, "queryKey" | "queryFn">
 ) {
   return useQuery({
     queryKey,

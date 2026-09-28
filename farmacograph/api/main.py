@@ -7,22 +7,30 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from prometheus_client import make_asgi_app
 
-from farmacograph.api.middleware import CorrelationMiddleware
+from farmacograph.api.middleware import CorrelationMiddleware, RateLimitMiddleware
 from farmacograph.api.routers import (
     admin_users,
+    ai_settings,
     auth,
+    bulk_import,
     curator,
     dashboard,
     demo_access,
+    developer,
     diseases,
     drugs,
+    education_export,
     evidence,
     explain,
     health,
+    imports,
+    interactions,
     learning,
+    mechanisms,
     platform,
     snapshots,
 )
@@ -79,7 +87,15 @@ def create_app() -> FastAPI:
         openapi_url="/openapi.json",
     )
 
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
     app.add_middleware(CorrelationMiddleware)
+    app.add_middleware(RateLimitMiddleware)
     app.add_middleware(AuthContextMiddleware)
 
     @app.get("/", include_in_schema=False)
@@ -115,18 +131,25 @@ def create_app() -> FastAPI:
     api_v1 = FastAPI(title="FarmacoGraph API v1")
     api_v1.include_router(health.router)
     api_v1.include_router(auth.router)
+    api_v1.include_router(ai_settings.router)
     api_v1.include_router(demo_access.router)
+    api_v1.include_router(developer.router)
     api_v1.include_router(dashboard.router)
     api_v1.include_router(curator.router)
     api_v1.include_router(drugs.router)
     api_v1.include_router(diseases.router)
     api_v1.include_router(evidence.router)
+    api_v1.include_router(education_export.router)
     api_v1.include_router(explain.explain_router)
     api_v1.include_router(explain.compare_router)
+    api_v1.include_router(imports.router)
+    api_v1.include_router(interactions.router)
     api_v1.include_router(platform.search_router)
     api_v1.include_router(platform.modules_router)
     api_v1.include_router(platform.stats_router)
     api_v1.include_router(learning.router)
+    api_v1.include_router(mechanisms.router)
+    api_v1.include_router(bulk_import.router)
     api_v1.include_router(snapshots.router)
     api_v1.include_router(admin_users.router)
 

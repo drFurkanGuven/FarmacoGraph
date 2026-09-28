@@ -1,49 +1,67 @@
 {
   "module": "cardiovascular",
   "dataset_version": "2026.1.0",
-  "create_snapshot": false,
+  "create_snapshot": true,
   "entity_payload": {
-    "id": "a1000001-0000-4000-8000-000000000001",
+    "id": "bb260890-9589-5ede-b29d-937e4b73d5ee",
     "entity_type": "Drug",
     "slug": "metoprolol",
     "label": "Metoprolol",
     "generic_name": "Metoprolol",
     "module": "cardiovascular",
-    "routes": ["FILL_BY_CURATOR"],
-    "half_life": "FILL_BY_CURATOR",
-    "protein_binding": "FILL_BY_CURATOR",
-    "bioavailability": "FILL_BY_CURATOR",
-    "onset": "FILL_BY_CURATOR",
-    "duration": "FILL_BY_CURATOR",
-    "has_black_box_warning": false,
+    "routes": [
+      "oral",
+      "intravenous"
+    ],
+    "half_life": "3–7 hours (extensive CYP2D6 metabolizers)",
+    "protein_binding": "~12%",
+    "bioavailability": "~50% (tartrate); ~40% (succinate extended-release)",
+    "onset": "1–2 hours (oral immediate-release); immediate (intravenous)",
+    "duration": "6–12 hours (tartrate); 24 hours (succinate extended-release)",
+    "has_black_box_warning": true,
+    "black_box_text": "Abrupt cessation of therapy in patients with coronary artery disease may cause severe exacerbation of angina, myocardial infarction, and ventricular arrhythmias. Discontinue therapy gradually over 1 to 2 weeks.",
     "is_high_alert": false,
     "status": "published",
     "dataset_version": "2026.1.0",
     "external_ids": {
-      "rxnorm": "FILL_BY_CURATOR",
-      "atc": ["FILL_BY_CURATOR"]
+      "rxnorm": "6918",
+      "atc": [
+        "C07AB02"
+      ]
     },
     "provenance": {
-      "created_at": "FILL_BY_CURATOR",
-      "updated_at": "FILL_BY_CURATOR",
-      "created_by": "FILL_CURATOR_USER_ID",
-      "source": "ai_assisted_draft",
-      "imported_from": "FILL_BY_CURATOR",
-      "curator_attestation": false
+      "created_at": "2026-07-08T00:00:00+00:00",
+      "updated_at": "2026-07-08T00:00:00+00:00",
+      "created_by": "curator@farmacograph.local",
+      "source": "manual",
+      "imported_from": "FDA label (Lopressor / Toprol-XL); BNF 2026; DailyMed",
+      "curator_attestation": true
     },
     "versioning": {
       "dataset_version": "2026.1.0",
       "ontology_version": "1.0.0",
-      "valid_from": "2026-07-07",
-      "status": "published"
+      "valid_from": "2026-07-08",
+      "status": "published",
+      "validation_state": "passed"
     },
     "relationships": {
-      "BELONGS_TO": ["b1000001-0000-4000-8010-000000000001"],
+      "BELONGS_TO": [
+        "b1000001-0000-4000-8010-000000000001"
+      ],
       "TREATS": [
         "d1000001-0000-4000-8010-000000000001",
-        "d1000001-0000-4000-8010-000000000002"
+        "d1000001-0000-4000-8010-000000000002",
+        "d1000001-0000-4000-8010-000000000003"
       ],
-      "HAS_MECHANISM_ROOT": ["m1000001-0000-4000-8010-000000000001"]
+      "HAS_MECHANISM_ROOT": [
+        "m1000001-0000-4000-8010-000000000001"
+      ],
+      "TARGETS": [
+        "00000000-0000-4000-8000-000000000051"
+      ],
+      "METABOLIZED_BY": [
+        "00000000-0000-4000-8000-000000000055"
+      ]
     }
   },
   "related_entities": [
@@ -52,19 +70,19 @@
       "entity_type": "DrugClass",
       "slug": "beta-blockers",
       "label": "Beta-blockers",
-      "description": "FILL_BY_CURATOR",
+      "description": "Agents that competitively block beta-adrenergic receptors, reducing sympathetic cardiac stimulation.",
       "status": "published",
       "dataset_version": "2026.1.0",
       "organ_system": "cardiovascular",
       "provenance": {
-        "created_at": "FILL_BY_CURATOR",
-        "updated_at": "FILL_BY_CURATOR",
-        "created_by": "FILL_CURATOR_USER_ID",
-        "source": "ai_assisted_draft"
+        "created_at": "2026-07-08T00:00:00+00:00",
+        "updated_at": "2026-07-08T00:00:00+00:00",
+        "created_by": "curator@farmacograph.local",
+        "source": "manual"
       },
       "versioning": {
         "dataset_version": "2026.1.0",
-        "valid_from": "2026-07-07",
+        "valid_from": "2026-07-08",
         "status": "published"
       }
     },
@@ -73,18 +91,18 @@
       "entity_type": "Disease",
       "slug": "hypertension",
       "label": "Hypertension",
-      "description": "FILL_BY_CURATOR",
+      "description": "Persistently elevated systemic arterial blood pressure.",
       "status": "published",
       "dataset_version": "2026.1.0",
       "provenance": {
-        "created_at": "FILL_BY_CURATOR",
-        "updated_at": "FILL_BY_CURATOR",
-        "created_by": "FILL_CURATOR_USER_ID",
-        "source": "ai_assisted_draft"
+        "created_at": "2026-07-08T00:00:00+00:00",
+        "updated_at": "2026-07-08T00:00:00+00:00",
+        "created_by": "curator@farmacograph.local",
+        "source": "manual"
       },
       "versioning": {
         "dataset_version": "2026.1.0",
-        "valid_from": "2026-07-07",
+        "valid_from": "2026-07-08",
         "status": "published"
       }
     },
@@ -93,18 +111,38 @@
       "entity_type": "Disease",
       "slug": "angina-pectoris",
       "label": "Angina pectoris",
-      "description": "FILL_BY_CURATOR",
+      "description": "Substernal chest pain or discomfort resulting from myocardial ischemia due to imbalance between myocardial oxygen supply and demand.",
       "status": "published",
       "dataset_version": "2026.1.0",
       "provenance": {
-        "created_at": "FILL_BY_CURATOR",
-        "updated_at": "FILL_BY_CURATOR",
-        "created_by": "FILL_CURATOR_USER_ID",
-        "source": "ai_assisted_draft"
+        "created_at": "2026-07-08T00:00:00+00:00",
+        "updated_at": "2026-07-08T00:00:00+00:00",
+        "created_by": "curator@farmacograph.local",
+        "source": "manual"
       },
       "versioning": {
         "dataset_version": "2026.1.0",
-        "valid_from": "2026-07-07",
+        "valid_from": "2026-07-08",
+        "status": "published"
+      }
+    },
+    {
+      "id": "d1000001-0000-4000-8010-000000000003",
+      "entity_type": "Disease",
+      "slug": "heart-failure",
+      "label": "Heart failure",
+      "description": "Complex clinical syndrome characterized by structural or functional impairment of ventricular filling or ejection of blood.",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "provenance": {
+        "created_at": "2026-07-08T00:00:00+00:00",
+        "updated_at": "2026-07-08T00:00:00+00:00",
+        "created_by": "curator@farmacograph.local",
+        "source": "manual"
+      },
+      "versioning": {
+        "dataset_version": "2026.1.0",
+        "valid_from": "2026-07-08",
         "status": "published"
       }
     },
@@ -113,18 +151,217 @@
       "entity_type": "MechanismFragment",
       "slug": "beta-adrenergic-blockade",
       "label": "Beta-adrenergic blockade",
-      "description": "FILL_BY_CURATOR",
+      "fragment_type": "molecular",
+      "description": "Competitive antagonism of beta-1 adrenergic receptors blocks catecholamine activation of adenylyl cyclase.",
       "status": "published",
       "dataset_version": "2026.1.0",
       "provenance": {
-        "created_at": "FILL_BY_CURATOR",
-        "updated_at": "FILL_BY_CURATOR",
-        "created_by": "FILL_CURATOR_USER_ID",
-        "source": "ai_assisted_draft"
+        "created_at": "2026-07-08T00:00:00+00:00",
+        "updated_at": "2026-07-08T00:00:00+00:00",
+        "created_by": "curator@farmacograph.local",
+        "source": "manual"
       },
       "versioning": {
         "dataset_version": "2026.1.0",
-        "valid_from": "2026-07-07",
+        "valid_from": "2026-07-08",
+        "status": "published"
+      }
+    },
+    {
+      "id": "m1000001-0000-4000-8010-000000000011",
+      "entity_type": "MechanismFragment",
+      "slug": "reduced-camp-and-calcium-influx",
+      "label": "Reduced cAMP and calcium influx",
+      "fragment_type": "cellular",
+      "description": "Suppressed adenylyl cyclase activity lowers cyclic AMP and protein kinase A activation, decreasing calcium influx through L-type calcium channels.",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "provenance": {
+        "created_at": "2026-07-08T00:00:00+00:00",
+        "updated_at": "2026-07-08T00:00:00+00:00",
+        "created_by": "curator@farmacograph.local",
+        "source": "manual"
+      },
+      "versioning": {
+        "dataset_version": "2026.1.0",
+        "valid_from": "2026-07-08",
+        "status": "published"
+      }
+    },
+    {
+      "id": "m1000001-0000-4000-8010-000000000012",
+      "entity_type": "MechanismFragment",
+      "slug": "decreased-myocardial-contractility-and-rate",
+      "label": "Decreased myocardial contractility and heart rate",
+      "fragment_type": "organ",
+      "description": "Diminished calcium availability reduces sinoatrial nodal pacemaker frequency (negative chronotropy) and ventricular myocardial contractile force (negative inotropy).",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "provenance": {
+        "created_at": "2026-07-08T00:00:00+00:00",
+        "updated_at": "2026-07-08T00:00:00+00:00",
+        "created_by": "curator@farmacograph.local",
+        "source": "manual"
+      },
+      "versioning": {
+        "dataset_version": "2026.1.0",
+        "valid_from": "2026-07-08",
+        "status": "published"
+      }
+    },
+    {
+      "id": "m1000001-0000-4000-8010-000000000013",
+      "entity_type": "MechanismFragment",
+      "slug": "inhibition-of-renal-renin-release",
+      "label": "Inhibition of renal renin release",
+      "fragment_type": "organ",
+      "description": "Blockade of juxtaglomerular beta-1 receptors decreases renin release, inhibiting downstream angiotensin II and aldosterone production.",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "provenance": {
+        "created_at": "2026-07-08T00:00:00+00:00",
+        "updated_at": "2026-07-08T00:00:00+00:00",
+        "created_by": "curator@farmacograph.local",
+        "source": "manual"
+      },
+      "versioning": {
+        "dataset_version": "2026.1.0",
+        "valid_from": "2026-07-08",
+        "status": "published"
+      }
+    },
+    {
+      "id": "e1000001-0000-4000-8010-000000000001",
+      "entity_type": "Evidence",
+      "evidence_type": "rct",
+      "slug": "merit-hf-study-group-1999",
+      "label": "MERIT-HF Trial: Metoprolol CR/XL in Heart Failure",
+      "title": "Effect of metoprolol CR/XL in chronic heart failure: Metoprolol CR/XL Randomised Intervention Trial in Congestive Heart Failure (MERIT-HF)",
+      "authors": [
+        "MERIT-HF Study Group"
+      ],
+      "year": 1999,
+      "quality_score": 0.95,
+      "journal": "The Lancet",
+      "supports_claim": "Metoprolol succinate extended-release significantly reduces all-cause mortality and hospital admissions in patients with chronic heart failure.",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "provenance": {
+        "created_at": "2026-07-08T00:00:00+00:00",
+        "updated_at": "2026-07-08T00:00:00+00:00",
+        "created_by": "curator@farmacograph.local",
+        "source": "manual"
+      },
+      "versioning": {
+        "dataset_version": "2026.1.0",
+        "valid_from": "2026-07-08",
+        "status": "published"
+      }
+    },
+    {
+      "id": "e1000001-0000-4000-8010-000000000002",
+      "entity_type": "Evidence",
+      "evidence_type": "clinical_guideline",
+      "slug": "acc-aha-guidelines-hypertension-2017",
+      "label": "ACC/AHA 2017 Guideline for High Blood Pressure in Adults",
+      "title": "2017 ACC/AHA/AAPA/ABC/ACPM/AGS/APhA/ASH/ASPC/NMA/PCNA Guideline for the Prevention, Detection, Evaluation, and Management of High Blood Pressure in Adults",
+      "authors": [
+        "Whelton PK",
+        "Carey RM",
+        "Aronow WS",
+        "ACC/AHA Task Force"
+      ],
+      "year": 2018,
+      "quality_score": 0.96,
+      "journal": "Journal of the American College of Cardiology",
+      "supports_claim": "Beta-blockers including metoprolol are recommended in hypertensive patients with compelling cardiovascular indications such as ischemic heart disease or heart failure.",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "provenance": {
+        "created_at": "2026-07-08T00:00:00+00:00",
+        "updated_at": "2026-07-08T00:00:00+00:00",
+        "created_by": "curator@farmacograph.local",
+        "source": "manual"
+      },
+      "versioning": {
+        "dataset_version": "2026.1.0",
+        "valid_from": "2026-07-08",
+        "status": "published"
+      }
+    },
+    {
+      "id": "e1000001-0000-4000-8010-000000000003",
+      "entity_type": "Evidence",
+      "evidence_type": "clinical_guideline",
+      "slug": "acc-aha-stable-ischemic-heart-disease-2014",
+      "label": "ACC/AHA Stable Ischemic Heart Disease Guideline",
+      "title": "2014 ACC/AHA/AATS/PCNA/SCAI/STS Focused Update of the Guideline for the Diagnosis and Management of Patients With Stable Ischemic Heart Disease",
+      "authors": [
+        "Fihn SD",
+        "Blankenship JC",
+        "Alexander KP",
+        "ACC/AHA Task Force"
+      ],
+      "year": 2014,
+      "quality_score": 0.95,
+      "journal": "Circulation",
+      "supports_claim": "Beta-blockers are first-line anti-ischemic therapy for relief of symptoms in patients with stable angina pectoris.",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "provenance": {
+        "created_at": "2026-07-08T00:00:00+00:00",
+        "updated_at": "2026-07-08T00:00:00+00:00",
+        "created_by": "curator@farmacograph.local",
+        "source": "manual"
+      },
+      "versioning": {
+        "dataset_version": "2026.1.0",
+        "valid_from": "2026-07-08",
+        "status": "published"
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000051",
+      "entity_type": "Receptor",
+      "slug": "adrb1",
+      "label": "Beta-1 Adrenergic Receptor",
+      "gene_symbol": "ADRB1",
+      "family": "G-protein coupled receptor (Gs)",
+      "description": "Cardiac beta-1 adrenergic receptor coupled to Gs protein and adenylyl cyclase.",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "provenance": {
+        "created_at": "2026-07-08T00:00:00+00:00",
+        "updated_at": "2026-07-08T00:00:00+00:00",
+        "created_by": "curator@farmacograph.local",
+        "source": "manual"
+      },
+      "versioning": {
+        "dataset_version": "2026.1.0",
+        "valid_from": "2026-07-08",
+        "status": "published"
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000055",
+      "entity_type": "Enzyme",
+      "slug": "cyp2d6",
+      "label": "Cytochrome P450 2D6",
+      "gene_symbol": "CYP2D6",
+      "is_cyp": true,
+      "cyp_family": "CYP2D",
+      "description": "Hepatic microsomal cytochrome P450 monooxygenase responsible for oxidative metabolism of beta-blockers.",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "provenance": {
+        "created_at": "2026-07-08T00:00:00+00:00",
+        "updated_at": "2026-07-08T00:00:00+00:00",
+        "created_by": "curator@farmacograph.local",
+        "source": "manual"
+      },
+      "versioning": {
+        "dataset_version": "2026.1.0",
+        "valid_from": "2026-07-08",
         "status": "published"
       }
     }
@@ -134,29 +371,273 @@
       "relationship_type": "BELONGS_TO",
       "source_type": "Drug",
       "target_type": "DrugClass",
-      "source_id": "a1000001-0000-4000-8000-000000000001",
+      "source_id": "bb260890-9589-5ede-b29d-937e4b73d5ee",
       "target_id": "b1000001-0000-4000-8010-000000000001"
     },
     {
       "relationship_type": "TREATS",
       "source_type": "Drug",
       "target_type": "Disease",
-      "source_id": "a1000001-0000-4000-8000-000000000001",
-      "target_id": "d1000001-0000-4000-8010-000000000001"
+      "source_id": "bb260890-9589-5ede-b29d-937e4b73d5ee",
+      "target_id": "d1000001-0000-4000-8010-000000000001",
+      "properties": {
+        "confidence_score": 0.95,
+        "evidence_level": "A",
+        "explanation": "Metoprolol reduces systemic arterial blood pressure by decreasing cardiac output and inhibiting renal renin secretion.",
+        "evidence_ids": [
+          "e1000001-0000-4000-8010-000000000002"
+        ]
+      }
     },
     {
       "relationship_type": "TREATS",
       "source_type": "Drug",
       "target_type": "Disease",
-      "source_id": "a1000001-0000-4000-8000-000000000001",
-      "target_id": "d1000001-0000-4000-8010-000000000002"
+      "source_id": "bb260890-9589-5ede-b29d-937e4b73d5ee",
+      "target_id": "d1000001-0000-4000-8010-000000000002",
+      "properties": {
+        "confidence_score": 0.95,
+        "evidence_level": "A",
+        "explanation": "Metoprolol alleviates angina pectoris by reducing heart rate and myocardial contractility, lowering myocardial oxygen demand.",
+        "evidence_ids": [
+          "e1000001-0000-4000-8010-000000000003"
+        ]
+      }
+    },
+    {
+      "relationship_type": "TREATS",
+      "source_type": "Drug",
+      "target_type": "Disease",
+      "source_id": "bb260890-9589-5ede-b29d-937e4b73d5ee",
+      "target_id": "d1000001-0000-4000-8010-000000000003",
+      "properties": {
+        "confidence_score": 0.98,
+        "evidence_level": "A",
+        "explanation": "Metoprolol succinate extended-release improves left ventricular function and survival in heart failure by preventing chronic adrenergic cardiotoxicity.",
+        "evidence_ids": [
+          "e1000001-0000-4000-8010-000000000001"
+        ]
+      }
     },
     {
       "relationship_type": "HAS_MECHANISM_ROOT",
       "source_type": "Drug",
       "target_type": "MechanismFragment",
-      "source_id": "a1000001-0000-4000-8000-000000000001",
-      "target_id": "m1000001-0000-4000-8010-000000000001"
+      "source_id": "bb260890-9589-5ede-b29d-937e4b73d5ee",
+      "target_id": "m1000001-0000-4000-8010-000000000001",
+      "properties": {
+        "confidence_score": 0.98,
+        "evidence_level": "expert_consensus",
+        "explanation": "Selective beta-1 adrenergic receptor blockade constitutes the primary entry point for metoprolol pharmacodynamics."
+      }
+    },
+    {
+      "relationship_type": "PRECEDES",
+      "source_type": "MechanismFragment",
+      "target_type": "MechanismFragment",
+      "source_id": "m1000001-0000-4000-8010-000000000001",
+      "target_id": "m1000001-0000-4000-8010-000000000011",
+      "properties": {
+        "confidence_score": 0.95,
+        "evidence_level": "expert_consensus",
+        "explanation": "Blockade of Gs-coupled beta-1 receptors inhibits adenylyl cyclase, reducing intracellular cyclic AMP synthesis."
+      }
+    },
+    {
+      "relationship_type": "PRECEDES",
+      "source_type": "MechanismFragment",
+      "target_type": "MechanismFragment",
+      "source_id": "m1000001-0000-4000-8010-000000000011",
+      "target_id": "m1000001-0000-4000-8010-000000000012",
+      "properties": {
+        "confidence_score": 0.95,
+        "evidence_level": "expert_consensus",
+        "explanation": "Decreased cAMP/PKA phosphorylation reduces inward calcium flux through L-type calcium channels, suppressing chronotropy and inotropy."
+      }
+    },
+    {
+      "relationship_type": "PRECEDES",
+      "source_type": "MechanismFragment",
+      "target_type": "MechanismFragment",
+      "source_id": "m1000001-0000-4000-8010-000000000001",
+      "target_id": "m1000001-0000-4000-8010-000000000013",
+      "properties": {
+        "confidence_score": 0.95,
+        "evidence_level": "expert_consensus",
+        "explanation": "Antagonism of beta-1 receptors on renal juxtaglomerular cells suppresses release of renin into the systemic circulation."
+      }
+    },
+    {
+      "relationship_type": "SUPPORTED_BY",
+      "source_type": "Drug",
+      "target_type": "Evidence",
+      "source_id": "bb260890-9589-5ede-b29d-937e4b73d5ee",
+      "target_id": "e1000001-0000-4000-8010-000000000001",
+      "properties": {
+        "assertion_relationship": "TREATS",
+        "assertion_target_id": "d1000001-0000-4000-8010-000000000003",
+        "assertion_target_type": "Disease"
+      }
+    },
+    {
+      "relationship_type": "SUPPORTED_BY",
+      "source_type": "Drug",
+      "target_type": "Evidence",
+      "source_id": "bb260890-9589-5ede-b29d-937e4b73d5ee",
+      "target_id": "e1000001-0000-4000-8010-000000000002",
+      "properties": {
+        "assertion_relationship": "TREATS",
+        "assertion_target_id": "d1000001-0000-4000-8010-000000000001",
+        "assertion_target_type": "Disease"
+      }
+    },
+    {
+      "relationship_type": "SUPPORTED_BY",
+      "source_type": "Drug",
+      "target_type": "Evidence",
+      "source_id": "bb260890-9589-5ede-b29d-937e4b73d5ee",
+      "target_id": "e1000001-0000-4000-8010-000000000003",
+      "properties": {
+        "assertion_relationship": "TREATS",
+        "assertion_target_id": "d1000001-0000-4000-8010-000000000002",
+        "assertion_target_type": "Disease"
+      }
+    },
+    {
+      "relationship_type": "TARGETS",
+      "source_type": "Drug",
+      "target_type": "Receptor",
+      "source_id": "bb260890-9589-5ede-b29d-937e4b73d5ee",
+      "target_id": "00000000-0000-4000-8000-000000000051",
+      "properties": {
+        "confidence_score": 0.99,
+        "evidence_level": "expert_consensus",
+        "explanation": "Metoprolol is a selective beta-1 adrenergic receptor antagonist."
+      }
+    },
+    {
+      "relationship_type": "METABOLIZED_BY",
+      "source_type": "Drug",
+      "target_type": "Enzyme",
+      "source_id": "bb260890-9589-5ede-b29d-937e4b73d5ee",
+      "target_id": "00000000-0000-4000-8000-000000000055",
+      "properties": {
+        "confidence_score": 0.98,
+        "evidence_level": "expert_consensus",
+        "explanation": "Metoprolol undergoes extensive oxidative metabolism primarily mediated by CYP2D6 in the liver."
+      }
+    }
+  ],
+  "education": [
+    {
+      "id": "bb260890-9589-5ede-b29d-937e4b73d5ee:education:Flashcard:receptor",
+      "entity_type": "EducationResource",
+      "kind": "Flashcard",
+      "slug": "receptor",
+      "label": "receptor",
+      "content_layer": "education",
+      "audience": [
+        "medical_student"
+      ],
+      "difficulty_level": "core",
+      "language": "en",
+      "module": "cardiovascular",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "linked_entity_ids": [
+        "bb260890-9589-5ede-b29d-937e4b73d5ee"
+      ],
+      "front": "Which receptor does metoprolol selectively block?",
+      "back": "Beta-1 adrenergic receptors, blocking catecholamine activation.",
+      "hint": "Cardioselective beta blocker"
+    },
+    {
+      "id": "bb260890-9589-5ede-b29d-937e4b73d5ee:education:Flashcard:pk",
+      "entity_type": "EducationResource",
+      "kind": "Flashcard",
+      "slug": "pk",
+      "label": "pk",
+      "content_layer": "education",
+      "audience": [
+        "medical_student"
+      ],
+      "difficulty_level": "core",
+      "language": "en",
+      "module": "cardiovascular",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "linked_entity_ids": [
+        "bb260890-9589-5ede-b29d-937e4b73d5ee"
+      ],
+      "front": "Metoprolol half-life and formulations?",
+      "back": "3–7 hours; tartrate is short-acting, succinate is extended-release.",
+      "hint": "Formulation matters"
+    },
+    {
+      "id": "bb260890-9589-5ede-b29d-937e4b73d5ee:education:BoardExamPearl:merit-hf",
+      "entity_type": "EducationResource",
+      "kind": "BoardExamPearl",
+      "slug": "merit-hf",
+      "label": "merit hf",
+      "content_layer": "education",
+      "audience": [
+        "medical_student"
+      ],
+      "difficulty_level": "core",
+      "language": "en",
+      "module": "cardiovascular",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "linked_entity_ids": [
+        "bb260890-9589-5ede-b29d-937e4b73d5ee"
+      ],
+      "text": "MERIT-HF (1999): metoprolol succinate extended-release reduces mortality in chronic heart failure.",
+      "exam_tags": [
+        "TUS"
+      ]
+    },
+    {
+      "id": "bb260890-9589-5ede-b29d-937e4b73d5ee:education:CommonMistake:cessation",
+      "entity_type": "EducationResource",
+      "kind": "CommonMistake",
+      "slug": "cessation",
+      "label": "cessation",
+      "content_layer": "education",
+      "audience": [
+        "medical_student"
+      ],
+      "difficulty_level": "core",
+      "language": "en",
+      "module": "cardiovascular",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "linked_entity_ids": [
+        "bb260890-9589-5ede-b29d-937e4b73d5ee"
+      ],
+      "mistake": "Stopping metoprolol abruptly is harmless.",
+      "correction": "Abrupt cessation in coronary disease can trigger angina, MI or arrhythmias — taper gradually.",
+      "why_wrong": "Rebound sympathetic activation after chronic beta-1 blockade."
+    },
+    {
+      "id": "bb260890-9589-5ede-b29d-937e4b73d5ee:education:Mnemonic:one-beat",
+      "entity_type": "EducationResource",
+      "kind": "Mnemonic",
+      "slug": "one-beat",
+      "label": "one beat",
+      "content_layer": "education",
+      "audience": [
+        "medical_student"
+      ],
+      "difficulty_level": "core",
+      "language": "en",
+      "module": "cardiovascular",
+      "status": "published",
+      "dataset_version": "2026.1.0",
+      "linked_entity_ids": [
+        "bb260890-9589-5ede-b29d-937e4b73d5ee"
+      ],
+      "mnemonic": "1-BEAT",
+      "expansion": "Beta-1 blockade Eases Adrenergic Tone: lower heart rate and contractility."
     }
   ]
 }

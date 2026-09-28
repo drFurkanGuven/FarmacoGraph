@@ -32,7 +32,9 @@ export function DiseaseSectionEditor({
     <div className={cn("space-y-4", className)}>
       <div>
         <h3 className="text-lg font-semibold">{section.title}</h3>
-        {section.description ? <p className="text-sm text-muted-foreground">{section.description}</p> : null}
+        {section.description ? (
+          <p className="text-sm text-muted-foreground">{section.description}</p>
+        ) : null}
       </div>
       <PropertyEditor
         fields={fields}

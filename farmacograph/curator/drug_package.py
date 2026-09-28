@@ -49,6 +49,7 @@ class DrugPublishPackage(BaseModel):
     entity_payload: dict[str, Any]
     related_entities: list[dict[str, Any]] = Field(default_factory=list)
     relationships: list[dict[str, Any]] = Field(default_factory=list)
+    education: list[dict[str, Any]] = Field(default_factory=list)
     dataset_version: str = "2026.1.0"
     module: str | None = None
     create_snapshot: bool = False
@@ -57,6 +58,188 @@ class DrugPublishPackage(BaseModel):
 def load_package(path: str | Path) -> DrugPublishPackage:
     data = json.loads(Path(path).read_text(encoding="utf-8"))
     return DrugPublishPackage.model_validate(data)
+
+
+def find_package_by_ref(ref: str | uuid.UUID) -> DrugPublishPackage | None:
+    """Find staging drug package by slug or entity UUID."""
+    ref_str = str(ref).strip().lower()
+    if not CV_DRUGS_DIR.exists():
+        return None
+    for p in CV_DRUGS_DIR.glob("*.json"):
+        try:
+            pkg = load_package(p)
+            payload = pkg.entity_payload
+            if str(payload.get("slug", "")).lower() == ref_str or str(payload.get("id", "")).lower() == ref_str:
+                return pkg
+        except Exception:
+            continue
+    return None
+
+
+def extract_mechanism_dag(pkg: DrugPublishPackage) -> dict[str, Any]:
+    """Extract mechanism DAG dictionary (nodes, edges, root) from drug package."""
+    drug_id = str(pkg.entity_payload.get("id"))
+    related = pkg.related_entities or []
+    rels = pkg.relationships or []
+
+    nodes = [
+        {
+            "id": str(e["id"]),
+            "label": str(e.get("label") or e.get("slug") or e["id"]),
+            "entity_type": e.get("entity_type", "MechanismFragment"),
+            "slug": e.get("slug"),
+            "status": e.get("status", "published"),
+            "properties": e,
+        }
+        for e in related
+        if e.get("entity_type") == "MechanismFragment"
+    ]
+
+    root_id: str | None = None
+    edges = []
+    for r in rels:
+        rtype = r.get("relationship_type")
+        if rtype == "HAS_MECHANISM_ROOT":
+            root_id = str(r.get("target_id"))
+            edges.append(
+                {
+                    "id": f"{r.get('source_id')}->{r.get('target_id')}",
+                    "relationship_type": "HAS_MECHANISM_ROOT",
+                    "source_id": str(r.get("source_id")),
+                    "target_id": str(r.get("target_id")),
+                    "properties": r.get("properties") or {},
+                }
+            )
+        elif rtype in ("PRECEDES", "BRANCHES_TO", "MERGES_INTO", "RESULTS_IN"):
+            edges.append(
+                {
+                    "id": f"{r.get('source_id')}->{r.get('target_id')}",
+                    "relationship_type": rtype,
+                    "source_id": str(r.get("source_id")),
+                    "target_id": str(r.get("target_id")),
+                    "properties": r.get("properties") or {},
+                }
+            )
+
+    return {
+        "drug_id": drug_id,
+        "root_fragment_id": root_id,
+        "nodes": nodes,
+        "edges": edges,
+        "clinical_outcomes": [],
+        "is_acyclic": True,
+    }
+
+
+def extract_drug_graph_projection(
+    pkg: DrugPublishPackage,
+    *,
+    depth: int = 2,
+) -> dict[str, Any]:
+    """Extract drug neighborhood graph projection (nodes, edges) within depth hops."""
+    from collections import deque
+
+    drug_payload = pkg.entity_payload
+    drug_id = str(drug_payload.get("id"))
+
+    drug_node = {
+        "id": drug_id,
+        "labels": ["Drug"],
+        "entity_type": "Drug",
+        "label": str(drug_payload.get("label") or drug_payload.get("generic_name") or drug_payload.get("slug") or drug_id),
+        "slug": drug_payload.get("slug"),
+        "properties": drug_payload,
+    }
+
+    all_nodes: dict[str, dict[str, Any]] = {drug_id: drug_node}
+    for e in pkg.related_entities or []:
+        eid = str(e.get("id"))
+        etype = e.get("entity_type", "Entity")
+        all_nodes[eid] = {
+            "id": eid,
+            "labels": [etype],
+            "entity_type": etype,
+            "label": str(e.get("label") or e.get("slug") or eid),
+            "slug": e.get("slug"),
+            "properties": e,
+        }
+
+    all_edges: list[dict[str, Any]] = []
+    seen_edge_keys: set[tuple[str, str, str]] = set()
+
+    for r in pkg.relationships or []:
+        sid = str(r.get("source_id"))
+        tid = str(r.get("target_id"))
+        rtype = str(r.get("relationship_type", "RELATED_TO"))
+        key = (sid, rtype, tid)
+        if key not in seen_edge_keys:
+            seen_edge_keys.add(key)
+            all_edges.append(
+                {
+                    "id": f"{sid}-{rtype}->{tid}",
+                    "relationship_type": rtype,
+                    "source_id": sid,
+                    "target_id": tid,
+                    "source_type": r.get("source_type"),
+                    "target_type": r.get("target_type"),
+                    "properties": r.get("properties") or {},
+                }
+            )
+
+    payload_rels = drug_payload.get("relationships") or {}
+    for rtype, targets in payload_rels.items():
+        if isinstance(targets, list):
+            for tid in targets:
+                tid_str = str(tid)
+                key = (drug_id, rtype, tid_str)
+                if key not in seen_edge_keys:
+                    seen_edge_keys.add(key)
+                    target_node = all_nodes.get(tid_str)
+                    all_edges.append(
+                        {
+                            "id": f"{drug_id}-{rtype}->{tid_str}",
+                            "relationship_type": rtype,
+                            "source_id": drug_id,
+                            "target_id": tid_str,
+                            "source_type": "Drug",
+                            "target_type": target_node.get("entity_type") if target_node else None,
+                            "properties": {},
+                        }
+                    )
+
+    bounded_depth = max(1, min(depth, 3))
+    adj: dict[str, set[str]] = {nid: set() for nid in all_nodes}
+    for edge in all_edges:
+        s, t = edge["source_id"], edge["target_id"]
+        if s in adj and t in adj:
+            adj[s].add(t)
+            adj[t].add(s)
+
+    visited: set[str] = {drug_id}
+    queue: deque[tuple[str, int]] = deque([(drug_id, 0)])
+    while queue:
+        curr, dist = queue.popleft()
+        if dist < bounded_depth:
+            for neighbor in adj.get(curr, set()):
+                if neighbor not in visited:
+                    visited.add(neighbor)
+                    queue.append((neighbor, dist + 1))
+
+    filtered_nodes = [node for nid, node in all_nodes.items() if nid in visited]
+    filtered_edges = [
+        edge
+        for edge in all_edges
+        if edge["source_id"] in visited and edge["target_id"] in visited
+    ]
+
+    return {
+        "nodes": filtered_nodes,
+        "edges": filtered_edges,
+        "layout_hint": "dagre",
+        "depth": bounded_depth,
+        "neo4j_available": True,
+        "drug_in_graph": True,
+    }
 
 
 def validate_package_file(path: str | Path) -> ValidationResult:

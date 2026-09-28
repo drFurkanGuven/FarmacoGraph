@@ -1,4 +1,7 @@
-import { isMissingEvidenceIssue, parseValidationIssues } from "@/components/validation/validation-utils";
+import {
+  isMissingEvidenceIssue,
+  parseValidationIssues,
+} from "@/components/validation/validation-utils";
 import type { ValidationResult } from "@/lib/api";
 import type {
   DrugEvidenceAttachment,
@@ -46,11 +49,18 @@ export function parseEvidenceItem(raw: Record<string, unknown>): EvidenceItem | 
   };
 }
 
-export function parseDrugEvidenceAttachment(raw: Record<string, unknown>): DrugEvidenceAttachment | null {
+export function parseDrugEvidenceAttachment(
+  raw: Record<string, unknown>
+): DrugEvidenceAttachment | null {
   const evidenceId = typeof raw.evidence_id === "string" ? raw.evidence_id : null;
   const nestedEvidence = raw.evidence;
 
-  if (evidenceId && typeof nestedEvidence === "object" && nestedEvidence !== null && !Array.isArray(nestedEvidence)) {
+  if (
+    evidenceId &&
+    typeof nestedEvidence === "object" &&
+    nestedEvidence !== null &&
+    !Array.isArray(nestedEvidence)
+  ) {
     const evidence = parseEvidenceItem(nestedEvidence as Record<string, unknown>);
     if (!evidence) return null;
     return {
@@ -80,7 +90,7 @@ export function parseDrugEvidenceAttachments(payload: unknown): DrugEvidenceAtta
     .map((entry) =>
       typeof entry === "object" && entry !== null && !Array.isArray(entry)
         ? parseDrugEvidenceAttachment(entry as Record<string, unknown>)
-        : null,
+        : null
     )
     .filter((entry): entry is DrugEvidenceAttachment => entry !== null);
 }
@@ -99,7 +109,7 @@ export function formatQualityScore(score: number | null): string {
 
 export function summarizeDrugEvidence(
   attachments: DrugEvidenceAttachment[],
-  missingRequirements: MissingEvidenceRequirement[],
+  missingRequirements: MissingEvidenceRequirement[]
 ): DrugEvidenceSummary {
   const attachedCount = attachments.length;
   const missingCount = missingRequirements.length;
@@ -128,7 +138,7 @@ export function summarizeDrugEvidence(
 }
 
 export function missingRequirementsFromValidation(
-  validation: ValidationResult | null,
+  validation: ValidationResult | null
 ): MissingEvidenceRequirement[] {
   if (!validation) return [];
 
@@ -163,7 +173,7 @@ export function evidenceTypeLabel(value: string): string {
 
 export function isEvidenceAlreadyAttached(
   attachments: DrugEvidenceAttachment[],
-  evidenceId: string,
+  evidenceId: string
 ): boolean {
   return attachments.some((entry) => entry.evidence_id === evidenceId);
 }

@@ -8,9 +8,4 @@ export {
   saveDrugPackage,
   ensureDraftWorkflow,
 } from "./autosave";
-export type {
-  DrugEditorSnapshot,
-  DrugPublishPackage,
-  SaveStatus,
-  SaveStrategy,
-} from "./types";
+export type { DrugEditorSnapshot, DrugPublishPackage, SaveStatus, SaveStrategy } from "./types";

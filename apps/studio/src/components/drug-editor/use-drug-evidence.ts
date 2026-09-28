@@ -11,10 +11,7 @@ import {
   fetchDrugEvidence,
   searchEvidence,
 } from "./evidence-client";
-import {
-  missingRequirementsFromValidation,
-  summarizeDrugEvidence,
-} from "./evidence-helpers";
+import { missingRequirementsFromValidation, summarizeDrugEvidence } from "./evidence-helpers";
 import type { CreateEvidenceInput, DrugEvidenceContext } from "./evidence-types";
 
 export const drugEvidenceQueryKey = ({ drugId, entityId, slug }: DrugEvidenceContext) =>
@@ -36,12 +33,12 @@ export function useDrugEvidence(context: DrugEvidenceContext) {
 
   const missingRequirements = useMemo(
     () => missingRequirementsFromValidation(validation),
-    [validation],
+    [validation]
   );
 
   const summary = useMemo(
     () => summarizeDrugEvidence(evidenceQuery.data ?? [], missingRequirements),
-    [evidenceQuery.data, missingRequirements],
+    [evidenceQuery.data, missingRequirements]
   );
 
   const invalidate = useCallback(async () => {

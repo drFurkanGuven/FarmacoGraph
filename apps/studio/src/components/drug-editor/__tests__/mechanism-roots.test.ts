@@ -20,10 +20,15 @@ const BRADY = "m1000001-0000-4000-8010-000000000003";
 describe("mechanism root selection", () => {
   it("writes flat HAS_MECHANISM_ROOT edges and related entities", () => {
     const pkg = createEmptyDrugPackage(DRUG_ID);
-    const withRoots = syncMechanismRootSelection(pkg, DRUG_ID, [ACE, BETA], [
-      { id: ACE, slug: "ace-inhibition", label: "ACE inhibition" },
-      { id: BETA, slug: "beta-adrenergic-blockade", label: "Beta-adrenergic blockade" },
-    ]);
+    const withRoots = syncMechanismRootSelection(
+      pkg,
+      DRUG_ID,
+      [ACE, BETA],
+      [
+        { id: ACE, slug: "ace-inhibition", label: "ACE inhibition" },
+        { id: BETA, slug: "beta-adrenergic-blockade", label: "Beta-adrenergic blockade" },
+      ]
+    );
 
     expect(listMechanismRootIds(withRoots)).toEqual([ACE, BETA]);
     expect(withRoots.relationships).toEqual(
@@ -38,13 +43,13 @@ describe("mechanism root selection", () => {
           source_id: DRUG_ID,
           target_id: BETA,
         }),
-      ]),
+      ])
     );
     expect(withRoots.related_entities).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ id: ACE, entity_type: "MechanismFragment" }),
         expect.objectContaining({ id: BETA, entity_type: "MechanismFragment" }),
-      ]),
+      ])
     );
   });
 
@@ -77,9 +82,12 @@ describe("mechanism root selection", () => {
 
 describe("mechanism pathway edges", () => {
   it("adds PRECEDES edges between fragments", () => {
-    const pkg = syncMechanismRootSelection(createEmptyDrugPackage(DRUG_ID), DRUG_ID, [ACE], [
-      { id: ACE, slug: "ace-inhibition", label: "ACE inhibition" },
-    ]);
+    const pkg = syncMechanismRootSelection(
+      createEmptyDrugPackage(DRUG_ID),
+      DRUG_ID,
+      [ACE],
+      [{ id: ACE, slug: "ace-inhibition", label: "ACE inhibition" }]
+    );
     const next = addPathwayEdge(pkg, {
       sourceId: ACE,
       targetId: BRADY,

@@ -132,7 +132,9 @@ function mergePackage(body: unknown, fallback: MockPackage): MockPackage {
         >) ?? {}),
       },
     },
-    relationships: Array.isArray(input.relationships) ? input.relationships : fallback.relationships,
+    relationships: Array.isArray(input.relationships)
+      ? input.relationships
+      : fallback.relationships,
   };
 }
 
@@ -150,7 +152,10 @@ function indexSupportedBy(rels: PackageRelationshipRow[]): Set<string> {
   return covered;
 }
 
-function validateTreatsPackage(pkg: MockPackage): { valid: boolean; issues: Record<string, unknown>[] } {
+function validateTreatsPackage(pkg: MockPackage): {
+  valid: boolean;
+  issues: Record<string, unknown>[];
+} {
   const issues: Record<string, unknown>[] = [];
   const entity = pkg.entity_payload;
   const treatsIds = (entity.relationships as { TREATS?: string[] } | undefined)?.TREATS ?? [];
@@ -161,7 +166,7 @@ function validateTreatsPackage(pkg: MockPackage): { valid: boolean; issues: Reco
       (row) =>
         row.relationship_type === "TREATS" &&
         String(row.target_id) === diseaseId &&
-        String(row.source_id) === RAMIPRIL_ENTITY_ID,
+        String(row.source_id) === RAMIPRIL_ENTITY_ID
     );
     const props = (edge?.properties ?? {}) as Record<string, unknown>;
     const edgeKey = `${RAMIPRIL_ENTITY_ID}::TREATS::${diseaseId}`;
@@ -180,14 +185,16 @@ function validateTreatsPackage(pkg: MockPackage): { valid: boolean; issues: Reco
     const hasEvidenceIds = Array.isArray(evidenceIds) && evidenceIds.length > 0;
     const expertEscape =
       props.evidence_level === "expert_consensus" &&
-      (entity.provenance as { curator_attestation?: boolean } | undefined)?.curator_attestation === true;
+      (entity.provenance as { curator_attestation?: boolean } | undefined)?.curator_attestation ===
+        true;
     const hasSupportedBy = supported.has(edgeKey);
 
     if (!hasEvidenceIds && !hasSupportedBy && !expertEscape) {
       issues.push({
         constraint_id: "FG-C012",
         severity: "error",
-        message: "Clinical assertion TREATS requires supporting evidence (SUPPORTED_BY link or evidence_ids).",
+        message:
+          "Clinical assertion TREATS requires supporting evidence (SUPPORTED_BY link or evidence_ids).",
         field: "relationships.TREATS",
         relationship_type: "TREATS",
       });
@@ -264,7 +271,9 @@ export async function mockEvidenceWorkflowApi(page: Page): Promise<{
     function readJsonBody(): Record<string, unknown> {
       try {
         const body = route.request().postDataJSON();
-        return body && typeof body === "object" && !Array.isArray(body) ? (body as Record<string, unknown>) : {};
+        return body && typeof body === "object" && !Array.isArray(body)
+          ? (body as Record<string, unknown>)
+          : {};
       } catch {
         return {};
       }
@@ -343,7 +352,7 @@ export async function mockEvidenceWorkflowApi(page: Page): Promise<{
             },
             meta: { slug },
           },
-          201,
+          201
         );
       }
       const search = (url.searchParams.get("search") ?? "").toLowerCase();
@@ -351,7 +360,7 @@ export async function mockEvidenceWorkflowApi(page: Page): Promise<{
         (row) =>
           !search ||
           row.label.toLowerCase().includes(search) ||
-          row.slug.toLowerCase().includes(search),
+          row.slug.toLowerCase().includes(search)
       );
       return json(route, { data, meta: { count: data.length, total: data.length } });
     }
@@ -450,7 +459,10 @@ export async function mockEvidenceWorkflowApi(page: Page): Promise<{
             },
             score: 1,
           }));
-        return json(route, { data: results, meta: { count: results.length, total: results.length } });
+        return json(route, {
+          data: results,
+          meta: { count: results.length, total: results.length },
+        });
       }
       return json(route, { data: [], meta: { count: 0, total: 0 } });
     }
@@ -554,7 +566,9 @@ export async function mockEvidenceWorkflowApi(page: Page): Promise<{
         const query = url.searchParams.get("q") ?? url.searchParams.get("search") ?? "";
         let results = [...catalog.values()];
         if (query) {
-          results = results.filter((entry) => entry.title.toLowerCase().includes(query.toLowerCase()));
+          results = results.filter((entry) =>
+            entry.title.toLowerCase().includes(query.toLowerCase())
+          );
         }
         return json(route, {
           data: results,
@@ -568,7 +582,8 @@ export async function mockEvidenceWorkflowApi(page: Page): Promise<{
         const record: MockEvidenceRecord = {
           id,
           title: typeof body.title === "string" ? body.title : "Untitled evidence",
-          evidence_type: typeof body.evidence_type === "string" ? body.evidence_type : "review_article",
+          evidence_type:
+            typeof body.evidence_type === "string" ? body.evidence_type : "review_article",
           quality_score: typeof body.quality_score === "number" ? body.quality_score : 0.5,
           year: typeof body.year === "number" ? body.year : null,
           status: "draft",

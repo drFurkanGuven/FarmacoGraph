@@ -66,7 +66,7 @@ export function useDrugEditor({ drugId }: UseDrugEditorOptions) {
           setSnapshot((current) => ({ ...current, validationPending: false }));
         }
       }, VALIDATION_DEBOUNCE_MS),
-    [client],
+    [client]
   );
 
   const runSave = useMemo(
@@ -112,7 +112,7 @@ export function useDrugEditor({ drugId }: UseDrugEditorOptions) {
           }));
         }
       }, AUTOSAVE_DEBOUNCE_MS),
-    [client, drugId, queryClient],
+    [client, drugId, queryClient]
   );
 
   useEffect(() => {
@@ -128,7 +128,7 @@ export function useDrugEditor({ drugId }: UseDrugEditorOptions) {
         const pkgWithTreats = ensureTreatsRelationshipEdges(loaded.package);
         const pkg = syncEducationGraphRows(
           pkgWithTreats,
-          String(pkgWithTreats.entity_payload.id ?? drugId),
+          String(pkgWithTreats.entity_payload.id ?? drugId)
         );
 
         if (cancelled) return;
@@ -198,7 +198,7 @@ export function useDrugEditor({ drugId }: UseDrugEditorOptions) {
       runValidation(packageRef.current);
       runSave(sectionId, packageRef.current);
     },
-    [isPackageLocked, runSave, runValidation],
+    [isPackageLocked, runSave, runValidation]
   );
 
   const updatePackage = useCallback(
@@ -214,7 +214,7 @@ export function useDrugEditor({ drugId }: UseDrugEditorOptions) {
       runValidation(nextPackage);
       runSave(sectionId, nextPackage);
     },
-    [isPackageLocked, runSave, runValidation],
+    [isPackageLocked, runSave, runValidation]
   );
 
   const retrySave = useCallback(() => {
@@ -249,7 +249,8 @@ export function useDrugEditor({ drugId }: UseDrugEditorOptions) {
     setSnapshot((current) => ({ ...current, workflow }));
   }, []);
 
-  const activeSection = getSectionById(snapshot.activeSectionId) ?? getSectionById(DEFAULT_SECTION_ID)!;
+  const activeSection =
+    getSectionById(snapshot.activeSectionId) ?? getSectionById(DEFAULT_SECTION_ID)!;
 
   return {
     loading,

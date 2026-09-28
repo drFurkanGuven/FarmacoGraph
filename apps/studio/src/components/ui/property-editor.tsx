@@ -6,15 +6,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-export type PropertyEditorFieldType = "text" | "textarea" | "number" | "readonly";
+export type PropertyEditorFieldType = "text" | "textarea" | "number" | "readonly" | "boolean";
 
 export interface PropertyEditorField {
   /** Unique field key */
   key: string;
   /** Display label */
   label: string;
-  /** Current value */
-  value: string | number;
+  /** Current value ("true"/"false" strings are accepted for boolean fields) */
+  value: string | number | boolean;
   /** Input type — readonly renders static text */
   type?: PropertyEditorFieldType;
   /** Optional helper text below the field */
@@ -56,7 +56,23 @@ function PropertyEditor({
               {field.label}
             </Label>
             {field.type === "readonly" ? (
-              <dd className="rounded-md border bg-muted/30 px-3 py-2 text-sm font-mono">{field.value}</dd>
+              <dd className="rounded-md border bg-muted/30 px-3 py-2 text-sm font-mono">
+                {String(field.value)}
+              </dd>
+            ) : field.type === "boolean" ? (
+              <div className="flex items-center gap-2">
+                <input
+                  id={`property-${field.key}`}
+                  type="checkbox"
+                  checked={field.value === true || field.value === "true"}
+                  disabled={disabled}
+                  onChange={(e) => onFieldChange?.(field.key, e.target.checked ? "true" : "false")}
+                  className="h-4 w-4 rounded border-input accent-primary"
+                />
+                <span className="text-xs text-muted-foreground">
+                  {field.value === true || field.value === "true" ? "✓" : "—"}
+                </span>
+              </div>
             ) : field.type === "textarea" ? (
               <Textarea
                 id={`property-${field.key}`}
@@ -69,13 +85,15 @@ function PropertyEditor({
               <Input
                 id={`property-${field.key}`}
                 type={field.type === "number" ? "number" : "text"}
-                value={field.value}
+                value={field.value as string | number}
                 placeholder={field.placeholder}
                 disabled={disabled}
                 onChange={(e) => onFieldChange?.(field.key, e.target.value)}
               />
             )}
-            {field.description && <p className="text-[0.8rem] text-muted-foreground">{field.description}</p>}
+            {field.description && (
+              <p className="text-[0.8rem] text-muted-foreground">{field.description}</p>
+            )}
           </div>
         ))}
       </dl>

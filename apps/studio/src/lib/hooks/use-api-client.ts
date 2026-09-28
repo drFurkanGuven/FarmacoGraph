@@ -19,6 +19,6 @@ export function useApiClient() {
         refreshSession,
         onUnauthorized: signOut,
       }),
-    [session, signOut, refreshSession],
+    [session, signOut, refreshSession]
   );
 }

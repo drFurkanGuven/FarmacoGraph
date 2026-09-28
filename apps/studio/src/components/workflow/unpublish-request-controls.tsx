@@ -122,7 +122,12 @@ export function UnpublishRequestControls({
         </Badge>
         {isAdmin ? (
           <>
-            <Button size="sm" variant="secondary" disabled={busy} onClick={() => void handleApprove()}>
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={busy}
+              onClick={() => void handleApprove()}
+            >
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
               Approve unpublish
             </Button>
@@ -138,7 +143,10 @@ export function UnpublishRequestControls({
           </Button>
         )}
         {workflow.unpublish_request_notes ? (
-          <span className="max-w-[220px] truncate text-xs text-muted-foreground" title={workflow.unpublish_request_notes}>
+          <span
+            className="max-w-[220px] truncate text-xs text-muted-foreground"
+            title={workflow.unpublish_request_notes}
+          >
             {workflow.unpublish_request_notes}
           </span>
         ) : null}
@@ -194,8 +202,8 @@ export function UnpublishRequestControls({
             <DialogHeader>
               <DialogTitle>Request unpublish</DialogTitle>
               <DialogDescription>
-                Only administrators can unpublish. Describe why this published package needs to return
-                to draft.
+                Only administrators can unpublish. Describe why this published package needs to
+                return to draft.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-2 py-4">

@@ -8,7 +8,7 @@ from uuid import UUID
 from farmacograph.api.schemas.responses import EntitySummary, ResponseMeta
 from farmacograph.core.config import Settings
 from farmacograph.core.exceptions import NotFoundError
-from farmacograph.curator.disease_package import list_disease_catalog
+from farmacograph.curator.disease_package import get_disease_by_id, list_disease_catalog
 from farmacograph.models.enums import ContentLayer, EntityType
 
 
@@ -53,8 +53,7 @@ class DiseaseService:
         import time
 
         start = time.perf_counter()
-        rows, _ = list_disease_catalog(limit=10_000, offset=0)
-        match = next((row for row in rows if row["id"] == str(disease_id)), None)
+        match = get_disease_by_id(str(disease_id))
         if match is None:
             raise NotFoundError(f"Disease not found: {disease_id}")
         elapsed = int((time.perf_counter() - start) * 1000)

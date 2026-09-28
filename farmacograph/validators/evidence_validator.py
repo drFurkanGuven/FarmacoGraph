@@ -19,14 +19,14 @@ RELATIONSHIP_TARGET_TYPES: dict[str, str] = {
     "TREATS": "Disease",
     "PREVENTS": "Disease",
     "HAS_MECHANISM_ROOT": "MechanismFragment",
-    "TARGETS": "Target",
-    "INHIBITS": "Target",
+    "TARGETS": "TargetProtein",
+    "INHIBITS": "Enzyme",
     "CAUSES": "SideEffect",
     "CONTRAINDICATED_IN": "Disease",
     "INTERACTS_WITH": "Drug",
     "AVOID_WITH": "Drug",
     "METABOLIZED_BY": "Enzyme",
-    "COVERS": "Pathogen",
+    "COVERS": "Microorganism",
     "FIRST_LINE_FOR": "Disease",
 }
 

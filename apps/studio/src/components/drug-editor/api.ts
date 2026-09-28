@@ -43,7 +43,7 @@ export function formatDrugEditorLoadError(error: unknown, slugOrId: string): str
 
 export async function loadDrugRecord(
   client: FarmacoGraphClient,
-  drugId: string,
+  drugId: string
 ): Promise<Record<string, unknown> | null> {
   if (isDrugSlug(drugId)) return null;
   try {
@@ -56,7 +56,7 @@ export async function loadDrugRecord(
 
 export async function loadCuratorDrugPackage(
   client: FarmacoGraphClient,
-  slugOrId: string,
+  slugOrId: string
 ): Promise<{ package: DrugPublishPackage; workflow: WorkflowItem | null }> {
   if (isDrugSlug(slugOrId)) {
     const envelope = await client.openDrugWorkflow(slugOrId);
@@ -75,7 +75,7 @@ export async function loadCuratorDrugPackage(
 
 export async function findDraftWorkflow(
   client: FarmacoGraphClient,
-  drugId: string,
+  drugId: string
 ): Promise<WorkflowItem | null> {
   const queue = await client.curatorQueue("draft", { limit: 100 });
   return queue.data.find((item) => item.entity_id === drugId) ?? null;
@@ -83,7 +83,7 @@ export async function findDraftWorkflow(
 
 export async function resolveWorkflow(
   client: FarmacoGraphClient,
-  drugId: string,
+  drugId: string
 ): Promise<WorkflowItem | null> {
   const existing = await findDraftWorkflow(client, drugId);
   if (existing) return existing;
@@ -95,7 +95,7 @@ export async function resolveWorkflow(
 
 export async function validateDrugPackage(
   client: FarmacoGraphClient,
-  pkg: DrugPublishPackage,
+  pkg: DrugPublishPackage
 ): Promise<ValidationResult> {
   const envelope = await client.validatePackage(pkg);
   return envelope.data;
@@ -103,7 +103,7 @@ export async function validateDrugPackage(
 
 export async function loadEntityAuditCount(
   client: FarmacoGraphClient,
-  drugId: string,
+  drugId: string
 ): Promise<number> {
   const envelope = await client.auditLogs({ resourceType: "Drug", limit: 20 });
   return envelope.data.filter((entry) => entry.resource_id === drugId).length;

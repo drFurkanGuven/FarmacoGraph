@@ -1,7 +1,14 @@
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 /** Single-line text skeleton */
 function TextSkeleton({ className }: { className?: string }) {
@@ -36,7 +43,15 @@ function ListSkeleton({ rows = 4, className }: { rows?: number; className?: stri
 }
 
 /** Table loading placeholder */
-function TableSkeleton({ rows = 5, columns = 4, className }: { rows?: number; columns?: number; className?: string }) {
+function TableSkeleton({
+  rows = 5,
+  columns = 4,
+  className,
+}: {
+  rows?: number;
+  columns?: number;
+  className?: string;
+}) {
   return (
     <Table className={className}>
       <TableHeader>
@@ -84,4 +99,11 @@ function PageHeaderSkeleton({ className }: { className?: string }) {
   );
 }
 
-export { TextSkeleton, CardSkeleton, ListSkeleton, TableSkeleton, StatGridSkeleton, PageHeaderSkeleton };
+export {
+  TextSkeleton,
+  CardSkeleton,
+  ListSkeleton,
+  TableSkeleton,
+  StatGridSkeleton,
+  PageHeaderSkeleton,
+};

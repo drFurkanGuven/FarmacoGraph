@@ -36,31 +36,33 @@ const drawerContentVariants = cva(
       },
     },
     defaultVariants: { side: "right" },
-  },
+  }
 );
 
 export interface DrawerContentProps
-  extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>,
+  extends
+    React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>,
     VariantProps<typeof drawerContentVariants> {}
 
-const DrawerContent = React.forwardRef<React.ElementRef<typeof DialogPrimitive.Content>, DrawerContentProps>(
-  ({ side = "right", className, children, ...props }, ref) => (
-    <DrawerPortal>
-      <DrawerOverlay />
-      <DialogPrimitive.Content
-        ref={ref}
-        className={cn(drawerContentVariants({ side }), className)}
-        {...props}
-      >
-        {children}
-        <DrawerClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring">
-          <X className="h-4 w-4" />
-          <span className="sr-only">Close</span>
-        </DrawerClose>
-      </DialogPrimitive.Content>
-    </DrawerPortal>
-  ),
-);
+const DrawerContent = React.forwardRef<
+  React.ElementRef<typeof DialogPrimitive.Content>,
+  DrawerContentProps
+>(({ side = "right", className, children, ...props }, ref) => (
+  <DrawerPortal>
+    <DrawerOverlay />
+    <DialogPrimitive.Content
+      ref={ref}
+      className={cn(drawerContentVariants({ side }), className)}
+      {...props}
+    >
+      {children}
+      <DrawerClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring">
+        <X className="h-4 w-4" />
+        <span className="sr-only">Close</span>
+      </DrawerClose>
+    </DialogPrimitive.Content>
+  </DrawerPortal>
+));
 DrawerContent.displayName = "DrawerContent";
 
 const DrawerHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
@@ -77,7 +79,11 @@ const DrawerTitle = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Title>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>
 >(({ className, ...props }, ref) => (
-  <DialogPrimitive.Title ref={ref} className={cn("text-lg font-semibold leading-none tracking-tight", className)} {...props} />
+  <DialogPrimitive.Title
+    ref={ref}
+    className={cn("text-lg font-semibold leading-none tracking-tight", className)}
+    {...props}
+  />
 ));
 DrawerTitle.displayName = "DrawerTitle";
 
@@ -85,7 +91,11 @@ const DrawerDescription = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Description>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description>
 >(({ className, ...props }, ref) => (
-  <DialogPrimitive.Description ref={ref} className={cn("text-sm text-muted-foreground", className)} {...props} />
+  <DialogPrimitive.Description
+    ref={ref}
+    className={cn("text-sm text-muted-foreground", className)}
+    {...props}
+  />
 ));
 DrawerDescription.displayName = "DrawerDescription";
 

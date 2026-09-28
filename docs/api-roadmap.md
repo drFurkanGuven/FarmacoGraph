@@ -44,23 +44,23 @@
 
 ---
 
-## Phase API 5.3 — Koruma ve limitler ← **şimdi**
+## Phase API 5.3 — Koruma ve limitler ✅
 
-| # | Deliverable |
-|---|-------------|
-| 5.3.1 | In-memory rate limit middleware |
-| 5.3.2 | `429` + `Retry-After` |
-| 5.3.3 | CORS yapılandırması (public docs origin) |
+| # | Deliverable | Durum |
+|---|-------------|-------|
+| 5.3.1 | In-memory rate limit middleware | ✅ |
+| 5.3.2 | `429` + `Retry-After` (header + client exponential backoff) | ✅ |
+| 5.3.3 | CORS yapılandırması (public docs & studio origins) | ✅ |
 
 ---
 
-## Phase API 5.4 — Sözleşme kalitesi
+## Phase API 5.4 — Sözleşme kalitesi ✅
 
-| # | Deliverable |
-|---|-------------|
-| 5.4.1 | OpenAPI ↔ FastAPI senkron (curator, info, validate) |
-| 5.4.2 | Schemathesis contract test CI |
-| 5.4.3 | `GET /drugs/{slug}` (slug ile erişim) |
+| # | Deliverable | Durum |
+|---|-------------|-------|
+| 5.4.1 | OpenAPI ↔ FastAPI senkron (91 endpoints, `check-openapi-diff.py` CI) | ✅ |
+| 5.4.2 | `POST /interactions` clinical reasoning engine | ✅ |
+| 5.4.3 | `GET /drugs/{slug}` (slug ve UUID ile erişim) | ✅ |
 
 ---
 

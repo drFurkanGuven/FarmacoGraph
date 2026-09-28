@@ -4,11 +4,7 @@ import { BookOpen, GraduationCap, HelpCircle, Layers3, Lightbulb } from "lucide-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input, Textarea } from "@/components/ui";
 import type { DrugPublishPackage } from "./types";
-import {
-  type EducationKind,
-  readEducationItem,
-  updateEducationItem,
-} from "./education";
+import { type EducationKind, readEducationItem, updateEducationItem } from "./education";
 
 export interface EducationSectionProps {
   pkg: DrugPublishPackage;

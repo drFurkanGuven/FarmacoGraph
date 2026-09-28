@@ -176,7 +176,7 @@ export async function mockDrugEditorNotFound(page: Page, slug: string): Promise<
         {
           error: { code: "not_found", message: `Drug "${slug}" was not found.` },
         },
-        404,
+        404
       );
     }
 

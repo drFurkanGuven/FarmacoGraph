@@ -4,10 +4,7 @@ import { useApiClient } from "@/lib/hooks/use-api-client";
 import { defaultQueryOptions } from "@/lib/api/react-query/config";
 import { useApiQuery } from "@/lib/api/react-query/optimistic";
 import type { ApiEnvelope, WorkflowItem } from "@/lib/api/types";
-import {
-  buildRelationshipsFromDrug,
-  parseValidationIssues,
-} from "./validation-utils";
+import { buildRelationshipsFromDrug, parseValidationIssues } from "./validation-utils";
 import type { QueueValidationItem, ValidationSummaryData } from "./validation-types";
 
 const VALIDATION_REFRESH_MS = 30_000;
@@ -22,7 +19,7 @@ const MAX_QUEUE_VALIDATIONS = 15;
 
 async function validateWorkflowDrug(
   client: ReturnType<typeof useApiClient>,
-  workflow: WorkflowItem,
+  workflow: WorkflowItem
 ): Promise<QueueValidationItem | null> {
   if (workflow.entity_type !== "Drug") {
     return null;
@@ -55,7 +52,7 @@ export function useValidationSummary() {
   return useApiQuery(
     validationQueryKeys.summary(),
     () => client.request<ValidationSummaryData>("/curator/validation-summary"),
-    { ...defaultQueryOptions, refetchInterval: VALIDATION_REFRESH_MS },
+    { ...defaultQueryOptions, refetchInterval: VALIDATION_REFRESH_MS }
   );
 }
 
@@ -64,7 +61,7 @@ export function useGraphValidationJobs() {
   return useApiQuery(
     validationQueryKeys.graphJobs(),
     () => client.jobs({ jobType: "graph_validation", limit: 20 }),
-    { ...defaultQueryOptions, refetchInterval: VALIDATION_REFRESH_MS },
+    { ...defaultQueryOptions, refetchInterval: VALIDATION_REFRESH_MS }
   );
 }
 
@@ -80,16 +77,19 @@ export function useQueueValidation() {
       ]);
 
       const workflows = [...draftEnvelope.data, ...reviewEnvelope.data].filter(
-        (workflow) => workflow.entity_type === "Drug",
+        (workflow) => workflow.entity_type === "Drug"
       );
       const candidates = workflows.slice(0, MAX_QUEUE_VALIDATIONS);
 
       const settled = await Promise.allSettled(
-        candidates.map((workflow) => validateWorkflowDrug(client, workflow)),
+        candidates.map((workflow) => validateWorkflowDrug(client, workflow))
       );
 
       const items = settled
-        .filter((result): result is PromiseFulfilledResult<QueueValidationItem | null> => result.status === "fulfilled")
+        .filter(
+          (result): result is PromiseFulfilledResult<QueueValidationItem | null> =>
+            result.status === "fulfilled"
+        )
         .map((result) => result.value)
         .filter((item): item is QueueValidationItem => item !== null);
 
@@ -104,6 +104,6 @@ export function useQueueValidation() {
         },
       };
     },
-    { ...defaultQueryOptions, refetchInterval: VALIDATION_REFRESH_MS, staleTime: 60_000 },
+    { ...defaultQueryOptions, refetchInterval: VALIDATION_REFRESH_MS, staleTime: 60_000 }
   );
 }

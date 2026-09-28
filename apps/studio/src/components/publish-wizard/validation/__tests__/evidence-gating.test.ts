@@ -46,13 +46,15 @@ const samplePackage = {
 
 describe("isEvidenceIssue", () => {
   it("detects provenance and evidence constraint issues", () => {
-    expect(isEvidenceIssue(baseIssue({ constraint_id: "FG-C018", message: "Provenance required" }))).toBe(
-      true,
+    expect(
+      isEvidenceIssue(baseIssue({ constraint_id: "FG-C018", message: "Provenance required" }))
+    ).toBe(true);
+    expect(
+      isEvidenceIssue(baseIssue({ constraint_id: "FG-C028", message: "AI draft attestation" }))
+    ).toBe(true);
+    expect(isEvidenceIssue(baseIssue({ constraint_id: "FG-C026", severity: "warning" }))).toBe(
+      true
     );
-    expect(isEvidenceIssue(baseIssue({ constraint_id: "FG-C028", message: "AI draft attestation" }))).toBe(
-      true,
-    );
-    expect(isEvidenceIssue(baseIssue({ constraint_id: "FG-C026", severity: "warning" }))).toBe(true);
     expect(isEvidenceIssue(baseIssue({ message: "Missing drug class" }))).toBe(false);
   });
 });
@@ -64,8 +66,8 @@ describe("isLowConfidenceEvidenceIssue", () => {
         baseIssue({
           severity: "warning",
           message: "Relationship confidence score is 0.32",
-        }),
-      ),
+        })
+      )
     ).toBe(true);
 
     expect(
@@ -74,8 +76,8 @@ describe("isLowConfidenceEvidenceIssue", () => {
           severity: "warning",
           field: "relationships.TREATS.metadata.confidence_score",
           message: "Low confidence for clinical assertion",
-        }),
-      ),
+        })
+      )
     ).toBe(true);
 
     expect(
@@ -83,8 +85,8 @@ describe("isLowConfidenceEvidenceIssue", () => {
         baseIssue({
           constraint_id: "FG-C018",
           message: "Provenance metadata is required",
-        }),
-      ),
+        })
+      )
     ).toBe(false);
   });
 
@@ -94,8 +96,8 @@ describe("isLowConfidenceEvidenceIssue", () => {
         baseIssue({
           severity: "warning",
           message: `Confidence score: ${LOW_CONFIDENCE_SCORE_THRESHOLD - 0.1}`,
-        }),
-      ),
+        })
+      )
     ).toBe(true);
   });
 });
@@ -173,7 +175,12 @@ describe("getNonemptyEvidenceCategories", () => {
 
     const sections = getNonemptyEvidenceCategories(categorized);
 
-    expect(sections.map((section) => section.id)).toEqual(["blockers", "missing", "lowConfidence", "warnings"]);
+    expect(sections.map((section) => section.id)).toEqual([
+      "blockers",
+      "missing",
+      "lowConfidence",
+      "warnings",
+    ]);
   });
 });
 
@@ -217,7 +224,7 @@ describe("computePublishValidationState evidence integration", () => {
           },
         ],
       },
-      attestedPackage,
+      attestedPackage
     );
 
     const state = computePublishValidationState({
@@ -253,7 +260,7 @@ describe("gatePublishAction evidence gating", () => {
             },
           ],
         },
-        attestedPackage,
+        attestedPackage
       ),
       packageInput: attestedPackage,
       workflowState: "approved",
@@ -280,7 +287,7 @@ describe("gatePublishAction evidence gating", () => {
             },
           ],
         },
-        samplePackage,
+        samplePackage
       ),
       packageInput: samplePackage,
       workflowState: "draft",
@@ -303,11 +310,12 @@ describe("gatePublishAction evidence gating", () => {
               constraint_id: "FG-C026",
               level: "biomedical",
               severity: "warning",
-              message: "FIRST_LINE_FOR should have RECOMMENDED_BY Guideline or SUPPORTED_BY Evidence",
+              message:
+                "FIRST_LINE_FOR should have RECOMMENDED_BY Guideline or SUPPORTED_BY Evidence",
             },
           ],
         },
-        attestedPackage,
+        attestedPackage
       ),
       packageInput: attestedPackage,
       workflowState: "approved",

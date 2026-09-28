@@ -83,13 +83,23 @@ export default function SettingsPage() {
               <label className="text-sm font-medium" htmlFor="accessToken">
                 JWT access token
               </label>
-              <Input id="accessToken" type="password" autoComplete="off" {...form.register("accessToken")} />
+              <Input
+                id="accessToken"
+                type="password"
+                autoComplete="off"
+                {...form.register("accessToken")}
+              />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium" htmlFor="refreshToken">
                 Refresh token
               </label>
-              <Input id="refreshToken" type="password" autoComplete="off" {...form.register("refreshToken")} />
+              <Input
+                id="refreshToken"
+                type="password"
+                autoComplete="off"
+                {...form.register("refreshToken")}
+              />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium" htmlFor="apiKey">

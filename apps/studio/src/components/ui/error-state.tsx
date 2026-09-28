@@ -48,7 +48,10 @@ function ErrorState({
   if (variant === "inline") {
     return (
       <div
-        className={cn("rounded-md border border-destructive/40 bg-destructive/5 p-4 space-y-2", className)}
+        className={cn(
+          "rounded-md border border-destructive/40 bg-destructive/5 p-4 space-y-2",
+          className
+        )}
         role="alert"
         {...props}
       >
@@ -58,7 +61,11 @@ function ErrorState({
   }
 
   return (
-    <Card className={cn("border-destructive/40 bg-destructive/5", className)} role="alert" {...props}>
+    <Card
+      className={cn("border-destructive/40 bg-destructive/5", className)}
+      role="alert"
+      {...props}
+    >
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-sm">
           <AlertCircle className="h-4 w-4 text-destructive" />

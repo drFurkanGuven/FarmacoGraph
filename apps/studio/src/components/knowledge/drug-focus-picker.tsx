@@ -11,7 +11,8 @@ import { useCuratorDrugs } from "@/lib/api/react-query/hooks";
 import type { DrugBrowseItem } from "@/lib/api";
 
 function statusTone(row: DrugBrowseItem): "success" | "warning" | "muted" {
-  if (row.workflow_state === "published" || row.publication_status === "published") return "success";
+  if (row.workflow_state === "published" || row.publication_status === "published")
+    return "success";
   if (row.workflow_state === "approved" || row.workflow_state === "review") return "warning";
   return "muted";
 }

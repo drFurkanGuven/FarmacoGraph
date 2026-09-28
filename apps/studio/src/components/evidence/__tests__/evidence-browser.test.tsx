@@ -10,7 +10,13 @@ vi.mock("@/lib/hooks/use-api-client", () => ({
   useApiClient: () => ({
     request: vi.fn().mockResolvedValue({ data: [], meta: { api_version: "v1" } }),
     statistics: vi.fn().mockResolvedValue({
-      data: { evidence_count: 0, entity_count: 0, relationship_count: 0, module_stats: {}, latest_snapshot: null },
+      data: {
+        evidence_count: 0,
+        entity_count: 0,
+        relationship_count: 0,
+        module_stats: {},
+        latest_snapshot: null,
+      },
       meta: {},
     }),
     validatePackage: vi.fn(),
@@ -29,7 +35,13 @@ vi.mock("@/lib/api/evidence", async (importOriginal) => {
 vi.mock("@/lib/api/react-query/hooks", () => ({
   useStatistics: () => ({
     data: {
-      data: { evidence_count: 12, entity_count: 0, relationship_count: 0, module_stats: {}, latest_snapshot: null },
+      data: {
+        evidence_count: 12,
+        entity_count: 0,
+        relationship_count: 0,
+        module_stats: {},
+        latest_snapshot: null,
+      },
       meta: { dataset_version: "v1" },
     },
     isLoading: false,
@@ -43,7 +55,7 @@ function renderBrowser() {
   return render(
     <QueryClientProvider client={client}>
       <EvidenceBrowser />
-    </QueryClientProvider>,
+    </QueryClientProvider>
   );
 }
 

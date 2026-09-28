@@ -2,12 +2,7 @@
 
 import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { PublishWizardAction } from "./validation";
 import { SnapshotResultCard } from "./snapshot-result-card";
 import type { PublishWizardResult } from "./types";
@@ -38,22 +33,24 @@ export function PublishConfirmation({
       <DialogHeader>
         <DialogTitle>Confirm {actionLabel.toLowerCase()}</DialogTitle>
         <DialogDescription>
-          This will update the workflow from <span className="font-mono">{workflowState ?? "unknown"}</span> using
-          the live curator API.
+          This will update the workflow from{" "}
+          <span className="font-mono">{workflowState ?? "unknown"}</span> using the live curator
+          API.
         </DialogDescription>
       </DialogHeader>
 
       <div className="space-y-4 py-2">
         {action === "publish" && (
           <p className="text-sm text-muted-foreground">
-            Publishing writes the current package to the knowledge graph and creates a snapshot when configured.
+            Publishing writes the current package to the knowledge graph and creates a snapshot when
+            configured.
           </p>
         )}
 
         {action === "returnToDraft" && (
           <p className="text-sm text-muted-foreground">
-            Returning to draft unlocks the package so missing indications, education, and evidence can be edited
-            before review.
+            Returning to draft unlocks the package so missing indications, education, and evidence
+            can be edited before review.
           </p>
         )}
 
@@ -70,7 +67,8 @@ export function PublishConfirmation({
 
         {canProceed && (
           <p className="text-sm text-muted-foreground">
-            Review validation results above before confirming. This action cannot be undone from the wizard.
+            Review validation results above before confirming. This action cannot be undone from the
+            wizard.
           </p>
         )}
       </div>
@@ -126,9 +124,7 @@ export function PublishResult({ result, actionLabel, slug, onClose, onDone }: Pu
         </div>
       )}
 
-      {result.publishOutcome && (
-        <SnapshotResultCard result={result.publishOutcome} slug={slug} />
-      )}
+      {result.publishOutcome && <SnapshotResultCard result={result.publishOutcome} slug={slug} />}
 
       <DialogFooter>
         {success ? (

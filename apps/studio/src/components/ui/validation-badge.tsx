@@ -2,7 +2,10 @@ import { Badge, type BadgeProps } from "@/components/ui/badge";
 
 export type ValidationStatus = "valid" | "invalid" | "pending";
 
-const STATUS_MAP: Record<ValidationStatus, { label: string; variant: NonNullable<BadgeProps["variant"]> }> = {
+const STATUS_MAP: Record<
+  ValidationStatus,
+  { label: string; variant: NonNullable<BadgeProps["variant"]> }
+> = {
   valid: { label: "Valid", variant: "success" },
   invalid: { label: "Invalid", variant: "danger" },
   pending: { label: "Pending", variant: "warning" },

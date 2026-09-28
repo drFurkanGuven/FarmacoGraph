@@ -44,7 +44,9 @@ function GraphValidationTimeline({
     <Card>
       <CardHeader>
         <CardTitle className="text-base">Graph validation failures</CardTitle>
-        <CardDescription>Recent post-publish integrity checks from graph validation jobs.</CardDescription>
+        <CardDescription>
+          Recent post-publish integrity checks from graph validation jobs.
+        </CardDescription>
       </CardHeader>
       <CardContent>
         {loading ? (
@@ -72,7 +74,8 @@ export function ValidationCenterView() {
   const queueQuery = useQueueValidation();
 
   const loading = summaryQuery.isLoading || jobsQuery.isLoading || queueQuery.isLoading;
-  const isFetching = (summaryQuery.isFetching || jobsQuery.isFetching || queueQuery.isFetching) && !loading;
+  const isFetching =
+    (summaryQuery.isFetching || jobsQuery.isFetching || queueQuery.isFetching) && !loading;
 
   const error = summaryQuery.error ?? jobsQuery.error ?? queueQuery.error;
 
@@ -83,7 +86,9 @@ export function ValidationCenterView() {
   const readiness = computePublishReadiness(summary, queueItems, categorized);
 
   const failedJobs = jobsQuery.data?.data.filter((job) => job.status === "failed") ?? [];
-  const pendingJobs = jobsQuery.data?.data.filter((job) => job.status === "pending" || job.status === "running") ?? [];
+  const pendingJobs =
+    jobsQuery.data?.data.filter((job) => job.status === "pending" || job.status === "running") ??
+    [];
 
   const refetchAll = () => {
     void summaryQuery.refetch();
@@ -208,7 +213,9 @@ export function ValidationCenterView() {
                 <li key={job.id} className="rounded-md border px-3 py-2">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="font-mono text-xs text-muted-foreground">{job.id}</span>
-                    <span className="text-xs text-muted-foreground">{jobStatusLabel(job.status)}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {jobStatusLabel(job.status)}
+                    </span>
                   </div>
                   <p className="mt-1 line-clamp-2">{job.error_message ?? "Validation failed"}</p>
                   <p className="mt-1 text-xs text-muted-foreground">

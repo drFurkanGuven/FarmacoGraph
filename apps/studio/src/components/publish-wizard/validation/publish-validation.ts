@@ -48,7 +48,7 @@ export function computePublishReady(valid: boolean, packageInput: PublishPackage
 
 export function toPackageValidationSnapshot(
   validation: { valid: boolean; issues: Record<string, unknown>[] },
-  packageInput: PublishPackageInput,
+  packageInput: PublishPackageInput
 ): PackageValidationSnapshot {
   const issues = parseValidationIssues(validation.issues);
   const errorCount = issues.filter((issue) => issue.severity === "error").length;
@@ -65,14 +65,14 @@ export function toPackageValidationSnapshot(
 
 export async function validatePublishPackage(
   client: FarmacoGraphClient,
-  packageInput: PublishPackageInput,
+  packageInput: PublishPackageInput
 ): Promise<PackageValidationSnapshot> {
   const envelope = await client.validatePackage(packageInput);
   return toPackageValidationSnapshot(envelope.data, packageInput);
 }
 
 export async function fetchValidationSummary(
-  client: FarmacoGraphClient,
+  client: FarmacoGraphClient
 ): Promise<ValidationSummaryData> {
   const envelope = await client.request<ValidationSummaryData>("/curator/validation-summary");
   return envelope.data;
@@ -80,7 +80,7 @@ export async function fetchValidationSummary(
 
 function appendAttestationIssue(
   issues: ReturnType<typeof parseValidationIssues>,
-  packageInput: PublishPackageInput,
+  packageInput: PublishPackageInput
 ): PublishWizardIssue[] {
   if (readCuratorAttestation(packageInput)) {
     return issues;
@@ -93,10 +93,14 @@ function formatEvidenceBlockerSummary(evidence: EvidenceGatingState): string | n
     return null;
   }
 
-  const parts: string[] = [`${evidence.blockerCount} evidence blocker${evidence.blockerCount === 1 ? "" : "s"}`];
+  const parts: string[] = [
+    `${evidence.blockerCount} evidence blocker${evidence.blockerCount === 1 ? "" : "s"}`,
+  ];
 
   if (evidence.missingCount > 0) {
-    parts.push(`${evidence.missingCount} missing evidence gap${evidence.missingCount === 1 ? "" : "s"}`);
+    parts.push(
+      `${evidence.missingCount} missing evidence gap${evidence.missingCount === 1 ? "" : "s"}`
+    );
   }
 
   return parts.join(", ");
@@ -113,13 +117,13 @@ export function getEvidenceGatingBlockers(state: PublishValidationState): string
 
   if (evidence.lowConfidenceCount > 0 && evidence.blockerCount === 0) {
     blockers.push(
-      `${evidence.lowConfidenceCount} low-confidence evidence item${evidence.lowConfidenceCount === 1 ? "" : "s"} flagged`,
+      `${evidence.lowConfidenceCount} low-confidence evidence item${evidence.lowConfidenceCount === 1 ? "" : "s"} flagged`
     );
   }
 
   if (evidence.warningCount > 0 && evidence.blockerCount === 0) {
     blockers.push(
-      `${evidence.warningCount} evidence warning${evidence.warningCount === 1 ? "" : "s"} should be reviewed`,
+      `${evidence.warningCount} evidence warning${evidence.warningCount === 1 ? "" : "s"} should be reviewed`
     );
   }
 
@@ -169,7 +173,9 @@ export function computePublishValidationState(input: {
     status = "blocked";
     const parts: string[] = [];
     if (!packageValidation.valid || blockingErrorCount > 0) {
-      parts.push(`${blockingErrorCount || packageValidation.error_count} blocking validation issue${(blockingErrorCount || packageValidation.error_count) === 1 ? "" : "s"}`);
+      parts.push(
+        `${blockingErrorCount || packageValidation.error_count} blocking validation issue${(blockingErrorCount || packageValidation.error_count) === 1 ? "" : "s"}`
+      );
     }
     const evidenceSummary = formatEvidenceBlockerSummary(evidence);
     if (evidenceSummary) {
@@ -219,7 +225,7 @@ export function getPublishBlockReason(state: PublishValidationState): string | n
 export function gatePublishAction(
   action: PublishWizardAction,
   state: PublishValidationState | null,
-  workflowState: string | null,
+  workflowState: string | null
 ): PublishActionGate {
   const requiredState = REQUIRED_WORKFLOW_STATE[action];
   const actionLabel = ACTION_LABELS[action];

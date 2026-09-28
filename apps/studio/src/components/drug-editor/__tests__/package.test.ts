@@ -3,7 +3,9 @@ import {
   applyFieldChange,
   createEmptyDrugPackage,
   drugRecordToPackage,
+  formatFieldValue,
   formatUuidList,
+  parseFieldValue,
   parseUuidList,
   relationshipCounts,
   sectionFieldValues,
@@ -82,7 +84,9 @@ describe("applyFieldChange", () => {
     expect(provenance.curator_attestation).toBe(false);
 
     const attested = applyFieldChange(unattested, field.path, "true", field.type);
-    const attestedProvenance = attested.entity_payload.provenance as { curator_attestation?: boolean };
+    const attestedProvenance = attested.entity_payload.provenance as {
+      curator_attestation?: boolean;
+    };
     expect(attestedProvenance.curator_attestation).toBe(true);
     expect(sectionFieldValues(attested, section).curator_attestation).toBe("true");
   });
@@ -131,16 +135,20 @@ describe("education package helpers", () => {
       text: "Rapid recall summary.",
       linked_entity_ids: ["drug-1"],
     });
-    expect(next.related_entities).toContainEqual(expect.objectContaining({
-      entity_type: "EducationResource",
-      content_layer: "education",
-    }));
-    expect(next.relationships).toContainEqual(expect.objectContaining({
-      relationship_type: "HAS_EDUCATION",
-      source_type: "Drug",
-      target_type: "EducationResource",
-      source_id: "drug-1",
-    }));
+    expect(next.related_entities).toContainEqual(
+      expect.objectContaining({
+        entity_type: "EducationResource",
+        content_layer: "education",
+      })
+    );
+    expect(next.relationships).toContainEqual(
+      expect.objectContaining({
+        relationship_type: "HAS_EDUCATION",
+        source_type: "Drug",
+        target_type: "EducationResource",
+        source_id: "drug-1",
+      })
+    );
   });
 
   it("stores flashcards and common mistakes as education resources", () => {
@@ -156,15 +164,68 @@ describe("education package helpers", () => {
     });
 
     expect(withMistake.education).toHaveLength(2);
-    expect(withMistake.education).toContainEqual(expect.objectContaining({
-      kind: "Flashcard",
-      front: "Which suffix suggests an ACE inhibitor?",
-      back: "-pril",
-    }));
-    expect(withMistake.education).toContainEqual(expect.objectContaining({
-      kind: "CommonMistake",
-      mistake: "Treating education mnemonics as clinical evidence.",
-    }));
-    expect(withMistake.relationships?.filter((row) => row.relationship_type === "HAS_EDUCATION")).toHaveLength(2);
+    expect(withMistake.education).toContainEqual(
+      expect.objectContaining({
+        kind: "Flashcard",
+        front: "Which suffix suggests an ACE inhibitor?",
+        back: "-pril",
+      })
+    );
+    expect(withMistake.education).toContainEqual(
+      expect.objectContaining({
+        kind: "CommonMistake",
+        mistake: "Treating education mnemonics as clinical evidence.",
+      })
+    );
+    expect(
+      withMistake.relationships?.filter((row) => row.relationship_type === "HAS_EDUCATION")
+    ).toHaveLength(2);
+  });
+});
+
+describe("boolean fields (curator attestation, safety flags)", () => {
+  it("formats booleans as checkbox strings", () => {
+    expect(formatFieldValue(true, "boolean")).toBe("true");
+    expect(formatFieldValue(false, "boolean")).toBe("false");
+    expect(formatFieldValue(undefined, "boolean")).toBe("");
+  });
+
+  it("parses checkbox strings back to booleans", () => {
+    expect(parseFieldValue("true", "boolean")).toBe(true);
+    expect(parseFieldValue("false", "boolean")).toBe(false);
+  });
+
+  it("stores attestation as a real boolean in the package", () => {
+    const pkg = createEmptyDrugPackage("drug-1");
+    const next = applyFieldChange(
+      pkg,
+      "entity_payload.provenance.curator_attestation",
+      "true",
+      "boolean"
+    );
+    const provenance = next.entity_payload.provenance as Record<string, unknown>;
+    expect(provenance.curator_attestation).toBe(true);
+  });
+
+  it("preserves pharmacokinetics and safety scalars on load", () => {
+    const pkg = drugRecordToPackage("drug-1", {
+      id: "drug-1",
+      slug: "metoprolol",
+      label: "Metoprolol",
+      half_life: "3–7 hours",
+      bioavailability: "~50%",
+      protein_binding: "~12%",
+      onset: "1–2 hours",
+      duration: "24 hours",
+      has_black_box_warning: true,
+      black_box_text: "Do not stop abruptly.",
+      is_high_alert: false,
+    });
+    const payload = pkg.entity_payload as Record<string, unknown>;
+    expect(payload.half_life).toBe("3–7 hours");
+    expect(payload.bioavailability).toBe("~50%");
+    expect(payload.has_black_box_warning).toBe(true);
+    expect(payload.black_box_text).toBe("Do not stop abruptly.");
+    expect(payload.is_high_alert).toBe(false);
   });
 });

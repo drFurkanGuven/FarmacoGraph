@@ -8,7 +8,7 @@ export interface TreatsIndicationReadinessResult {
 }
 
 export function readCuratorAttestationFromPackage(
-  provenance: Record<string, unknown> | null | undefined,
+  provenance: Record<string, unknown> | null | undefined
 ): boolean {
   if (!provenance || typeof provenance !== "object" || Array.isArray(provenance)) {
     return false;
@@ -19,7 +19,7 @@ export function readCuratorAttestationFromPackage(
 /** Client-side mirror of FG-C012 / FG-C019 / FG-C020 for a single TREATS indication. */
 export function evaluateTreatsIndicationReadiness(
   props: TreatsIndicationProperties,
-  curatorAttestation: boolean,
+  curatorAttestation: boolean
 ): TreatsIndicationReadinessResult {
   const missing: string[] = [];
 

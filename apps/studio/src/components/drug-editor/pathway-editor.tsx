@@ -21,7 +21,11 @@ import {
 import "@xyflow/react/dist/style.css";
 import { GitBranch, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/lib/i18n/context";
 import { AddPathwayNodePanel } from "./add-pathway-node-panel";
 import { CreateMechanismFragmentDialog } from "./create-mechanism-fragment-dialog";
 import {
@@ -36,6 +40,7 @@ import {
   removePathwayEdge,
   removePathwayNode,
   setMechanismRoot,
+  updatePathwayEdgeProperties,
   type PathwayEdgeType,
 } from "./mechanism-pathway";
 import type { DrugPublishPackage } from "./types";
@@ -43,12 +48,36 @@ import type { DrugPublishPackage } from "./types";
 const DRUG_NODE_TYPE = "drug";
 const FRAGMENT_NODE_TYPE = "pathway";
 
+/** Left-border accent per mechanism level (same palette as the reader Explore view). */
+const FRAGMENT_LEVEL_STYLES: Record<string, { border: string; badge: string }> = {
+  molecular: {
+    border: "border-l-indigo-500",
+    badge: "bg-indigo-500/10 text-indigo-500 border-indigo-500/20",
+  },
+  cellular: {
+    border: "border-l-cyan-500",
+    badge: "bg-cyan-500/10 text-cyan-500 border-cyan-500/20",
+  },
+  tissue: {
+    border: "border-l-violet-500",
+    badge: "bg-violet-500/10 text-violet-500 border-violet-500/20",
+  },
+  organ: {
+    border: "border-l-amber-500",
+    badge: "bg-amber-500/10 text-amber-500 border-amber-500/20",
+  },
+  clinical: {
+    border: "border-l-emerald-500",
+    badge: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
+  },
+};
+
 function DrugGraphNode({ data, selected }: NodeProps) {
   return (
     <div
       className={cn(
         "min-w-[10rem] max-w-[13rem] rounded-md border border-emerald-500/80 bg-emerald-500/15 px-3 py-2 shadow-sm",
-        selected && "ring-2 ring-foreground/40",
+        selected && "ring-2 ring-foreground/40"
       )}
     >
       <p className="truncate text-xs font-semibold">{String(data.label)}</p>
@@ -60,19 +89,37 @@ function DrugGraphNode({ data, selected }: NodeProps) {
 
 function PathwayNode({ data, selected }: NodeProps) {
   const isRoot = Boolean(data.isRoot);
+  const level = typeof data.level === "string" ? data.level : null;
+  const levelStyle = level ? FRAGMENT_LEVEL_STYLES[level] : undefined;
   return (
     <div
       className={cn(
-        "min-w-[10rem] max-w-[13rem] rounded-md border px-3 py-2 shadow-sm",
+        "min-w-[10rem] max-w-[13rem] rounded-md border border-l-4 px-3 py-2 shadow-sm",
         isRoot ? "border-sky-500/80 bg-sky-500/15" : "border-border bg-card",
-        selected && "ring-2 ring-foreground/40",
+        levelStyle ? levelStyle.border : "border-l-muted-foreground/30",
+        !level && "ring-1 ring-amber-500/60",
+        selected && "ring-2 ring-foreground/40"
       )}
+      title={
+        level ? `Level: ${level}` : "No fragment level set — publish validation (FG-C015) will fail"
+      }
     >
       <Handle type="target" position={Position.Left} className="!h-2 !w-2 !bg-muted-foreground" />
       <p className="truncate text-xs font-semibold">{String(data.label)}</p>
       <p className="truncate text-[10px] text-muted-foreground">
         {isRoot ? "Mechanism root" : "Pathway fragment"}
       </p>
+      {level && levelStyle ? (
+        <span
+          className={`mt-1 inline-block px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${levelStyle.badge}`}
+        >
+          {level}
+        </span>
+      ) : (
+        <span className="mt-1 inline-block px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border border-amber-500/40 bg-amber-500/10 text-amber-600">
+          no level
+        </span>
+      )}
       <Handle type="source" position={Position.Right} className="!h-2 !w-2 !bg-muted-foreground" />
     </div>
   );
@@ -107,6 +154,7 @@ function buildPackageGraph(
   pkg: DrugPublishPackage,
   drugEntityId: string,
   labelMap: Map<string, string>,
+  levelMap: Map<string, string | null>
 ): { nodes: Node[]; edges: Edge[]; fragmentIds: string[]; signature: string } {
   const rootIds = listMechanismRootIds(pkg);
   const rootSet = new Set(rootIds);
@@ -133,6 +181,7 @@ function buildPackageGraph(
         label: labelMap.get(id) ?? readFragmentLabel(pkg, id),
         isRoot: rootSet.has(id),
         kind: "fragment",
+        level: levelMap.get(id) ?? null,
       },
     });
   });
@@ -164,8 +213,12 @@ function buildPackageGraph(
     drugEntityId,
     ...fragmentIds.slice().sort(),
     ...edges.map((edge) => edge.id).sort(),
-    ...rootIds.slice().sort().map((id) => `root:${id}`),
+    ...rootIds
+      .slice()
+      .sort()
+      .map((id) => `root:${id}`),
     ...fragmentIds.map((id) => `label:${id}:${labelMap.get(id) ?? ""}`),
+    ...fragmentIds.map((id) => `level:${id}:${levelMap.get(id) ?? ""}`),
   ].join("|");
 
   return { nodes, edges, fragmentIds, signature };
@@ -183,6 +236,85 @@ export function PathwayEditor(props: PathwayEditorProps) {
     <ReactFlowProvider>
       <PathwayEditorInner {...props} />
     </ReactFlowProvider>
+  );
+}
+
+function EdgeMetadataPanel({
+  sourceId,
+  targetId,
+  relationshipType,
+  properties,
+  onSave,
+}: {
+  sourceId: string;
+  targetId: string;
+  relationshipType: string;
+  properties: { explanation: string; confidence_score: number; evidence_level: string };
+  onSave: (patch: {
+    explanation?: string;
+    confidence_score?: number;
+    evidence_level?: string;
+  }) => void;
+}) {
+  const { t } = useLanguage();
+  const [explanation, setExplanation] = useState(properties.explanation);
+  const [confidence, setConfidence] = useState(properties.confidence_score);
+  const [evidenceLevel, setEvidenceLevel] = useState(properties.evidence_level);
+  const dirty =
+    explanation !== properties.explanation ||
+    confidence !== properties.confidence_score ||
+    evidenceLevel !== properties.evidence_level;
+
+  return (
+    <div className="space-y-3 rounded-md border bg-card/40 p-3">
+      <p className="text-xs font-semibold">
+        {relationshipType.replaceAll("_", " ")} · {sourceId.slice(0, 8)} → {targetId.slice(0, 8)}
+      </p>
+      <div className="space-y-2">
+        <Label>{t("treats.clinicalExplanation", "Clinical explanation")}</Label>
+        <Textarea
+          rows={2}
+          value={explanation}
+          onChange={(event) => setExplanation(event.target.value)}
+          placeholder={t(
+            "treats.clinicalExplanationPlaceholder",
+            "Why does this drug treat this condition?"
+          )}
+        />
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label>{t("treats.confidence", "Confidence score (0–1)")}</Label>
+          <Input
+            type="number"
+            min={0}
+            max={1}
+            step={0.05}
+            value={confidence}
+            onChange={(event) => {
+              const parsed = Number.parseFloat(event.target.value);
+              setConfidence(Number.isFinite(parsed) ? Math.min(1, Math.max(0, parsed)) : 0);
+            }}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>{t("treats.evidenceLevel", "Evidence level")}</Label>
+          <Input value={evidenceLevel} onChange={(event) => setEvidenceLevel(event.target.value)} />
+        </div>
+      </div>
+      <div className="flex justify-end">
+        <Button
+          type="button"
+          size="sm"
+          disabled={!dirty}
+          onClick={() =>
+            onSave({ explanation, confidence_score: confidence, evidence_level: evidenceLevel })
+          }
+        >
+          Save edge metadata
+        </Button>
+      </div>
+    </div>
   );
 }
 
@@ -211,9 +343,30 @@ function PathwayEditorInner({
     return map;
   }, [pkg, fragmentIds]);
 
+  const levelMap = useMemo(() => {
+    const map = new Map<string, string | null>();
+    const related = Array.isArray(pkg.related_entities) ? pkg.related_entities : [];
+    for (const row of related) {
+      if (
+        typeof row === "object" &&
+        row !== null &&
+        (row as Record<string, unknown>).entity_type === "MechanismFragment" &&
+        typeof (row as Record<string, unknown>).id === "string"
+      ) {
+        const record = row as Record<string, unknown>;
+        const level = record.fragment_type;
+        map.set(
+          record.id as string,
+          typeof level === "string" && level in FRAGMENT_LEVEL_STYLES ? level : null
+        );
+      }
+    }
+    return map;
+  }, [pkg]);
+
   const packageGraph = useMemo(
-    () => buildPackageGraph(pkg, drugEntityId, labelMap),
-    [pkg, drugEntityId, labelMap],
+    () => buildPackageGraph(pkg, drugEntityId, labelMap, levelMap),
+    [pkg, drugEntityId, labelMap, levelMap]
   );
 
   const [nodes, setNodes, onNodesChange] = useNodesState(packageGraph.nodes);
@@ -250,7 +403,7 @@ function PathwayEditorInner({
           setMechanismRoot(pkg, drugEntityId, target, true, {
             id: target,
             label: labelMap.get(target),
-          }),
+          })
         );
         return;
       }
@@ -265,13 +418,13 @@ function PathwayEditorInner({
               { id: source, label: labelMap.get(source) },
               { id: target, label: labelMap.get(target) },
             ],
-          }),
+          })
         );
       } catch (err) {
         setConnectError(err instanceof Error ? err.message : "Could not add pathway edge.");
       }
     },
-    [disabled, drugEntityId, pkg, edgeType, labelMap, onPackageChange],
+    [disabled, drugEntityId, pkg, edgeType, labelMap, onPackageChange]
   );
 
   function addFragmentToCanvas(fragment: {
@@ -279,6 +432,8 @@ function PathwayEditorInner({
     slug: string;
     label: string;
     description?: string | null;
+    fragment_type?: string | null;
+    direction?: string | null;
   }) {
     if (disabled) return;
     onPackageChange(
@@ -287,7 +442,9 @@ function PathwayEditorInner({
         slug: fragment.slug,
         label: fragment.label,
         description: fragment.description,
-      }),
+        fragment_type: fragment.fragment_type,
+        direction: fragment.direction,
+      })
     );
   }
 
@@ -297,7 +454,7 @@ function PathwayEditorInner({
       setMechanismRoot(pkg, drugEntityId, selectedNodeId, enabled, {
         id: selectedNodeId,
         label: labelMap.get(selectedNodeId),
-      }),
+      })
     );
   }
 
@@ -328,6 +485,28 @@ function PathwayEditorInner({
   const selectedIsRoot = selectedIsFragment && selectedNodeId ? rootSet.has(selectedNodeId) : false;
   const canDelete =
     Boolean(selectedEdgeId) || (selectedIsFragment && selectedNodeId !== drugEntityId);
+  const selectedPathwayEdge = useMemo(() => {
+    if (!selectedEdgeId) return null;
+    const edge = edges.find((row) => row.id === selectedEdgeId);
+    if (!edge || edge.data?.kind !== "pathway") return null;
+    const relationshipType = isPathwayEdgeTypeValue(edge.data?.relationshipType)
+      ? edge.data.relationshipType
+      : undefined;
+    const rows = listPathwayEdges(pkg);
+    const match = rows.find(
+      (row) =>
+        row.source_id === edge.source &&
+        row.target_id === edge.target &&
+        (!relationshipType || row.relationship_type === relationshipType)
+    );
+    if (!match) return null;
+    return {
+      sourceId: match.source_id,
+      targetId: match.target_id,
+      relationshipType: match.relationship_type,
+      properties: match.properties,
+    };
+  }, [selectedEdgeId, edges, pkg]);
 
   return (
     <div className="space-y-3">
@@ -338,8 +517,8 @@ function PathwayEditorInner({
             Pathway editor
           </p>
           <p className="text-xs text-muted-foreground">
-            Add fragments, connect from the Drug node to set roots, then draw PRECEDES / BRANCHES_TO /
-            MERGES_INTO steps. Changes save with the draft package.
+            Add fragments, connect from the Drug node to set roots, then draw PRECEDES / BRANCHES_TO
+            / MERGES_INTO steps. Changes save with the draft package.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -372,6 +551,8 @@ function PathwayEditorInner({
                 slug: entity.slug,
                 label: entity.label,
                 description: entity.description,
+                fragment_type: entity.fragment_type,
+                direction: entity.direction,
               })
             }
           />
@@ -408,6 +589,27 @@ function PathwayEditorInner({
         <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
           {connectError}
         </p>
+      )}
+
+      {selectedPathwayEdge && !disabled && (
+        <EdgeMetadataPanel
+          key={`${selectedPathwayEdge.sourceId}::${selectedPathwayEdge.relationshipType}::${selectedPathwayEdge.targetId}`}
+          sourceId={selectedPathwayEdge.sourceId}
+          targetId={selectedPathwayEdge.targetId}
+          relationshipType={selectedPathwayEdge.relationshipType}
+          properties={selectedPathwayEdge.properties}
+          onSave={(patch) =>
+            onPackageChange(
+              updatePathwayEdgeProperties(
+                pkg,
+                selectedPathwayEdge.sourceId,
+                selectedPathwayEdge.targetId,
+                patch,
+                selectedPathwayEdge.relationshipType
+              )
+            )
+          }
+        />
       )}
 
       <div className="h-[28rem] overflow-hidden rounded-md border bg-muted/20">
@@ -454,8 +656,8 @@ function PathwayEditorInner({
 
       {fragmentIds.length === 0 && (
         <p className="text-xs text-muted-foreground">
-          Canvas starts with the Drug node. Use <span className="font-medium">Add node</span> to place
-          fragments, then connect Drug → fragment to mark roots.
+          Canvas starts with the Drug node. Use <span className="font-medium">Add node</span> to
+          place fragments, then connect Drug → fragment to mark roots.
         </p>
       )}
     </div>

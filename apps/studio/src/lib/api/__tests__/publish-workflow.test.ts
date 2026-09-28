@@ -50,9 +50,12 @@ describe("FarmacoGraphClient publish workflow mutations", () => {
 
     await client.returnWorkflowToDraft("workflow-1");
 
-    expect(transport.request).toHaveBeenCalledWith("/curator/workflows/workflow-1/return-to-draft", {
-      method: "POST",
-    });
+    expect(transport.request).toHaveBeenCalledWith(
+      "/curator/workflows/workflow-1/return-to-draft",
+      {
+        method: "POST",
+      }
+    );
   });
 
   it("calls publish workflow endpoint with package body", async () => {
@@ -104,7 +107,9 @@ describe("FarmacoGraphClient publish workflow mutations", () => {
   it("surfaces ApiError from failed publish mutation", async () => {
     const transport = createMockTransport();
     transport.request.mockRejectedValueOnce(
-      new ApiError("Cannot publish from state: draft", 400, { message: "Cannot publish from state: draft" }),
+      new ApiError("Cannot publish from state: draft", 400, {
+        message: "Cannot publish from state: draft",
+      })
     );
     const client = new FarmacoGraphClient({ baseUrl: "http://api.test/api/v1/" });
     Object.defineProperty(client, "transport", { value: transport });

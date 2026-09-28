@@ -24,6 +24,8 @@ import { Label } from "@/components/ui/label";
 import { SearchInput } from "@/components/ui/search-input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/lib/i18n/context";
+import { getConstraintHint } from "@/lib/i18n/dictionaries";
 import {
   EVIDENCE_TYPE_OPTIONS,
   evidenceTypeLabel,
@@ -36,10 +38,18 @@ import { useDrugEvidence } from "./use-drug-evidence";
 export interface DrugEvidenceSectionProps extends DrugEvidenceContext {
   disabled?: boolean;
   className?: string;
+  /** TREATS disease options for linking a newly created record to an indication. */
+  treatsOptions?: Array<{ id: string; label: string }>;
+  /** Called after create+attach when the curator linked the record to an indication. */
+  onLinkToIndication?: (evidenceId: string, diseaseId: string) => void;
 }
 
 function evidenceBadgeType(evidenceType: string): EvidenceType {
-  if (evidenceType.includes("fda") || evidenceType.includes("rct") || evidenceType.includes("meta")) {
+  if (
+    evidenceType.includes("fda") ||
+    evidenceType.includes("rct") ||
+    evidenceType.includes("meta")
+  ) {
     return "primary";
   }
   if (evidenceType.includes("review") || evidenceType.includes("guideline")) {
@@ -76,7 +86,10 @@ export function DrugEvidenceSection({
   validation,
   disabled = false,
   className,
+  treatsOptions = [],
+  onLinkToIndication,
 }: DrugEvidenceSectionProps) {
+  const { t, locale } = useLanguage();
   const evidence = useDrugEvidence({ drugId, entityId, slug, validation });
   const [attachOpen, setAttachOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
@@ -86,8 +99,12 @@ export function DrugEvidenceSection({
     evidence_type: "pubmed_article",
     quality_score: 0.5,
     year: null,
+    authors: [],
+    journal: null,
+    supports_claim: null,
     extract: "",
   });
+  const [linkDiseaseId, setLinkDiseaseId] = useState("");
 
   const handleSearch = useCallback(async () => {
     if (!searchQuery.trim()) return;
@@ -108,7 +125,7 @@ export function DrugEvidenceSection({
         // useDrugEvidence exposes the mutation error through actionError.
       }
     },
-    [evidence],
+    [evidence]
   );
 
   const handleDetach = useCallback(
@@ -119,29 +136,39 @@ export function DrugEvidenceSection({
         // useDrugEvidence exposes the mutation error through actionError.
       }
     },
-    [evidence],
+    [evidence]
   );
 
   const handleCreate = useCallback(async () => {
     if (!createForm.title.trim()) return;
     try {
-      await evidence.createAndAttachEvidence({
+      const created = await evidence.createAndAttachEvidence({
         ...createForm,
         title: createForm.title.trim(),
+        authors: createForm.authors?.filter(Boolean) ?? [],
+        journal: createForm.journal?.trim() || null,
+        supports_claim: createForm.supports_claim?.trim() || null,
         extract: createForm.extract?.trim() || null,
       });
+      if (linkDiseaseId && onLinkToIndication) {
+        onLinkToIndication(created.id, linkDiseaseId);
+      }
       setCreateOpen(false);
       setCreateForm({
         title: "",
         evidence_type: "pubmed_article",
         quality_score: 0.5,
         year: null,
+        authors: [],
+        journal: null,
+        supports_claim: null,
         extract: "",
       });
+      setLinkDiseaseId("");
     } catch {
       // useDrugEvidence exposes the mutation error through actionError.
     }
-  }, [createForm, evidence]);
+  }, [createForm, evidence, linkDiseaseId, onLinkToIndication]);
 
   if (evidence.loading) {
     return (
@@ -161,9 +188,14 @@ export function DrugEvidenceSection({
     return (
       <div className={cn("space-y-4", className)}>
         <div>
-          <h2 className="text-lg font-semibold tracking-tight">Evidence</h2>
+          <h2 className="text-lg font-semibold tracking-tight">
+            {t("evidence.title", "Evidence")}
+          </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Citations and provenance linked to this drug via the evidence API.
+            {t(
+              "evidence.subtitle",
+              "Citations and provenance linked to this drug via the evidence API."
+            )}
           </p>
         </div>
         <ErrorState
@@ -180,9 +212,14 @@ export function DrugEvidenceSection({
     <div className={cn("space-y-6", className)}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold tracking-tight">Evidence</h2>
+          <h2 className="text-lg font-semibold tracking-tight">
+            {t("evidence.title", "Evidence")}
+          </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Attached citations, validation gaps, and evidence quality for this drug package.
+            {t(
+              "evidence.subtitle",
+              "Attached citations, validation gaps, and evidence quality for this drug package."
+            )}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -193,7 +230,7 @@ export function DrugEvidenceSection({
             onClick={() => setAttachOpen(true)}
           >
             <Link2 className="h-4 w-4" />
-            Attach existing
+            {t("evidence.attachExisting", "Attach existing")}
           </Button>
           <Button
             variant="default"
@@ -202,20 +239,27 @@ export function DrugEvidenceSection({
             onClick={() => setCreateOpen(true)}
           >
             <Plus className="h-4 w-4" />
-            Create evidence
+            {t("evidence.createEvidence", "Create evidence")}
           </Button>
         </div>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">
-        <SummaryMetric label="Attached" value={evidence.summary.attachedCount} />
         <SummaryMetric
-          label="Missing"
-          value={evidence.summary.missingCount}
-          hint={evidence.summary.missingCount > 0 ? "From validation dry-run" : "No gaps reported"}
+          label={t("evidence.attached", "Attached")}
+          value={evidence.summary.attachedCount}
         />
         <SummaryMetric
-          label="Avg. quality"
+          label={t("evidence.missing", "Missing")}
+          value={evidence.summary.missingCount}
+          hint={
+            evidence.summary.missingCount > 0
+              ? t("evidence.missingHintSome", "From validation dry-run")
+              : t("evidence.missingHintNone", "No gaps reported")
+          }
+        />
+        <SummaryMetric
+          label={t("evidence.avgQuality", "Avg. quality")}
           value={formatQualityScore(evidence.summary.averageQuality)}
           hint={
             evidence.summary.qualityLevel !== "none"
@@ -235,16 +279,24 @@ export function DrugEvidenceSection({
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-sm">
             <FileText className="h-4 w-4" />
-            Attached evidence
+            {t("evidence.attachedEvidence", "Attached evidence")}
           </CardTitle>
-          <CardDescription>Evidence nodes linked to this drug through the public API.</CardDescription>
+          <CardDescription>
+            {t(
+              "evidence.attachedEvidenceHint",
+              "Evidence nodes linked to this drug through the public API."
+            )}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {evidence.attachments.length === 0 ? (
             <EmptyState
-              title="No evidence attached"
-              description="Attach an existing evidence record or create a new structural citation entry."
-              actionLabel="Attach existing"
+              title={t("evidence.noEvidence", "No evidence attached")}
+              description={t(
+                "evidence.noEvidenceHint",
+                "Attach an existing evidence record or create a new structural citation entry."
+              )}
+              actionLabel={t("evidence.attachExisting", "Attach existing")}
               onAction={() => setAttachOpen(true)}
               className="py-8"
             />
@@ -263,11 +315,19 @@ export function DrugEvidenceSection({
                         label={evidenceTypeLabel(attachment.evidence.evidence_type)}
                       />
                       <ConfidenceBadge
-                        level={attachment.evidence.quality_score >= 0.8 ? "high" : attachment.evidence.quality_score >= 0.5 ? "medium" : "low"}
+                        level={
+                          attachment.evidence.quality_score >= 0.8
+                            ? "high"
+                            : attachment.evidence.quality_score >= 0.5
+                              ? "medium"
+                              : "low"
+                        }
                         score={Math.round(attachment.evidence.quality_score * 100)}
                       />
                     </div>
-                    <p className="font-mono text-[11px] text-muted-foreground">{attachment.evidence.id}</p>
+                    <p className="font-mono text-[11px] text-muted-foreground">
+                      {attachment.evidence.id}
+                    </p>
                   </div>
                   <Button
                     variant="ghost"
@@ -293,30 +353,46 @@ export function DrugEvidenceSection({
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-sm">
             <AlertTriangle className="h-4 w-4" />
-            Missing evidence
+            {t("evidence.missingEvidence", "Missing evidence")}
           </CardTitle>
-          <CardDescription>Validation issues that reference missing or insufficient evidence.</CardDescription>
+          <CardDescription>
+            {t(
+              "evidence.missingEvidenceHint",
+              "Validation issues that reference missing or insufficient evidence."
+            )}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {evidence.missingRequirements.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              No missing-evidence issues reported by the latest validation dry-run.
+              {t(
+                "evidence.noMissing",
+                "No missing-evidence issues reported by the latest validation dry-run."
+              )}
             </p>
           ) : (
             <ul className="space-y-2">
-              {evidence.missingRequirements.map((requirement) => (
-                <li
-                  key={requirement.id}
-                  className="rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-sm"
-                >
-                  <p>{requirement.message}</p>
-                  {(requirement.field || requirement.relationship_type) && (
-                    <p className="mt-1 font-mono text-[11px] text-muted-foreground">
-                      {[requirement.field, requirement.relationship_type].filter(Boolean).join(" · ")}
-                    </p>
-                  )}
-                </li>
-              ))}
+              {evidence.missingRequirements.map((requirement) => {
+                const hint = getConstraintHint(requirement.constraint_id, locale);
+                return (
+                  <li
+                    key={requirement.id}
+                    className="rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-sm"
+                  >
+                    <p>{requirement.message}</p>
+                    {hint && (
+                      <p className="mt-1 text-xs text-amber-800 dark:text-amber-200">{hint}</p>
+                    )}
+                    {(requirement.field || requirement.relationship_type) && (
+                      <p className="mt-1 font-mono text-[11px] text-muted-foreground">
+                        {[requirement.field, requirement.relationship_type]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </p>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </CardContent>
@@ -325,15 +401,20 @@ export function DrugEvidenceSection({
       <Dialog open={attachOpen} onOpenChange={setAttachOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Attach existing evidence</DialogTitle>
-            <DialogDescription>Search the evidence catalog and link a record to this drug.</DialogDescription>
+            <DialogTitle>{t("evidence.searchTitle", "Attach existing evidence")}</DialogTitle>
+            <DialogDescription>
+              {t(
+                "evidence.searchHint",
+                "Search the evidence catalog and link a record to this drug."
+              )}
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <div className="flex gap-2">
               <SearchInput
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Search by title or ID"
+                placeholder={t("evidence.searchPlaceholder", "Search by title or ID")}
                 onKeyDown={(event) => {
                   if (event.key === "Enter") {
                     event.preventDefault();
@@ -355,7 +436,9 @@ export function DrugEvidenceSection({
               </Button>
             </div>
             {evidence.searchResults.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Search to find evidence records to attach.</p>
+              <p className="text-sm text-muted-foreground">
+                {t("evidence.searchEmpty", "Search to find evidence records to attach.")}
+              </p>
             ) : (
               <ul className="max-h-64 space-y-2 overflow-auto">
                 {evidence.searchResults.map((item) => {
@@ -375,7 +458,9 @@ export function DrugEvidenceSection({
                         disabled={attached || evidence.isMutating}
                         onClick={() => void handleAttach(item.id)}
                       >
-                        {attached ? "Attached" : "Attach"}
+                        {attached
+                          ? t("evidence.attachedLabel", "Attached")
+                          : t("evidence.attachLabel", "Attach")}
                       </Button>
                     </li>
                   );
@@ -389,23 +474,28 @@ export function DrugEvidenceSection({
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create evidence</DialogTitle>
+            <DialogTitle>{t("evidence.createTitle", "Create evidence")}</DialogTitle>
             <DialogDescription>
-              Create a structural evidence record and attach it to this drug. No biomedical assertions are inferred.
+              {t(
+                "evidence.createHint",
+                "Create a structural evidence record and attach it to this drug. No biomedical assertions are inferred."
+              )}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="evidence-title">Title</Label>
+              <Label htmlFor="evidence-title">{t("evidence.fieldTitle", "Title")}</Label>
               <Input
                 id="evidence-title"
                 value={createForm.title}
-                onChange={(event) => setCreateForm((current) => ({ ...current, title: event.target.value }))}
-                placeholder="Citation or source title"
+                onChange={(event) =>
+                  setCreateForm((current) => ({ ...current, title: event.target.value }))
+                }
+                placeholder={t("evidence.fieldTitlePlaceholder", "Citation or source title")}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="evidence-type">Evidence type</Label>
+              <Label htmlFor="evidence-type">{t("evidence.fieldType", "Evidence type")}</Label>
               <select
                 id="evidence-type"
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
@@ -421,47 +511,145 @@ export function DrugEvidenceSection({
                 ))}
               </select>
             </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="evidence-quality">
+                  {t("evidence.fieldQuality", "Quality score (0–1)")}
+                </Label>
+                <Input
+                  id="evidence-quality"
+                  type="number"
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  value={createForm.quality_score}
+                  onChange={(event) =>
+                    setCreateForm((current) => ({
+                      ...current,
+                      quality_score: Number(event.target.value),
+                    }))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="evidence-year">{t("evidence.fieldYear", "Year (optional)")}</Label>
+                <Input
+                  id="evidence-year"
+                  type="number"
+                  value={createForm.year ?? ""}
+                  onChange={(event) =>
+                    setCreateForm((current) => ({
+                      ...current,
+                      year: event.target.value ? Number(event.target.value) : null,
+                    }))
+                  }
+                />
+              </div>
+            </div>
             <div className="space-y-2">
-              <Label htmlFor="evidence-quality">Quality score (0–1)</Label>
+              <Label htmlFor="evidence-authors">
+                {t("evidence.fieldAuthors", "Authors (comma-separated)")}
+              </Label>
               <Input
-                id="evidence-quality"
-                type="number"
-                min={0}
-                max={1}
-                step={0.05}
-                value={createForm.quality_score}
+                id="evidence-authors"
+                value={(createForm.authors ?? []).join(", ")}
                 onChange={(event) =>
                   setCreateForm((current) => ({
                     ...current,
-                    quality_score: Number(event.target.value),
+                    authors: event.target.value
+                      .split(",")
+                      .map((author) => author.trim())
+                      .filter(Boolean),
                   }))
                 }
+                placeholder="Yusuf S, Sleight P"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="evidence-year">Year (optional)</Label>
+              <Label htmlFor="evidence-journal">
+                {t("evidence.fieldJournal", "Journal / source")}
+              </Label>
               <Input
-                id="evidence-year"
-                type="number"
-                value={createForm.year ?? ""}
+                id="evidence-journal"
+                value={createForm.journal ?? ""}
+                onChange={(event) =>
+                  setCreateForm((current) => ({ ...current, journal: event.target.value }))
+                }
+                placeholder={t("evidence.fieldJournalPlaceholder", "Journal or regulator")}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="evidence-supports-claim">
+                {t("evidence.fieldSupportsClaim", "Supports claim")}
+              </Label>
+              <Input
+                id="evidence-supports-claim"
+                value={createForm.supports_claim ?? ""}
                 onChange={(event) =>
                   setCreateForm((current) => ({
                     ...current,
-                    year: event.target.value ? Number(event.target.value) : null,
+                    supports_claim: event.target.value,
                   }))
                 }
+                placeholder={t(
+                  "evidence.fieldSupportsClaimPlaceholder",
+                  "What clinical assertion does this support?"
+                )}
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="evidence-extract">{t("evidence.fieldExtract", "Extract")}</Label>
+              <Input
+                id="evidence-extract"
+                value={createForm.extract ?? ""}
+                onChange={(event) =>
+                  setCreateForm((current) => ({ ...current, extract: event.target.value }))
+                }
+                placeholder={t(
+                  "evidence.fieldExtractPlaceholder",
+                  "Relevant quote or summary from the source"
+                )}
+              />
+            </div>
+            {treatsOptions.length > 0 && (
+              <div className="space-y-2">
+                <Label htmlFor="evidence-link-indication">
+                  {t("evidence.fieldLinkIndication", "Link to indication (optional)")}
+                </Label>
+                <select
+                  id="evidence-link-indication"
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+                  value={linkDiseaseId}
+                  onChange={(event) => setLinkDiseaseId(event.target.value)}
+                >
+                  <option value="">
+                    {t(
+                      "evidence.fieldLinkIndicationNone",
+                      "Don't link — select later from the indication card"
+                    )}
+                  </option>
+                  {treatsOptions.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)}>
-              Cancel
+              {t("evidence.cancel", "Cancel")}
             </Button>
             <Button
               disabled={!createForm.title.trim() || evidence.isMutating}
               onClick={() => void handleCreate()}
             >
-              {evidence.isMutating ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create and attach"}
+              {evidence.isMutating ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                t("evidence.createAndAttach", "Create and attach")
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

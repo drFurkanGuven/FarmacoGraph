@@ -1,27 +1,22 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { BookOpen, Braces, GraduationCap, Layers3, Pencil, Route } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  useDrugEducation,
-  useDrugFlashcards,
-  useDrugStudyView,
-} from "@/lib/api/react-query/hooks";
+import { useDrugEducation, useDrugFlashcards, useDrugStudyView } from "@/lib/api/react-query/hooks";
+import { useLanguage } from "@/lib/i18n/context";
 import type { EducationResource } from "@/lib/api";
 import { KnowledgeSurface, commonKnowledgeLinks } from "./knowledge-surface";
+import { DrugFocusPicker } from "./drug-focus-picker";
+import { StudyDrill } from "./study-drill";
 
 function contentPreview(item: EducationResource): string {
   return (
-    item.text ||
-    item.mnemonic ||
-    item.mistake ||
-    item.front ||
-    item.label ||
-    "Education content"
+    item.text || item.mnemonic || item.mistake || item.front || item.label || "Education content"
   );
 }
 
@@ -52,6 +47,8 @@ function FocusedEducationPanel({ drug }: { drug: string }) {
   const educationQuery = useDrugEducation(drug);
   const flashcardsQuery = useDrugFlashcards(drug);
   const studyQuery = useDrugStudyView(drug);
+  const { t } = useLanguage();
+  const [mode, setMode] = useState<"list" | "practice">("list");
   const education = educationQuery.data?.data ?? [];
   const flashcards = flashcardsQuery.data?.data ?? [];
   const loading = educationQuery.isLoading || flashcardsQuery.isLoading;
@@ -70,7 +67,9 @@ function FocusedEducationPanel({ drug }: { drug: string }) {
                   <GraduationCap className="h-4 w-4" />
                   Focused education content
                 </CardTitle>
-                <CardDescription>Draft content for slugs, published content for UUIDs.</CardDescription>
+                <CardDescription>
+                  Draft content for slugs, published content for UUIDs.
+                </CardDescription>
               </div>
               <Button asChild size="sm" variant="outline">
                 <Link href={`/knowledge/drugs/${encodeURIComponent(drug)}`}>
@@ -101,14 +100,37 @@ function FocusedEducationPanel({ drug }: { drug: string }) {
 
         <Card className="rounded-md">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Layers3 className="h-4 w-4" />
-              Flashcards
-            </CardTitle>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Layers3 className="h-4 w-4" />
+                Flashcards
+              </CardTitle>
+              <div className="flex gap-1 rounded-lg bg-muted p-1">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={mode === "list" ? "secondary" : "ghost"}
+                  onClick={() => setMode("list")}
+                >
+                  {t("study.list", "List")}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={mode === "practice" ? "secondary" : "ghost"}
+                  onClick={() => setMode("practice")}
+                >
+                  <GraduationCap className="h-4 w-4" />
+                  {t("study.practice", "Practice")}
+                </Button>
+              </div>
+            </div>
             <CardDescription>Student-app ready card feed.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {loading ? (
+            {mode === "practice" ? (
+              <StudyDrill drug={drug} education={education} />
+            ) : loading ? (
               <p className="text-sm text-muted-foreground">Loading flashcards...</p>
             ) : flashcards.length === 0 ? (
               <p className="text-sm text-muted-foreground">No flashcards yet.</p>
@@ -164,7 +186,10 @@ function FocusedEducationPanel({ drug }: { drug: string }) {
               {study && study.study_plan.length > 0 && (
                 <div className="space-y-2">
                   {study.study_plan.map((step) => (
-                    <div key={step.step} className="flex items-center justify-between rounded-md border px-3 py-2">
+                    <div
+                      key={step.step}
+                      className="flex items-center justify-between rounded-md border px-3 py-2"
+                    >
                       <span className="text-sm font-medium">{step.title}</span>
                       <Badge variant="muted">{step.step}</Badge>
                     </div>
@@ -220,6 +245,10 @@ export function EducationSurface() {
           "Case-based teaching endpoints",
           "Mechanism-linked teaching diagrams",
         ]}
+      />
+      <DrugFocusPicker
+        title="Drug for education preview"
+        description="Select a drug to load its education content, flashcards, and study plan."
       />
       {focusedDrug && <FocusedEducationPanel drug={focusedDrug} />}
     </div>

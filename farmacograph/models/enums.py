@@ -47,6 +47,14 @@ class EvidenceType(StrEnum):
     TEXTBOOK = "textbook"
 
 
+class FragmentType(StrEnum):
+    MOLECULAR = "molecular"
+    CELLULAR = "cellular"
+    TISSUE = "tissue"
+    ORGAN = "organ"
+    CLINICAL = "clinical"
+
+
 class ContentLayer(StrEnum):
     BIOMEDICAL = "biomedical"
     EDUCATION = "education"

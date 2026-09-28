@@ -23,9 +23,15 @@ describe("isRetryableError", () => {
 });
 
 describe("getRetryDelay", () => {
-  it("increases linearly with attempt", () => {
+  it("increases exponentially with attempt", () => {
     expect(getRetryDelay(0, 100)).toBe(100);
-    expect(getRetryDelay(2, 100)).toBe(300);
+    expect(getRetryDelay(1, 100)).toBe(200);
+    expect(getRetryDelay(2, 100)).toBe(400);
+  });
+
+  it("prioritizes retryAfterMs from ApiError", () => {
+    const errorWithRetryAfter = new ApiError("rate limited", 429, null, null, 5000);
+    expect(getRetryDelay(0, 100, errorWithRetryAfter)).toBe(5000);
   });
 });
 
@@ -43,7 +49,9 @@ describe("withRetry", () => {
 
   it("stops retrying non-retryable errors", async () => {
     const fn = vi.fn().mockRejectedValue(new ApiError("bad request", 400));
-    await expect(withRetry(() => fn(), { retries: 3, baseDelayMs: 1 })).rejects.toThrow("bad request");
+    await expect(withRetry(() => fn(), { retries: 3, baseDelayMs: 1 })).rejects.toThrow(
+      "bad request"
+    );
     expect(fn).toHaveBeenCalledTimes(1);
   });
 });

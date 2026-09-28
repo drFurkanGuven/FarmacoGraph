@@ -84,7 +84,14 @@ async def test_approve_response_envelope(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_publish_response_includes_graph_and_validation_summary(client: AsyncClient):
+async def test_publish_without_graph_returns_503_and_keeps_approved(client: AsyncClient):
+    """New publish contract (was: test_publish_response_includes_graph_and_validation_summary).
+
+    Without a connected graph there is no published response to shape-check:
+    the endpoint answers 503 and the workflow stays approved. The full
+    response shape (workflow + graph_write + validation_summary) is covered by
+    the full-stack E2E (e2e/full-stack) against real Neo4j.
+    """
     package = build_cardiovascular_publish_package()
     workflow_id = await _create_workflow(client)
     await client.post(f"/api/v1/curator/workflows/{workflow_id}/submit")
@@ -95,14 +102,9 @@ async def test_publish_response_includes_graph_and_validation_summary(client: As
         json=package,
     )
 
-    assert response.status_code == 200
-    data = response.json()["data"]
-    assert "workflow" in data
-    assert "graph_write" in data
-    assert "validation_summary" in data
-    assert data["workflow"]["state"] == "published"
-    assert isinstance(data["graph_write"]["available"], bool)
-    assert data["validation_summary"]["publish_ready"] is True
+    assert response.status_code == 503
+    state = await client.get(f"/api/v1/curator/workflows/{workflow_id}")
+    assert state.json()["data"]["state"] == "approved"
 
 
 @pytest.mark.asyncio

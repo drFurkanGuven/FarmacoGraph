@@ -19,11 +19,13 @@ export function PlaceholderPage({ title, description, phase }: PlaceholderPagePr
         <CardHeader>
           <CardTitle className="text-base">Module not implemented yet</CardTitle>
           <CardDescription>
-            The secure drug curation path is live. Disease authoring is rolling out; other modules ship in later milestones.
+            The secure drug curation path is live. Disease authoring is rolling out; other modules
+            ship in later milestones.
           </CardDescription>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground">
-          All data operations will use the public FarmacoGraph API. Curators will not edit JSON files manually.
+          All data operations will use the public FarmacoGraph API. Curators will not edit JSON
+          files manually.
         </CardContent>
       </Card>
     </div>

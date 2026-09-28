@@ -25,7 +25,7 @@ flowchart LR
     API --> postgres
 ```
 
-**FG-C030:** PostgreSQL must never store biomedical entity tables.
+**FG-C032:** PostgreSQL must never store biomedical entity tables.
 
 ## Node Label Registry
 

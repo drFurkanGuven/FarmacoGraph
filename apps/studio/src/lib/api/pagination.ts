@@ -8,9 +8,7 @@ export function clampPageLimit(limit?: number): number {
   return Math.min(Math.max(1, limit), MAX_PAGE_LIMIT);
 }
 
-export function buildPaginationParams(
-  params?: PaginationParams,
-): Record<string, string | number> {
+export function buildPaginationParams(params?: PaginationParams): Record<string, string | number> {
   const result: Record<string, string | number> = {};
   if (params?.limit !== undefined) result.limit = clampPageLimit(params.limit);
   if (params?.offset !== undefined) result.offset = Math.max(0, params.offset);
@@ -35,7 +33,7 @@ export function hasMorePages(meta: PaginatedMeta, itemCount: number, pageSize: n
 export function infiniteQueryGetNextPageParam<T>(
   lastPage: { data: T[]; meta: PaginatedMeta },
   _allPages: { data: T[]; meta: PaginatedMeta }[],
-  pageSize: number,
+  pageSize: number
 ): number | undefined {
   const offset = lastPage.meta.offset ?? 0;
   if (!hasMorePages(lastPage.meta, lastPage.data.length, pageSize)) return undefined;

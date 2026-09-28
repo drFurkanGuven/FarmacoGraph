@@ -16,7 +16,11 @@ export interface DiseaseContextPanelProps {
   className?: string;
 }
 
-export function DiseaseContextPanel({ snapshot, diseaseSlug, className }: DiseaseContextPanelProps) {
+export function DiseaseContextPanel({
+  snapshot,
+  diseaseSlug,
+  className,
+}: DiseaseContextPanelProps) {
   const workflowId = snapshot.workflow?.id ?? null;
   const slug =
     typeof snapshot.package.entity_payload.slug === "string" && snapshot.package.entity_payload.slug

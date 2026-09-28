@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { useCuratorDiseases } from "@/lib/api/react-query/hooks";
+import { useLanguage } from "@/lib/i18n/context";
 import { DiseasePicker } from "./disease-picker";
 import { TreatsIndicationCard } from "./treats-indication-card";
 import {
@@ -32,11 +33,12 @@ export function IndicationsSection({
   disabled = false,
   onPackageChange,
 }: IndicationsSectionProps) {
+  const { t } = useLanguage();
   const drugEntityId = String(pkg.entity_payload.id ?? drugId);
   const selectedIds = listTreatsDiseaseIds(pkg);
   const catalogQuery = useCuratorDiseases({ limit: 200 });
   const curatorAttestation = readCuratorAttestationFromPackage(
-    pkg.entity_payload.provenance as Record<string, unknown> | undefined,
+    pkg.entity_payload.provenance as Record<string, unknown> | undefined
   );
 
   const evidence = useDrugEvidence({
@@ -60,22 +62,48 @@ export function IndicationsSection({
 
   function handleIndicationChange(
     diseaseId: string,
-    patch: Parameters<typeof updateTreatsIndication>[3],
+    patch: Parameters<typeof updateTreatsIndication>[3]
   ) {
     onPackageChange(updateTreatsIndication(pkg, drugEntityId, diseaseId, patch));
   }
 
+  async function handleQuickCreate(diseaseId: string, title: string) {
+    const created = await evidence.createAndAttachEvidence({
+      title,
+      evidence_type: "pubmed_article",
+      quality_score: 0.5,
+      year: null,
+      extract: null,
+    });
+    const current = readTreatsIndication(pkg, drugEntityId, diseaseId).evidence_ids ?? [];
+    if (!current.includes(created.id)) {
+      onPackageChange(
+        updateTreatsIndication(pkg, drugEntityId, diseaseId, {
+          evidence_ids: [...current, created.id],
+        })
+      );
+    }
+  }
+
   return (
     <div className="max-w-2xl space-y-6">
-      <DiseasePicker selectedIds={selectedIds} disabled={disabled} onChange={handleSelectionChange} />
+      <DiseasePicker
+        selectedIds={selectedIds}
+        disabled={disabled}
+        onChange={handleSelectionChange}
+      />
 
       {selectedIds.length > 0 && (
         <div className="space-y-4">
           <div>
-            <h3 className="text-sm font-semibold">Indication metadata</h3>
+            <h3 className="text-sm font-semibold">
+              {t("treats.indicationMetadata", "Indication metadata")}
+            </h3>
             <p className="text-xs text-muted-foreground">
-              Required for publish validation (FG-C012 / FG-C019 / FG-C020). Set Provenance attestation to
-              true when using expert consensus, or link attached evidence per indication.
+              {t(
+                "treats.clinicalExplanationHint",
+                "Required for publish validation (FG-C012 / FG-C019 / FG-C020). Set Provenance attestation to true when using expert consensus, or link attached evidence per indication."
+              )}
             </p>
           </div>
           {selectedIds.map((diseaseId) => {
@@ -91,6 +119,8 @@ export function IndicationsSection({
                 evidenceLoading={evidence.loading}
                 disabled={disabled}
                 onChange={(patch) => handleIndicationChange(diseaseId, patch)}
+                onQuickCreate={(title) => handleQuickCreate(diseaseId, title)}
+                quickCreatePending={evidence.isMutating}
               />
             );
           })}

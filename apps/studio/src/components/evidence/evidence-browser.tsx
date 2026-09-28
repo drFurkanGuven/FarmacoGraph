@@ -60,7 +60,8 @@ export function EvidenceBrowser() {
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">Evidence manager</h2>
           <p className="text-sm text-muted-foreground">
-            Browse, inspect, and draft evidence nodes backed by the public API — no mock pharmacology.
+            Browse, inspect, and draft evidence nodes backed by the public API — no mock
+            pharmacology.
           </p>
         </div>
         <Button
@@ -77,7 +78,9 @@ export function EvidenceBrowser() {
       <Card>
         <CardHeader className="pb-4">
           <CardTitle className="text-base">Search & filters</CardTitle>
-          <CardDescription>Filter by ontology evidence type, quality, year, and publication status.</CardDescription>
+          <CardDescription>
+            Filter by ontology evidence type, quality, year, and publication status.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <EvidenceFilters
@@ -106,7 +109,11 @@ export function EvidenceBrowser() {
         </CardHeader>
         <CardContent className="space-y-4">
           {browser.error && (
-            <ErrorState message={errorMessage} onRetry={() => void browser.refetch()} variant="inline" />
+            <ErrorState
+              message={errorMessage}
+              onRetry={() => void browser.refetch()}
+              variant="inline"
+            />
           )}
 
           {browser.isLoading ? (

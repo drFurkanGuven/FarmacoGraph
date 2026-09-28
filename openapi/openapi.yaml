@@ -2,54 +2,69 @@ openapi: 3.1.0
 info:
   title: FarmacoGraph API
   version: 1.0.0
-  description: |
-    **The API is the product.** FarmacoGraph never exposes Neo4j or PostgreSQL directly.
+  description: '**The API is the product.** FarmacoGraph never exposes Neo4j or PostgreSQL
+    directly.
+
 
     Universal interface for medical education apps, simulators, flashcard generators,
+
     AI assistants, and third-party developers.
 
+
     ## Content Layers
+
     - `biomedical` — validated facts
+
     - `education` — pedagogical content
+
     - `learning` — prerequisite knowledge graph
 
+
     ## Response Modes
+
     - `minimal` — IDs and labels only
+
     - `summary` — default
+
     - `full` — all properties
+
     - `graph` — subgraph projection
+
+    '
   license:
     name: GNU General Public License v3.0
     identifier: GPL-3.0-only
   contact:
     name: FarmacoGraph
     url: https://farmacograph.org
-
 servers:
-  - url: /api/v1
-    description: API v1
-
+- url: /api/v1
+  description: API v1
 tags:
-  - name: Health
-  - name: Auth
-  - name: Dashboard
-  - name: Curator
-  - name: Drugs
-  - name: Entities
-  - name: Clinical
-  - name: Education
-  - name: Learning
-  - name: Evidence
-  - name: Graph
-  - name: Explain
-  - name: Search
-  - name: Modules
-  - name: Future
-
+- name: Health
+- name: Auth
+- name: Dashboard
+- name: Curator
+- name: Drugs
+- name: Entities
+- name: Clinical
+- name: Education
+- name: Learning
+- name: Evidence
+- name: Graph
+- name: Explain
+- name: Search
+- name: Modules
+- name: Future
+- name: Demo Access
+- name: Developer
+- name: Users
+- name: Snapshots
 paths:
   /auth/token:
     post:
-      tags: [Auth]
+      tags:
+      - Auth
       summary: Issue access and refresh tokens
       operationId: issueToken
       requestBody:
@@ -57,30 +72,30 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/TokenRequest"
+              $ref: '#/components/schemas/TokenRequest'
       responses:
-        "200":
+        '200':
           description: Token pair issued
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/TokenResponse"
-        "400":
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
           description: Invalid request
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "401":
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
           description: Invalid credentials
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
+                $ref: '#/components/schemas/ErrorResponse'
   /auth/refresh:
     post:
-      tags: [Auth]
+      tags:
+      - Auth
       summary: Refresh access token
       operationId: refreshToken
       requestBody:
@@ -88,1522 +103,2037 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/RefreshRequest"
+              $ref: '#/components/schemas/RefreshRequest'
       responses:
-        "200":
+        '200':
           description: New token pair issued
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/TokenResponse"
-        "401":
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
           description: Invalid or expired refresh token
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
+                $ref: '#/components/schemas/ErrorResponse'
   /auth/introspect:
     post:
-      tags: [Auth]
+      tags:
+      - Auth
       summary: Introspect credentials (JWT or API key)
       operationId: introspectCredentials
       security:
-        - BearerAuth: []
-        - ApiKeyAuth: []
+      - BearerAuth: []
+      - ApiKeyAuth: []
       requestBody:
         required: false
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/IntrospectRequest"
+              $ref: '#/components/schemas/IntrospectRequest'
       responses:
-        "200":
+        '200':
           description: Credential is active
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/IntrospectResponse"
-        "401":
+                $ref: '#/components/schemas/IntrospectResponse'
+        '401':
           description: Invalid, expired, or missing credentials
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/HttpDetailError"
-
+                $ref: '#/components/schemas/HttpDetailError'
   /health:
     get:
-      tags: [Health]
+      tags:
+      - Health
       summary: Health check
       operationId: healthCheck
       responses:
-        "200":
+        '200':
           description: Service healthy
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/HealthEnvelopeResponse"
-
+                $ref: '#/components/schemas/HealthEnvelopeResponse'
   /info:
     get:
-      tags: [Health]
+      tags:
+      - Health
       summary: Public API discovery
       operationId: apiInfo
       responses:
-        "200":
+        '200':
           description: API metadata and documentation links
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/InfoEnvelopeResponse"
-
+                $ref: '#/components/schemas/InfoEnvelopeResponse'
   /dashboard:
     get:
-      tags: [Dashboard]
+      tags:
+      - Dashboard
       summary: Curation Studio operational dashboard
       operationId: getDashboard
       security:
-        - BearerAuth: []
+      - BearerAuth: []
       parameters:
-        - name: module
-          in: query
-          schema: { type: string, default: cardiovascular }
+      - name: module
+        in: query
+        schema:
+          type: string
+          default: cardiovascular
       responses:
-        "200":
+        '200':
           description: Dashboard aggregate
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/DashboardResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-
+                $ref: '#/components/schemas/DashboardResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
   /audit-logs:
     get:
-      tags: [Dashboard]
+      tags:
+      - Dashboard
       summary: List audit log entries
       operationId: listAuditLogs
       security:
-        - BearerAuth: []
+      - BearerAuth: []
       parameters:
-        - $ref: "#/components/parameters/DashboardLimit"
-        - $ref: "#/components/parameters/PageOffset"
-        - name: resource_type
-          in: query
-          schema: { type: string }
+      - $ref: '#/components/parameters/DashboardLimit'
+      - $ref: '#/components/parameters/PageOffset'
+      - name: resource_type
+        in: query
+        schema:
+          type: string
       responses:
-        "200":
+        '200':
           description: Audit log list
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AuditLogListResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-
+                $ref: '#/components/schemas/AuditLogListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
   /jobs:
     get:
-      tags: [Dashboard]
+      tags:
+      - Dashboard
       summary: List background jobs
       operationId: listJobs
       security:
-        - BearerAuth: []
+      - BearerAuth: []
       parameters:
-        - $ref: "#/components/parameters/DashboardLimit"
-        - $ref: "#/components/parameters/PageOffset"
-        - name: status
-          in: query
-          schema: { type: string }
-        - name: job_type
-          in: query
-          schema: { type: string }
+      - $ref: '#/components/parameters/DashboardLimit'
+      - $ref: '#/components/parameters/PageOffset'
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: job_type
+        in: query
+        schema:
+          type: string
       responses:
-        "200":
+        '200':
           description: Job list
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/JobListResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-
+                $ref: '#/components/schemas/JobListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
   /snapshots:
     get:
-      tags: [Snapshots]
+      tags:
+      - Snapshots
       summary: List knowledge release snapshots
       operationId: listSnapshots
       security:
-        - BearerAuth: []
+      - BearerAuth: []
       parameters:
-        - name: module
-          in: query
-          schema: { type: string }
-        - $ref: "#/components/parameters/PageLimit"
-        - $ref: "#/components/parameters/PageOffset"
+      - name: module
+        in: query
+        schema:
+          type: string
+      - $ref: '#/components/parameters/PageLimit'
+      - $ref: '#/components/parameters/PageOffset'
       responses:
-        "200":
+        '200':
           description: Snapshot list
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SnapshotListResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-
+                $ref: '#/components/schemas/SnapshotListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
   /snapshots/{version_tag}:
     get:
-      tags: [Snapshots]
+      tags:
+      - Snapshots
       summary: Get snapshot by version tag
       operationId: getSnapshot
       security:
-        - BearerAuth: []
+      - BearerAuth: []
       parameters:
-        - name: version_tag
-          in: path
-          required: true
-          schema: { type: string }
+      - name: version_tag
+        in: path
+        required: true
+        schema:
+          type: string
       responses:
-        "200":
+        '200':
           description: Snapshot detail
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SnapshotDetailResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
+                $ref: '#/components/schemas/SnapshotDetailResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /curator/drugs:
     get:
-      tags: [Curator]
-      summary: Browse drugs for curation
-      operationId: listCuratorDrugs
-      security:
-        - BearerAuth: [curator:write]
+      tags:
+      - Curator
+      summary: List Curator Drugs
+      operationId: list_curator_drugs_curator_drugs_get
       parameters:
-        - name: module
-          in: query
-          schema: { type: string, default: cardiovascular }
-        - name: search
-          in: query
-          schema: { type: string, default: "" }
-        - name: status
-          in: query
-          schema: { type: string }
-        - name: workflow_state
-          in: query
-          schema: { type: string }
-        - name: sort
-          in: query
-          schema: { type: string, default: slug }
-        - $ref: "#/components/parameters/PageLimit"
-        - $ref: "#/components/parameters/PageOffset"
+      - name: module
+        in: query
+        required: false
+        schema:
+          type: string
+          default: cardiovascular
+          title: Module
+      - name: search
+        in: query
+        required: false
+        schema:
+          type: string
+          default: ''
+          title: Search
+      - name: status
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status
+      - name: workflow_state
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Workflow State
+      - name: sort
+        in: query
+        required: false
+        schema:
+          type: string
+          default: slug
+          title: Sort
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 200
+          minimum: 1
+          default: 50
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          title: Offset
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
       responses:
-        "200":
-          description: Curator drug browser rows
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/CuratorDrugListResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-
-  /curator/drugs/{slug}/workflows:
-    post:
-      tags: [Curator]
-      summary: Open or create workflow for a drug slug
-      operationId: openDrugWorkflow
-      security:
-        - BearerAuth: [curator:write]
-      parameters:
-        - $ref: "#/components/parameters/DrugSlug"
-      responses:
-        "201":
-          description: Workflow opened
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/DrugWorkflowOpenResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-
-  /curator/drugs/{slug}/package:
-    get:
-      tags: [Curator]
-      summary: Get draft package for a drug slug
-      operationId: getDrugPackage
-      security:
-        - BearerAuth: [curator:write]
-      parameters:
-        - $ref: "#/components/parameters/DrugSlug"
-      responses:
-        "200":
-          description: Draft package
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/DrugPackageResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-
-  /curator/drugs/{slug}/education:
-    get:
-      tags: [Curator, Education]
-      summary: List draft education content for a drug by curriculum slug
-      operationId: listCuratorDrugEducation
-      security:
-        - BearerAuth: [curator:write]
-      parameters:
-        - $ref: "#/components/parameters/DrugSlug"
-      responses:
-        "200":
-          description: Draft drug education content
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/EducationListResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-
-  /curator/drugs/{slug}/education/flashcards:
-    get:
-      tags: [Curator, Education]
-      summary: List draft flashcards for a drug by curriculum slug
-      operationId: listCuratorDrugFlashcards
-      security:
-        - BearerAuth: [curator:write]
-      parameters:
-        - $ref: "#/components/parameters/DrugSlug"
-      responses:
-        "200":
-          description: Draft drug flashcards
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/EducationListResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-
-  /curator/drugs/{slug}/evidence:
-    get:
-      tags: [Curator, Evidence]
-      summary: List evidence for a drug by curriculum slug
-      operationId: listCuratorDrugEvidence
-      security:
-        - BearerAuth: [curator:write]
-      parameters:
-        - $ref: "#/components/parameters/DrugSlug"
-      responses:
-        "200":
-          description: Drug evidence attachments
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/EvidenceListResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-    post:
-      tags: [Curator, Evidence]
-      summary: Attach evidence to a drug by slug
-      operationId: attachCuratorDrugEvidence
-      security:
-        - BearerAuth: [curator:write]
-      parameters:
-        - $ref: "#/components/parameters/DrugSlug"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/AttachDrugEvidenceRequest"
-      responses:
-        "201":
-          description: Evidence attached
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/EvidenceDrugLinkResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "503":
-          description: Neo4j unavailable
-
-  /curator/drugs/{slug}/evidence/{evidence_id}:
-    delete:
-      tags: [Curator, Evidence]
-      summary: Detach evidence from a drug by slug
-      operationId: detachCuratorDrugEvidence
-      security:
-        - BearerAuth: [curator:write]
-      parameters:
-        - $ref: "#/components/parameters/DrugSlug"
-        - name: evidence_id
-          in: path
-          required: true
-          schema: { type: string, format: uuid }
-      responses:
-        "200":
-          description: Evidence detached
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/EvidenceDrugLinkResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
-  /curator/diseases:
-    get:
-      tags: [Curator]
-      summary: Browse diseases for curation
-      operationId: listCuratorDiseases
-      security:
-        - BearerAuth: [curator:write]
-      parameters:
-        - name: search
-          in: query
-          schema: { type: string, default: "" }
-        - name: status
-          in: query
-          schema: { type: string }
-        - name: workflow_state
-          in: query
-          schema: { type: string }
-        - name: sort
-          in: query
-          schema: { type: string, default: slug }
-        - $ref: "#/components/parameters/PageLimit"
-        - $ref: "#/components/parameters/PageOffset"
-      responses:
-        "200":
-          description: Curator disease browser rows
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/CuratorDiseaseListResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-
-  /curator/mechanism-fragments:
-    get:
-      tags: [Curator]
-      summary: Browse mechanism fragments for curation
-      operationId: listCuratorMechanismFragments
-      security:
-        - BearerAuth: [curator:write]
-      parameters:
-        - name: search
-          in: query
-          schema: { type: string, default: "" }
-        - name: sort
-          in: query
-          schema: { type: string, default: slug }
-        - $ref: "#/components/parameters/PageLimit"
-        - $ref: "#/components/parameters/PageOffset"
-      responses:
-        "200":
-          description: Curator mechanism fragment catalog rows
+        '200':
+          description: Successful Response
           content:
             application/json:
               schema:
                 type: object
-                required: [data, meta]
-                properties:
-                  data:
-                    type: array
-                    items:
-                      type: object
-                      required: [slug, label, entity_id]
-                      properties:
-                        slug: { type: string }
-                        label: { type: string }
-                        entity_id: { type: string, format: uuid }
-                        module: { type: string }
-                        publication_status: { type: string }
-                        description: { type: string, nullable: true }
-                  meta:
-                    $ref: "#/components/schemas/PaginationMeta"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-
-  /curator/diseases/{slug}/workflows:
+                additionalProperties: true
+                title: Response List Curator Drugs Curator Drugs Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
     post:
-      tags: [Curator]
-      summary: Open or create workflow for a disease slug
-      operationId: openDiseaseWorkflow
-      security:
-        - BearerAuth: [curator:write]
+      tags:
+      - Curator
+      summary: Create Drug
+      operationId: create_drug_curator_drugs_post
       parameters:
-        - $ref: "#/components/parameters/DiseaseSlug"
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDrugRequest'
       responses:
-        "201":
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                title: Response Create Drug Curator Drugs Post
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /curator/drugs/{slug}/workflows:
+    post:
+      tags:
+      - Curator
+      summary: Open or create workflow for a drug slug
+      operationId: openDrugWorkflow
+      security:
+      - BearerAuth:
+        - curator:write
+      parameters:
+      - $ref: '#/components/parameters/DrugSlug'
+      responses:
+        '201':
           description: Workflow opened
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/DiseaseWorkflowOpenResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-
-  /curator/diseases/{slug}/package:
+                $ref: '#/components/schemas/DrugWorkflowOpenResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /curator/drugs/{slug}/package:
     get:
-      tags: [Curator]
-      summary: Get draft package for a disease slug
-      operationId: getDiseasePackage
+      tags:
+      - Curator
+      summary: Get draft package for a drug slug
+      operationId: getDrugPackage
       security:
-        - BearerAuth: [curator:write]
+      - BearerAuth:
+        - curator:write
       parameters:
-        - $ref: "#/components/parameters/DiseaseSlug"
+      - $ref: '#/components/parameters/DrugSlug'
       responses:
-        "200":
+        '200':
           description: Draft package
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/DiseasePackageResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-
-  /curator/diseases/{slug}/workflow-state:
+                $ref: '#/components/schemas/DrugPackageResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /curator/drugs/{slug}/education:
     get:
-      tags: [Curator]
-      summary: Aggregate workflow, autosave, and validation for a disease slug
-      operationId: getDiseaseWorkflowState
+      tags:
+      - Curator
+      - Education
+      summary: List draft education content for a drug by curriculum slug
+      operationId: listCuratorDrugEducation
       security:
-        - BearerAuth: [curator:write]
+      - BearerAuth:
+        - curator:write
       parameters:
-        - $ref: "#/components/parameters/DiseaseSlug"
+      - $ref: '#/components/parameters/DrugSlug'
       responses:
-        "200":
-          description: Disease workflow state
+        '200':
+          description: Draft drug education content
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EntityWorkflowStateResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-
-  /curator/drugs/{slug}/workflow-state:
+                $ref: '#/components/schemas/EducationListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /curator/drugs/{slug}/education/flashcards:
     get:
-      tags: [Curator]
-      summary: Aggregate workflow, autosave, and validation for a drug slug
-      operationId: getDrugWorkflowState
+      tags:
+      - Curator
+      - Education
+      summary: List draft flashcards for a drug by curriculum slug
+      operationId: listCuratorDrugFlashcards
       security:
-        - BearerAuth: [curator:write]
+      - BearerAuth:
+        - curator:write
       parameters:
-        - $ref: "#/components/parameters/DrugSlug"
+      - $ref: '#/components/parameters/DrugSlug'
       responses:
-        "200":
-          description: Drug workflow state
+        '200':
+          description: Draft drug flashcards
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EntityWorkflowStateResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-
-  /curator/workflows:
-    post:
-      tags: [Curator]
-      summary: Create draft workflow
-      operationId: createWorkflow
-      security:
-        - BearerAuth: [curator:write]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreateWorkflowRequest"
-      responses:
-        "201":
-          description: Workflow created
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/WorkflowEnvelopeResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-
-  /curator/workflows/{workflow_id}:
+                $ref: '#/components/schemas/EducationListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /curator/drugs/{slug}/evidence:
     get:
-      tags: [Curator]
-      summary: Get workflow by ID
-      operationId: getWorkflow
+      tags:
+      - Curator
+      - Evidence
+      summary: List evidence for a drug by curriculum slug
+      operationId: listCuratorDrugEvidence
       security:
-        - BearerAuth: [curator:write]
+      - BearerAuth:
+        - curator:write
       parameters:
-        - $ref: "#/components/parameters/WorkflowId"
+      - $ref: '#/components/parameters/DrugSlug'
       responses:
-        "200":
-          description: Workflow detail
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/WorkflowEnvelopeResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
-  /curator/workflows/{workflow_id}/timeline:
-    get:
-      tags: [Curator]
-      summary: Workflow activity timeline
-      operationId: getWorkflowTimeline
-      security:
-        - BearerAuth: [curator:write]
-      parameters:
-        - $ref: "#/components/parameters/WorkflowId"
-        - name: limit
-          in: query
-          schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
-        - name: offset
-          in: query
-          schema: { type: integer, minimum: 0, default: 0 }
-      responses:
-        "200":
-          description: Chronological audit events for the workflow
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/WorkflowTimelineResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
-  /curator/workflows/{workflow_id}/package:
-    put:
-      tags: [Curator]
-      summary: Save draft package
-      operationId: saveWorkflowPackage
-      security:
-        - BearerAuth: [curator:write]
-      parameters:
-        - $ref: "#/components/parameters/WorkflowId"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/PublishRequest"
-      responses:
-        "200":
-          description: Draft saved
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/WorkflowSaveResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
-  /curator/workflows/{workflow_id}/submit:
-    post:
-      tags: [Curator]
-      summary: Submit workflow for review
-      operationId: submitWorkflow
-      security:
-        - BearerAuth: [curator:write]
-      parameters:
-        - $ref: "#/components/parameters/WorkflowId"
-      responses:
-        "200":
-          description: Workflow submitted
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/WorkflowEnvelopeResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-
-  /curator/workflows/{workflow_id}/approve:
-    post:
-      tags: [Curator]
-      summary: Approve workflow
-      operationId: approveWorkflow
-      security:
-        - BearerAuth: [curator:publish]
-      parameters:
-        - $ref: "#/components/parameters/WorkflowId"
-      responses:
-        "200":
-          description: Workflow approved
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/WorkflowEnvelopeResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-
-  /curator/workflows/{workflow_id}/publish:
-    post:
-      tags: [Curator]
-      summary: Publish approved workflow to graph
-      operationId: publishWorkflow
-      security:
-        - BearerAuth: [curator:publish]
-      parameters:
-        - $ref: "#/components/parameters/WorkflowId"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/PublishRequest"
-      responses:
-        "200":
-          description: Workflow published
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/PublishWorkflowResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-
-  /curator/queue:
-    get:
-      tags: [Curator]
-      summary: Review queue
-      operationId: getCuratorQueue
-      security:
-        - BearerAuth: [curator:write]
-      parameters:
-        - name: state
-          in: query
-          schema: { type: string, default: review }
-        - $ref: "#/components/parameters/DashboardLimit"
-      responses:
-        "200":
-          description: Queued workflows
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/WorkflowListResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-
-  /curator/validate:
-    post:
-      tags: [Curator]
-      summary: Dry-run publish validation
-      operationId: validatePackage
-      security:
-        - BearerAuth: [curator:write]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/PublishRequest"
-      responses:
-        "200":
-          description: Validation result
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ValidationResultResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-
-  /curator/validation-summary:
-    get:
-      tags: [Curator]
-      summary: Validation job summary
-      operationId: getValidationSummary
-      security:
-        - BearerAuth: [curator:write]
-      responses:
-        "200":
-          description: Validation summary
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ValidationSummaryResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-
-  /curator/stubs/cardiovascular:
-    get:
-      tags: [Curator]
-      summary: Structural cardiovascular stub template
-      operationId: getCardiovascularStub
-      security:
-        - BearerAuth: [curator:write]
-      responses:
-        "200":
-          description: Stub publish package
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/StubPackageResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-
-  /drugs:
-    get:
-      tags: [Drugs]
-      summary: List drugs
-      operationId: listDrugs
-      security:
-        - BearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/PageLimit"
-        - $ref: "#/components/parameters/PageOffset"
-        - name: module
-          in: query
-          schema: { type: string }
-        - $ref: "#/components/parameters/DatasetVersion"
-      responses:
-        "200":
-          description: Drug list
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/DrugListResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-
-  /drugs/{drug_id}:
-    get:
-      tags: [Drugs]
-      summary: Get drug by ID
-      operationId: getDrug
-      security:
-        - BearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/DrugId"
-        - $ref: "#/components/parameters/DatasetVersion"
-      responses:
-        "200":
-          description: Drug detail
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/DrugDetailResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
-  /drugs/{drug_id}/evidence:
-    get:
-      tags: [Drugs, Evidence]
-      summary: List evidence attached to a drug
-      operationId: listDrugEvidence
-      security:
-        - BearerAuth: [knowledge:read]
-      parameters:
-        - $ref: "#/components/parameters/DrugId"
-        - $ref: "#/components/parameters/DatasetVersion"
-      responses:
-        "200":
+        '200':
           description: Drug evidence attachments
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EvidenceListResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
+                $ref: '#/components/schemas/EvidenceListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
     post:
-      tags: [Drugs, Evidence]
-      summary: Attach evidence to a drug
-      operationId: attachDrugEvidence
+      tags:
+      - Curator
+      - Evidence
+      summary: Attach evidence to a drug by slug
+      operationId: attachCuratorDrugEvidence
       security:
-        - BearerAuth: [curator:write]
+      - BearerAuth:
+        - curator:write
       parameters:
-        - $ref: "#/components/parameters/DrugId"
+      - $ref: '#/components/parameters/DrugSlug'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AttachDrugEvidenceRequest"
+              $ref: '#/components/schemas/AttachDrugEvidenceRequest'
       responses:
-        "201":
+        '201':
           description: Evidence attached
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EvidenceDrugLinkResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "503":
+                $ref: '#/components/schemas/EvidenceDrugLinkResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '503':
           description: Neo4j unavailable
-
-  /drugs/{drug_id}/evidence/{evidence_id}:
+  /curator/drugs/{slug}/evidence/{evidence_id}:
     delete:
-      tags: [Drugs, Evidence]
-      summary: Detach evidence from a drug
-      operationId: detachDrugEvidence
+      tags:
+      - Curator
+      - Evidence
+      summary: Detach evidence from a drug by slug
+      operationId: detachCuratorDrugEvidence
       security:
-        - BearerAuth: [curator:write]
+      - BearerAuth:
+        - curator:write
       parameters:
-        - $ref: "#/components/parameters/DrugId"
-        - name: evidence_id
-          in: path
-          required: true
-          schema: { type: string, format: uuid }
+      - $ref: '#/components/parameters/DrugSlug'
+      - name: evidence_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
       responses:
-        "200":
+        '200':
           description: Evidence detached
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EvidenceDrugLinkResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
+                $ref: '#/components/schemas/EvidenceDrugLinkResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /curator/diseases:
+    get:
+      tags:
+      - Curator
+      summary: List Curator Diseases
+      operationId: list_curator_diseases_curator_diseases_get
+      parameters:
+      - name: search
+        in: query
+        required: false
+        schema:
+          type: string
+          default: ''
+          title: Search
+      - name: status
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status
+      - name: workflow_state
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Workflow State
+      - name: sort
+        in: query
+        required: false
+        schema:
+          type: string
+          default: slug
+          title: Sort
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 200
+          minimum: 1
+          default: 50
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          title: Offset
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                title: Response List Curator Diseases Curator Diseases Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+      - Curator
+      summary: Create Disease
+      operationId: create_disease_curator_diseases_post
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDiseaseRequest'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                title: Response Create Disease Curator Diseases Post
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /curator/mechanism-fragments:
+    get:
+      tags:
+      - Curator
+      summary: List Curator Mechanism Fragments
+      operationId: list_curator_mechanism_fragments_curator_mechanism_fragments_get
+      parameters:
+      - name: search
+        in: query
+        required: false
+        schema:
+          type: string
+          default: ''
+          title: Search
+      - name: sort
+        in: query
+        required: false
+        schema:
+          type: string
+          default: slug
+          title: Sort
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 200
+          minimum: 1
+          default: 50
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          title: Offset
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                title: Response List Curator Mechanism Fragments Curator Mechanism
+                  Fragments Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+      - Curator
+      summary: Create Mechanism Fragment
+      operationId: create_mechanism_fragment_curator_mechanism_fragments_post
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMechanismFragmentRequest'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                title: Response Create Mechanism Fragment Curator Mechanism Fragments
+                  Post
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /curator/diseases/{slug}/workflows:
+    post:
+      tags:
+      - Curator
+      summary: Open or create workflow for a disease slug
+      operationId: openDiseaseWorkflow
+      security:
+      - BearerAuth:
+        - curator:write
+      parameters:
+      - $ref: '#/components/parameters/DiseaseSlug'
+      responses:
+        '201':
+          description: Workflow opened
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiseaseWorkflowOpenResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /curator/diseases/{slug}/package:
+    get:
+      tags:
+      - Curator
+      summary: Get draft package for a disease slug
+      operationId: getDiseasePackage
+      security:
+      - BearerAuth:
+        - curator:write
+      parameters:
+      - $ref: '#/components/parameters/DiseaseSlug'
+      responses:
+        '200':
+          description: Draft package
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiseasePackageResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /curator/diseases/{slug}/workflow-state:
+    get:
+      tags:
+      - Curator
+      summary: Aggregate workflow, autosave, and validation for a disease slug
+      operationId: getDiseaseWorkflowState
+      security:
+      - BearerAuth:
+        - curator:write
+      parameters:
+      - $ref: '#/components/parameters/DiseaseSlug'
+      responses:
+        '200':
+          description: Disease workflow state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityWorkflowStateResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /curator/drugs/{slug}/workflow-state:
+    get:
+      tags:
+      - Curator
+      summary: Aggregate workflow, autosave, and validation for a drug slug
+      operationId: getDrugWorkflowState
+      security:
+      - BearerAuth:
+        - curator:write
+      parameters:
+      - $ref: '#/components/parameters/DrugSlug'
+      responses:
+        '200':
+          description: Drug workflow state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityWorkflowStateResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /curator/workflows:
+    post:
+      tags:
+      - Curator
+      summary: Create draft workflow
+      operationId: createWorkflow
+      security:
+      - BearerAuth:
+        - curator:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWorkflowRequest'
+      responses:
+        '201':
+          description: Workflow created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowEnvelopeResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /curator/workflows/{workflow_id}:
+    get:
+      tags:
+      - Curator
+      summary: Get workflow by ID
+      operationId: getWorkflow
+      security:
+      - BearerAuth:
+        - curator:write
+      parameters:
+      - $ref: '#/components/parameters/WorkflowId'
+      responses:
+        '200':
+          description: Workflow detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowEnvelopeResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /curator/workflows/{workflow_id}/timeline:
+    get:
+      tags:
+      - Curator
+      summary: Workflow activity timeline
+      operationId: getWorkflowTimeline
+      security:
+      - BearerAuth:
+        - curator:write
+      parameters:
+      - $ref: '#/components/parameters/WorkflowId'
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 50
+      - name: offset
+        in: query
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+      responses:
+        '200':
+          description: Chronological audit events for the workflow
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowTimelineResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /curator/workflows/{workflow_id}/package:
+    put:
+      tags:
+      - Curator
+      summary: Save draft package
+      operationId: saveWorkflowPackage
+      security:
+      - BearerAuth:
+        - curator:write
+      parameters:
+      - $ref: '#/components/parameters/WorkflowId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublishRequest'
+      responses:
+        '200':
+          description: Draft saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowSaveResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /curator/workflows/{workflow_id}/submit:
+    post:
+      tags:
+      - Curator
+      summary: Submit workflow for review
+      operationId: submitWorkflow
+      security:
+      - BearerAuth:
+        - curator:write
+      parameters:
+      - $ref: '#/components/parameters/WorkflowId'
+      responses:
+        '200':
+          description: Workflow submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowEnvelopeResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /curator/workflows/{workflow_id}/approve:
+    post:
+      tags:
+      - Curator
+      summary: Approve workflow
+      operationId: approveWorkflow
+      security:
+      - BearerAuth:
+        - curator:publish
+      parameters:
+      - $ref: '#/components/parameters/WorkflowId'
+      responses:
+        '200':
+          description: Workflow approved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowEnvelopeResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /curator/workflows/{workflow_id}/publish:
+    post:
+      tags:
+      - Curator
+      summary: Publish approved workflow to graph
+      operationId: publishWorkflow
+      security:
+      - BearerAuth:
+        - curator:publish
+      parameters:
+      - $ref: '#/components/parameters/WorkflowId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublishRequest'
+      responses:
+        '200':
+          description: Workflow published
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublishWorkflowResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /curator/queue:
+    get:
+      tags:
+      - Curator
+      summary: Review queue
+      operationId: getCuratorQueue
+      security:
+      - BearerAuth:
+        - curator:write
+      parameters:
+      - name: state
+        in: query
+        schema:
+          type: string
+          default: review
+      - $ref: '#/components/parameters/DashboardLimit'
+      responses:
+        '200':
+          description: Queued workflows
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /curator/validate:
+    post:
+      tags:
+      - Curator
+      summary: Dry-run publish validation
+      operationId: validatePackage
+      security:
+      - BearerAuth:
+        - curator:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublishRequest'
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationResultResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /curator/validation-summary:
+    get:
+      tags:
+      - Curator
+      summary: Validation job summary
+      operationId: getValidationSummary
+      security:
+      - BearerAuth:
+        - curator:write
+      responses:
+        '200':
+          description: Validation summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationSummaryResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /curator/stubs/cardiovascular:
+    get:
+      tags:
+      - Curator
+      summary: Structural cardiovascular stub template
+      operationId: getCardiovascularStub
+      security:
+      - BearerAuth:
+        - curator:write
+      responses:
+        '200':
+          description: Stub publish package
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StubPackageResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /drugs:
+    get:
+      tags:
+      - Drugs
+      summary: List drugs
+      operationId: listDrugs
+      security:
+      - BearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/PageLimit'
+      - $ref: '#/components/parameters/PageOffset'
+      - name: module
+        in: query
+        schema:
+          type: string
+      - $ref: '#/components/parameters/DatasetVersion'
+      responses:
+        '200':
+          description: Drug list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DrugListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /drugs/{drug_id}:
+    get:
+      tags:
+      - Drugs
+      summary: Get drug by ID
+      operationId: getDrug
+      security:
+      - BearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/DrugId'
+      - $ref: '#/components/parameters/DatasetVersion'
+      responses:
+        '200':
+          description: Drug detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DrugDetailResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /drugs/{drug_id}/evidence:
+    get:
+      tags:
+      - Drugs
+      - Evidence
+      summary: List evidence attached to a drug
+      operationId: listDrugEvidence
+      security:
+      - BearerAuth:
+        - knowledge:read
+      parameters:
+      - $ref: '#/components/parameters/DrugId'
+      - $ref: '#/components/parameters/DatasetVersion'
+      responses:
+        '200':
+          description: Drug evidence attachments
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvidenceListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      tags:
+      - Drugs
+      - Evidence
+      summary: Attach evidence to a drug
+      operationId: attachDrugEvidence
+      security:
+      - BearerAuth:
+        - curator:write
+      parameters:
+      - $ref: '#/components/parameters/DrugId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttachDrugEvidenceRequest'
+      responses:
+        '201':
+          description: Evidence attached
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvidenceDrugLinkResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '503':
+          description: Neo4j unavailable
+  /drugs/{drug_id}/evidence/{evidence_id}:
+    delete:
+      tags:
+      - Drugs
+      - Evidence
+      summary: Detach evidence from a drug
+      operationId: detachDrugEvidence
+      security:
+      - BearerAuth:
+        - curator:write
+      parameters:
+      - $ref: '#/components/parameters/DrugId'
+      - name: evidence_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Evidence detached
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvidenceDrugLinkResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /drugs/{drug_id}/graph:
     get:
-      tags: [Graph, Drugs]
+      tags:
+      - Graph
+      - Drugs
       summary: Drug neighborhood subgraph
       operationId: getDrugGraph
       parameters:
-        - $ref: "#/components/parameters/DrugId"
-        - name: depth
-          in: query
-          schema: { type: integer, minimum: 1, maximum: 3, default: 2 }
-        - name: format
-          in: query
-          schema:
-            type: string
-            enum: [native, react_flow, cytoscape, mermaid]
+      - $ref: '#/components/parameters/DrugId'
+      - name: depth
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 3
+          default: 2
+      - name: format
+        in: query
+        schema:
+          type: string
+          enum:
+          - native
+          - react_flow
+          - cytoscape
+          - mermaid
       responses:
-        "200":
+        '200':
           description: Graph projection
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/GraphResponse"
-
+                $ref: '#/components/schemas/GraphResponse'
   /drugs/{drug_id}/mechanism:
     get:
-      tags: [Graph, Drugs]
+      tags:
+      - Graph
+      - Drugs
       summary: Mechanism DAG
       operationId: getDrugMechanism
       parameters:
-        - $ref: "#/components/parameters/DrugId"
+      - $ref: '#/components/parameters/DrugId'
       responses:
-        "200":
+        '200':
           description: Mechanism DAG
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MechanismDAGResponse"
-
+                $ref: '#/components/schemas/MechanismDAGResponse'
   /drugs/{drug_id}/education:
     get:
-      tags: [Education, Drugs]
+      tags:
+      - Education
+      - Drugs
       summary: Education layer content
       operationId: getDrugEducation
       parameters:
-        - $ref: "#/components/parameters/DrugId"
-        - name: dataset_version
-          in: query
-          schema:
-            type: string
+      - $ref: '#/components/parameters/DrugId'
+      - name: dataset_version
+        in: query
+        schema:
+          type: string
       responses:
-        "200":
+        '200':
           description: Education content
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EducationListResponse"
-
+                $ref: '#/components/schemas/EducationListResponse'
   /drugs/{drug_id}/education/flashcards:
     get:
-      tags: [Education, Drugs]
+      tags:
+      - Education
+      - Drugs
       summary: Drug flashcards
       operationId: getDrugFlashcards
       parameters:
-        - $ref: "#/components/parameters/DrugId"
-        - name: dataset_version
-          in: query
-          schema:
-            type: string
+      - $ref: '#/components/parameters/DrugId'
+      - name: dataset_version
+        in: query
+        schema:
+          type: string
       responses:
-        "200":
+        '200':
           description: Drug flashcards
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EducationListResponse"
-
+                $ref: '#/components/schemas/EducationListResponse'
   /drugs/{drug_slug}/prerequisites:
     get:
-      tags: [Learning, Drugs]
+      tags:
+      - Learning
+      - Drugs
       summary: Learning prerequisite graph
       operationId: getDrugPrerequisites
       parameters:
-        - name: drug_slug
-          in: path
-          required: true
-          schema: { type: string }
+      - name: drug_slug
+        in: path
+        required: true
+        schema:
+          type: string
       responses:
-        "200":
+        '200':
           description: Prerequisite graph
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/LearningGraphResponse"
-
+                $ref: '#/components/schemas/LearningGraphResponse'
   /drugs/{drug_ref}/study:
     get:
-      tags: [Learning, Drugs, Education]
+      tags:
+      - Learning
+      - Drugs
+      - Education
       summary: Student study payload
       operationId: getDrugStudyView
       parameters:
-        - name: drug_ref
-          in: path
-          required: true
-          schema: { type: string }
+      - name: drug_ref
+        in: path
+        required: true
+        schema:
+          type: string
       responses:
-        "200":
+        '200':
           description: Student study payload
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/StudyViewResponse"
-
+                $ref: '#/components/schemas/StudyViewResponse'
   /drug-classes:
     get:
-      tags: [Entities]
+      tags:
+      - Entities
       summary: Drug class taxonomy
       operationId: listDrugClasses
       responses:
-        "200":
+        '200':
           description: Class tree
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EntityListResponse"
-
+                $ref: '#/components/schemas/EntityListResponse'
+      deprecated: true
+      x-fg-status: planned
+      description: '> **Notice**: Planned for Phase 5; reserved in contract.'
   /diseases:
     get:
-      tags: [Entities]
+      tags:
+      - Entities
       summary: List diseases
-      description: >
-        Bootstrap catalog from `staging/cardiovascular/shared/nodes.index.json`.
+      description: 'Bootstrap catalog from `staging/cardiovascular/shared/nodes.index.json`.
         Published graph-backed disease nodes appear after curator publish; this list
         is the canonical authoring catalog until Neo4j list queries ship.
+
+        '
       operationId: listDiseases
       parameters:
-        - $ref: "#/components/parameters/PageLimit"
-        - $ref: "#/components/parameters/PageOffset"
+      - $ref: '#/components/parameters/PageLimit'
+      - $ref: '#/components/parameters/PageOffset'
       responses:
-        "200":
+        '200':
           description: Disease list
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EntityListResponse"
-
+                $ref: '#/components/schemas/EntityListResponse'
   /diseases/{disease_id}:
     get:
-      tags: [Entities]
+      tags:
+      - Entities
       summary: Get disease by canonical entity ID
       operationId: getDisease
       parameters:
-        - name: disease_id
-          in: path
-          required: true
-          schema: { type: string, format: uuid }
+      - name: disease_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
       responses:
-        "200":
+        '200':
           description: Disease detail
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EntityDetailResponse"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
+                $ref: '#/components/schemas/EntityDetailResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /pathways/{id}:
     get:
-      tags: [Entities]
+      tags:
+      - Entities
       summary: Get pathway
       operationId: getPathway
       parameters:
-        - $ref: "#/components/parameters/EntityId"
+      - $ref: '#/components/parameters/EntityId'
       responses:
-        "200":
+        '200':
           description: Pathway detail
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EntityDetailResponse"
-
+                $ref: '#/components/schemas/EntityDetailResponse'
+      deprecated: true
+      x-fg-status: planned
+      description: '> **Notice**: Planned for Phase 5; reserved in contract.'
   /proteins/{id}:
     get:
-      tags: [Entities]
+      tags:
+      - Entities
       summary: Get protein target
       operationId: getProtein
       parameters:
-        - $ref: "#/components/parameters/EntityId"
+      - $ref: '#/components/parameters/EntityId'
       responses:
-        "200":
+        '200':
           description: Protein detail
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EntityDetailResponse"
-
+                $ref: '#/components/schemas/EntityDetailResponse'
+      deprecated: true
+      x-fg-status: planned
+      description: '> **Notice**: Planned for Phase 5; reserved in contract.'
   /receptors/{id}:
     get:
-      tags: [Entities]
+      tags:
+      - Entities
       summary: Get receptor
       operationId: getReceptor
       parameters:
-        - $ref: "#/components/parameters/EntityId"
+      - $ref: '#/components/parameters/EntityId'
       responses:
-        "200":
+        '200':
           description: Receptor detail
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EntityDetailResponse"
-
+                $ref: '#/components/schemas/EntityDetailResponse'
+      deprecated: true
+      x-fg-status: planned
+      description: '> **Notice**: Planned for Phase 5; reserved in contract.'
   /enzymes/{id}:
     get:
-      tags: [Entities]
+      tags:
+      - Entities
       summary: Get enzyme
       operationId: getEnzyme
       parameters:
-        - $ref: "#/components/parameters/EntityId"
+      - $ref: '#/components/parameters/EntityId'
       responses:
-        "200":
+        '200':
           description: Enzyme detail
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EntityDetailResponse"
-
+                $ref: '#/components/schemas/EntityDetailResponse'
+      deprecated: true
+      x-fg-status: planned
+      description: '> **Notice**: Planned for Phase 5; reserved in contract.'
   /interactions:
-    get:
-      tags: [Clinical]
-      summary: Query drug interactions
-      operationId: listInteractions
-      parameters:
-        - name: drug
-          in: query
-          required: true
-          schema: { type: string }
-        - name: severity
-          in: query
-          schema:
-            type: string
-            enum: [minor, moderate, major, contraindicated]
+    post:
+      tags:
+      - Clinical
+      summary: Evaluate drug-drug interactions
+      description: Clinical reasoning engine detecting pharmacodynamic and pharmacokinetic
+        interactions among drugs.
+      operationId: checkInteractions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - drugs
+              properties:
+                drugs:
+                  type: array
+                  items:
+                    type: string
+                  description: Drug UUIDs or slugs
       responses:
-        "200":
-          description: Interactions
+        '200':
+          description: Interaction analysis
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/InteractionListResponse"
-
+                $ref: '#/components/schemas/InteractionResponse'
+  /developer/tiers:
+    get:
+      tags:
+      - Developer
+      summary: List API developer tiers and rate limits
+      operationId: listDeveloperTiers
+      responses:
+        '200':
+          description: API rate limit tiers
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tiers:
+                    type: object
+                  current_client_tier:
+                    type: string
+  /developer/instant-key:
+    post:
+      tags:
+      - Developer
+      summary: Create an instant developer API key
+      operationId: createInstantKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - email
+              - label
+              properties:
+                email:
+                  type: string
+                  format: email
+                label:
+                  type: string
+                tier:
+                  type: string
+                  default: developer
+      responses:
+        '201':
+          description: Created API key
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  api_key:
+                    type: string
+                  key_id:
+                    type: string
+                  tier:
+                    type: string
+  /education/export/anki:
+    get:
+      tags:
+      - Education
+      summary: Export spaced repetition flashcards in Anki format
+      operationId: exportAnkiCards
+      parameters:
+      - name: module
+        in: query
+        schema:
+          type: string
+          default: cardiovascular
+      responses:
+        '200':
+          description: Anki export payload
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      format:
+                        type: string
+                      count:
+                        type: integer
+                      cards:
+                        type: array
+                        items:
+                          type: object
+  /education/export/quiz:
+    get:
+      tags:
+      - Education
+      summary: Export clinical vignette and multiple-choice questions
+      operationId: exportQuizQuestions
+      parameters:
+      - name: module
+        in: query
+        schema:
+          type: string
+          default: cardiovascular
+      - name: count
+        in: query
+        schema:
+          type: integer
+          default: 10
+      responses:
+        '200':
+          description: Quiz questions export
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      format:
+                        type: string
+                      count:
+                        type: integer
+                      questions:
+                        type: array
+                        items:
+                          type: object
   /mechanisms/{drug_id}:
     get:
-      tags: [Graph]
+      tags:
+      - Graph
       summary: Mechanism DAG by drug ID
       operationId: getMechanism
       parameters:
-        - name: drug_id
-          in: path
-          required: true
-          schema: { type: string, format: uuid }
+      - name: drug_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
       responses:
-        "200":
+        '200':
           description: Mechanism DAG
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MechanismDAGResponse"
-
+                $ref: '#/components/schemas/MechanismDAGResponse'
+      deprecated: true
+      x-fg-status: planned
+      description: '> **Notice**: Planned for Phase 5; reserved in contract.'
   /evidence:
     get:
-      tags: [Evidence]
+      tags:
+      - Evidence
       summary: List evidence nodes
       operationId: listEvidence
       security:
-        - BearerAuth: []
+      - BearerAuth: []
       parameters:
-        - $ref: "#/components/parameters/PageLimit"
-        - $ref: "#/components/parameters/PageOffset"
-        - name: search
-          in: query
-          schema: { type: string }
-        - name: evidence_type
-          in: query
-          schema:
-            $ref: "#/components/schemas/EvidenceType"
-        - $ref: "#/components/parameters/DatasetVersion"
+      - $ref: '#/components/parameters/PageLimit'
+      - $ref: '#/components/parameters/PageOffset'
+      - name: search
+        in: query
+        schema:
+          type: string
+      - name: evidence_type
+        in: query
+        schema:
+          $ref: '#/components/schemas/EvidenceType'
+      - $ref: '#/components/parameters/DatasetVersion'
       responses:
-        "200":
+        '200':
           description: Evidence list
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EvidenceListResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
+                $ref: '#/components/schemas/EvidenceListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
     post:
-      tags: [Evidence]
+      tags:
+      - Evidence
       summary: Create evidence node
       operationId: createEvidence
       security:
-        - BearerAuth: [curator:write]
+      - BearerAuth:
+        - curator:write
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateEvidenceRequest"
+              $ref: '#/components/schemas/CreateEvidenceRequest'
       responses:
-        "201":
+        '201':
           description: Evidence created
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EvidenceDetailResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "503":
+                $ref: '#/components/schemas/EvidenceDetailResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '503':
           description: Neo4j unavailable for graph writes
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/HttpDetailError"
-
+                $ref: '#/components/schemas/HttpDetailError'
   /evidence/{evidence_id}:
     get:
-      tags: [Evidence]
+      tags:
+      - Evidence
       summary: Get evidence node
       operationId: getEvidence
       security:
-        - BearerAuth: []
+      - BearerAuth: []
       parameters:
-        - $ref: "#/components/parameters/EvidenceId"
-        - $ref: "#/components/parameters/DatasetVersion"
+      - $ref: '#/components/parameters/EvidenceId'
+      - $ref: '#/components/parameters/DatasetVersion'
       responses:
-        "200":
+        '200':
           description: Evidence detail
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EvidenceDetailResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
-          $ref: "#/components/responses/NotFound"
+                $ref: '#/components/schemas/EvidenceDetailResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
     patch:
-      tags: [Evidence]
+      tags:
+      - Evidence
       summary: Update evidence node
       operationId: updateEvidence
       security:
-        - BearerAuth: [curator:write]
+      - BearerAuth:
+        - curator:write
       parameters:
-        - $ref: "#/components/parameters/EvidenceId"
+      - $ref: '#/components/parameters/EvidenceId'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateEvidenceRequest"
+              $ref: '#/components/schemas/UpdateEvidenceRequest'
       responses:
-        "200":
+        '200':
           description: Evidence updated
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EvidenceDetailResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "503":
+                $ref: '#/components/schemas/EvidenceDetailResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '503':
           description: Neo4j unavailable for graph writes
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/HttpDetailError"
-
+                $ref: '#/components/schemas/HttpDetailError'
   /evidence/{evidence_id}/drugs/{drug_id}:
     post:
-      tags: [Evidence, Drugs]
+      tags:
+      - Evidence
+      - Drugs
       summary: Attach evidence to a drug via SUPPORTED_BY
       operationId: attachEvidenceToDrug
       security:
-        - BearerAuth: [curator:write]
+      - BearerAuth:
+        - curator:write
       parameters:
-        - $ref: "#/components/parameters/EvidenceId"
-        - $ref: "#/components/parameters/DrugId"
+      - $ref: '#/components/parameters/EvidenceId'
+      - $ref: '#/components/parameters/DrugId'
       responses:
-        "201":
+        '201':
           description: Evidence attached to drug
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EvidenceDrugLinkResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "503":
+                $ref: '#/components/schemas/EvidenceDrugLinkResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '503':
           description: Neo4j unavailable for graph writes
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/HttpDetailError"
+                $ref: '#/components/schemas/HttpDetailError'
     delete:
-      tags: [Evidence, Drugs]
+      tags:
+      - Evidence
+      - Drugs
       summary: Detach evidence from a drug
       operationId: detachEvidenceFromDrug
       security:
-        - BearerAuth: [curator:write]
+      - BearerAuth:
+        - curator:write
       parameters:
-        - $ref: "#/components/parameters/EvidenceId"
-        - $ref: "#/components/parameters/DrugId"
+      - $ref: '#/components/parameters/EvidenceId'
+      - $ref: '#/components/parameters/DrugId'
       responses:
-        "200":
+        '200':
           description: Evidence detached from drug
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EvidenceDrugLinkResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "503":
+                $ref: '#/components/schemas/EvidenceDrugLinkResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '503':
           description: Neo4j unavailable for graph writes
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/HttpDetailError"
-
+                $ref: '#/components/schemas/HttpDetailError'
   /evidence/{evidence_id}/assertions:
     post:
-      tags: [Evidence]
+      tags:
+      - Evidence
       summary: Attach evidence to a clinical assertion (relationship edge)
       operationId: attachEvidenceToAssertion
       security:
-        - BearerAuth: [curator:write]
+      - BearerAuth:
+        - curator:write
       parameters:
-        - $ref: "#/components/parameters/EvidenceId"
+      - $ref: '#/components/parameters/EvidenceId'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AttachAssertionRequest"
+              $ref: '#/components/schemas/AttachAssertionRequest'
       responses:
-        "201":
+        '201':
           description: Evidence attached to assertion
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EvidenceAssertionLinkResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "503":
+                $ref: '#/components/schemas/EvidenceAssertionLinkResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '503':
           description: Neo4j unavailable for graph writes
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/HttpDetailError"
+                $ref: '#/components/schemas/HttpDetailError'
     delete:
-      tags: [Evidence]
+      tags:
+      - Evidence
       summary: Detach evidence from a clinical assertion
       operationId: detachEvidenceFromAssertion
       security:
-        - BearerAuth: [curator:write]
+      - BearerAuth:
+        - curator:write
       parameters:
-        - $ref: "#/components/parameters/EvidenceId"
+      - $ref: '#/components/parameters/EvidenceId'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AttachAssertionRequest"
+              $ref: '#/components/schemas/AttachAssertionRequest'
       responses:
-        "200":
+        '200':
           description: Evidence detached from assertion
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EvidenceAssertionLinkResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "503":
+                $ref: '#/components/schemas/EvidenceAssertionLinkResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '503':
           description: Neo4j unavailable for graph writes
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/HttpDetailError"
-
+                $ref: '#/components/schemas/HttpDetailError'
   /laboratory-tests:
     get:
-      tags: [Clinical]
+      tags:
+      - Clinical
       summary: List laboratory tests
       operationId: listLaboratoryTests
       responses:
-        "200":
+        '200':
           description: Lab tests
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EntityListResponse"
-
+                $ref: '#/components/schemas/EntityListResponse'
+      deprecated: true
+      x-fg-status: planned
+      description: '> **Notice**: Planned for Phase 5; reserved in contract.'
   /education/{id}:
     get:
-      tags: [Education]
+      tags:
+      - Education
       summary: Get education resource
       operationId: getEducation
       parameters:
-        - $ref: "#/components/parameters/EntityId"
+      - $ref: '#/components/parameters/EntityId'
       responses:
-        "200":
+        '200':
           description: Education resource
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EducationDetailResponse"
-
+                $ref: '#/components/schemas/EducationDetailResponse'
+      deprecated: true
+      x-fg-status: planned
+      description: '> **Notice**: Planned for Phase 5; reserved in contract.'
   /flashcards:
     get:
-      tags: [Education]
+      tags:
+      - Education
       summary: List flashcards
       operationId: listFlashcards
       parameters:
-        - name: drug
-          in: query
-          schema: { type: string }
-        - name: module
-          in: query
-          schema: { type: string }
+      - name: drug
+        in: query
+        schema:
+          type: string
+      - name: module
+        in: query
+        schema:
+          type: string
       responses:
-        "200":
+        '200':
           description: Flashcards
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/FlashcardListResponse"
-
+                $ref: '#/components/schemas/FlashcardListResponse'
+      deprecated: true
+      x-fg-status: planned
+      description: '> **Notice**: Planned for Phase 5; reserved in contract.'
   /cases:
     get:
-      tags: [Education]
+      tags:
+      - Education
       summary: List clinical cases
       operationId: listCases
       parameters:
-        - name: module
-          in: query
-          schema: { type: string }
+      - name: module
+        in: query
+        schema:
+          type: string
       responses:
-        "200":
+        '200':
           description: Clinical cases
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CaseListResponse"
-
+                $ref: '#/components/schemas/CaseListResponse'
+      deprecated: true
+      x-fg-status: planned
+      description: '> **Notice**: Planned for Phase 5; reserved in contract.'
   /compare:
     post:
-      tags: [Explain]
+      tags:
+      - Explain
       summary: Compare multiple drugs
       operationId: compareDrugs
       requestBody:
@@ -1611,186 +2141,1285 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CompareRequest"
+              $ref: '#/components/schemas/CompareRequest'
       responses:
-        "200":
+        '200':
           description: Comparison result
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CompareResponse"
-
+                $ref: '#/components/schemas/CompareResponse'
   /explain:
     get:
-      tags: [Explain]
+      tags:
+      - Explain
       summary: Structured reasoning chain
       operationId: explain
       parameters:
-        - name: drug
-          in: query
-          required: true
-          schema: { type: string }
-        - name: effect
-          in: query
-          schema: { type: string }
-        - name: question_type
-          in: query
-          schema:
-            type: string
-            enum: [mechanism, interaction, indication, monitoring, prerequisite]
+      - name: drug
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: effect
+        in: query
+        schema:
+          type: string
+      - name: question_type
+        in: query
+        schema:
+          type: string
+          enum:
+          - mechanism
+          - interaction
+          - indication
+          - monitoring
+          - prerequisite
       responses:
-        "200":
+        '200':
           description: Explainability response
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ExplainResponse"
-        "404":
+                $ref: '#/components/schemas/ExplainResponse'
+        '404':
           description: No path in knowledge base
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
+                $ref: '#/components/schemas/ErrorResponse'
   /search:
     get:
-      tags: [Search]
+      tags:
+      - Search
       summary: Full-text entity search
       operationId: search
       parameters:
-        - name: q
-          in: query
-          required: true
-          schema: { type: string, minLength: 2 }
-        - name: types
-          in: query
-          schema:
-            type: array
-            items: { type: string }
-        - $ref: "#/components/parameters/PageLimit"
+      - name: q
+        in: query
+        required: true
+        schema:
+          type: string
+          minLength: 2
+      - name: types
+        in: query
+        schema:
+          type: array
+          items:
+            type: string
+      - $ref: '#/components/parameters/PageLimit'
       responses:
-        "200":
+        '200':
           description: Search results
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SearchResponse"
-
+                $ref: '#/components/schemas/SearchResponse'
   /graph/query:
     post:
-      tags: [Graph]
+      tags:
+      - Graph
       summary: Parameterized read-only graph query
       operationId: graphQuery
-      description: Whitelisted Cypher templates only. No arbitrary queries.
+      description: 'Whitelisted Cypher templates only. No arbitrary queries.
+
+
+        > **Notice**: Planned for Phase 5; reserved in contract.'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/GraphQueryRequest"
+              $ref: '#/components/schemas/GraphQueryRequest'
       responses:
-        "200":
+        '200':
           description: Query result
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/GraphResponse"
-
+                $ref: '#/components/schemas/GraphResponse'
+      deprecated: true
+      x-fg-status: planned
   /modules:
     get:
-      tags: [Modules]
+      tags:
+      - Modules
       summary: List curriculum modules
       operationId: listModules
       responses:
-        "200":
+        '200':
           description: Module list with completion status
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ModuleListResponse"
-
+                $ref: '#/components/schemas/ModuleListResponse'
   /statistics:
     get:
-      tags: [Modules]
+      tags:
+      - Modules
       summary: Dataset statistics
       operationId: getStatistics
       responses:
-        "200":
+        '200':
           description: Entity and relationship counts
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/StatisticsResponse"
-
+                $ref: '#/components/schemas/StatisticsResponse'
   /rag:
     post:
-      tags: [Future]
+      tags:
+      - Future
       summary: RAG query (future)
       operationId: ragQuery
       deprecated: true
-      description: Future — Retrieval-Augmented Generation over validated graph
-      responses:
-        "501":
-          description: Not implemented
+      description: 'Future — Retrieval-Augmented Generation over validated graph
 
+
+        > **Notice**: Planned for Phase 5; reserved in contract.'
+      responses:
+        '501':
+          description: Not implemented
+      x-fg-status: planned
   /tutor:
     post:
-      tags: [Future]
+      tags:
+      - Future
       summary: AI tutor with prerequisite detection (future)
       operationId: tutorQuery
       deprecated: true
       responses:
-        "501":
+        '501':
           description: Not implemented
+      x-fg-status: planned
+      description: '> **Notice**: Planned for Phase 5; reserved in contract.'
+  /curator/drug-classes:
+    get:
+      tags:
+      - Curator
+      summary: List Curator Drug Classes
+      operationId: list_curator_drug_classes_curator_drug_classes_get
+      parameters:
+      - name: module
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Filter by module / organ_system
+          title: Module
+        description: Filter by module / organ_system
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                title: Response List Curator Drug Classes Curator Drug Classes Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /curator/targets:
+    get:
+      tags:
+      - Curator
+      summary: List Curator Targets
+      operationId: list_curator_targets_curator_targets_get
+      parameters:
+      - name: search
+        in: query
+        required: false
+        schema:
+          type: string
+          default: ''
+          title: Search
+      - name: entity_type
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Entity Type
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 200
+          minimum: 1
+          default: 50
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          title: Offset
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                title: Response List Curator Targets Curator Targets Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+      - Curator
+      summary: Create Target
+      operationId: create_target_curator_targets_post
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTargetRequest'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                title: Response Create Target Curator Targets Post
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /curator/unpublish-requests:
+    get:
+      tags:
+      - Curator
+      summary: List Unpublish Requests
+      description: 'Admin inbox: published workflows with a pending unpublish request.'
+      operationId: list_unpublish_requests_curator_unpublish_requests_get
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          default: 50
+          title: Limit
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                title: Response List Unpublish Requests Curator Unpublish Requests
+                  Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /curator/workflows/{workflow_id}/request-unpublish:
+    post:
+      tags:
+      - Curator
+      summary: Request Unpublish
+      description: Curator requests admin unpublish; workflow stays published until
+        approved.
+      operationId: request_unpublish_curator_workflows__workflow_id__request_unpublish_post
+      parameters:
+      - name: workflow_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Workflow Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnpublishRequestBody'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                title: Response Request Unpublish Curator Workflows  Workflow Id  Request
+                  Unpublish Post
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /curator/workflows/{workflow_id}/cancel-unpublish-request:
+    post:
+      tags:
+      - Curator
+      summary: Cancel Unpublish Request
+      description: Requester or admin cancels a pending unpublish request.
+      operationId: cancel_unpublish_request_curator_workflows__workflow_id__cancel_unpublish_request_post
+      parameters:
+      - name: workflow_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Workflow Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                title: Response Cancel Unpublish Request Curator Workflows  Workflow
+                  Id  Cancel Unpublish Request Post
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /curator/workflows/{workflow_id}/reject-unpublish-request:
+    post:
+      tags:
+      - Curator
+      summary: Reject Unpublish Request
+      description: Admin rejects a pending unpublish request without unpublishing.
+      operationId: reject_unpublish_request_curator_workflows__workflow_id__reject_unpublish_request_post
+      parameters:
+      - name: workflow_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Workflow Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RejectUnpublishRequestBody'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                title: Response Reject Unpublish Request Curator Workflows  Workflow
+                  Id  Reject Unpublish Request Post
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /curator/workflows/{workflow_id}/return-to-draft:
+    post:
+      tags:
+      - Curator
+      summary: Return Workflow To Draft
+      description: 'approved/review → draft (publisher).
 
+
+        published → draft requires admin:org (unpublish).
+
+        deprecated → draft requires admin:org (restore).'
+      operationId: return_workflow_to_draft_curator_workflows__workflow_id__return_to_draft_post
+      parameters:
+      - name: workflow_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Workflow Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                title: Response Return Workflow To Draft Curator Workflows  Workflow
+                  Id  Return To Draft Post
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /curator/workflows/{workflow_id}/deprecate:
+    post:
+      tags:
+      - Curator
+      summary: Deprecate Workflow
+      description: 'Soft-delete: published → deprecated (admin only). Hides entity
+        from public graph reads.'
+      operationId: deprecate_workflow_curator_workflows__workflow_id__deprecate_post
+      parameters:
+      - name: workflow_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Workflow Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                title: Response Deprecate Workflow Curator Workflows  Workflow Id  Deprecate
+                  Post
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /demo-requests:
+    post:
+      tags:
+      - Demo Access
+      summary: Create Demo Request
+      operationId: create_demo_request_demo_requests_post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DemoAccessRequestBody'
+      responses:
+        '202':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                title: Response Create Demo Request Demo Requests Post
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - Demo Access
+      summary: List Demo Requests
+      operationId: list_demo_requests_demo_requests_get
+      parameters:
+      - name: status
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - enum:
+            - pending
+            - approved
+            - rejected
+            type: string
+          - type: 'null'
+          default: pending
+          title: Status
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                title: Response List Demo Requests Demo Requests Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /demo-requests/{request_id}/approve:
+    post:
+      tags:
+      - Demo Access
+      summary: Approve Demo Request
+      operationId: approve_demo_request_demo_requests__request_id__approve_post
+      parameters:
+      - name: request_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Request Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                title: Response Approve Demo Request Demo Requests  Request Id  Approve
+                  Post
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /demo-requests/{request_id}/reject:
+    post:
+      tags:
+      - Demo Access
+      summary: Reject Demo Request
+      operationId: reject_demo_request_demo_requests__request_id__reject_post
+      parameters:
+      - name: request_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Request Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                title: Response Reject Demo Request Demo Requests  Request Id  Reject
+                  Post
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /developer/enterprise-inquiry:
+    post:
+      tags:
+      - Developer Platform & B2B
+      summary: Submit Enterprise Inquiry
+      description: Receive partnership inquiry from clinical software or university
+        enterprise.
+      operationId: submit_enterprise_inquiry_developer_enterprise_inquiry_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnterpriseInquiryRequest'
+        required: true
+      responses:
+        '202':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                type: object
+                title: Response Submit Enterprise Inquiry Developer Enterprise Inquiry
+                  Post
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /modules/{module_slug}/curriculum:
+    get:
+      tags:
+      - Modules
+      summary: Get Module Curriculum
+      operationId: get_module_curriculum_modules__module_slug__curriculum_get
+      parameters:
+      - name: module_slug
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Module Slug
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                title: Response Get Module Curriculum Modules  Module Slug  Curriculum
+                  Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /users:
+    get:
+      tags:
+      - Admin
+      summary: List Users
+      operationId: list_users_users_get
+      parameters:
+      - name: search
+        in: query
+        required: false
+        schema:
+          type: string
+          default: ''
+          title: Search
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 200
+          minimum: 1
+          default: 50
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          title: Offset
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                title: Response List Users Users Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+      - Admin
+      summary: Create User
+      operationId: create_user_users_post
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                title: Response Create User Users Post
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /users/{user_id}:
+    get:
+      tags:
+      - Admin
+      summary: Get User
+      operationId: get_user_users__user_id__get
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: User Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                title: Response Get User Users  User Id  Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    patch:
+      tags:
+      - Admin
+      summary: Update User
+      operationId: update_user_users__user_id__patch
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: User Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                title: Response Update User Users  User Id  Patch
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /users/{user_id}/api-keys:
+    get:
+      tags:
+      - Admin
+      summary: List User Api Keys
+      operationId: list_user_api_keys_users__user_id__api_keys_get
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: User Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                title: Response List User Api Keys Users  User Id  Api Keys Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+      - Admin
+      summary: Create User Api Key
+      operationId: create_user_api_key_users__user_id__api_keys_post
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: User Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateApiKeyRequest'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                title: Response Create User Api Key Users  User Id  Api Keys Post
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /users/{user_id}/api-keys/{key_id}/revoke:
+    post:
+      tags:
+      - Admin
+      summary: Revoke User Api Key
+      operationId: revoke_user_api_key_users__user_id__api_keys__key_id__revoke_post
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: User Id
+      - name: key_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Key Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      - name: X-API-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Api-Key
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                title: Response Revoke User Api Key Users  User Id  Api Keys  Key
+                  Id  Revoke Post
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
 components:
   parameters:
     EntityId:
       name: id
       in: path
       required: true
-      schema: { type: string, format: uuid }
+      schema:
+        type: string
+        format: uuid
     DrugId:
       name: drug_id
       in: path
       required: true
-      schema: { type: string, format: uuid }
+      schema:
+        type: string
+        format: uuid
     DrugSlug:
       name: slug
       in: path
       required: true
-      schema: { type: string }
+      schema:
+        type: string
     DiseaseSlug:
       name: slug
       in: path
       required: true
-      schema: { type: string, description: "Disease curriculum slug, e.g. hypertension" }
+      schema:
+        type: string
+        description: Disease curriculum slug, e.g. hypertension
     WorkflowId:
       name: workflow_id
       in: path
       required: true
-      schema: { type: string, format: uuid }
+      schema:
+        type: string
+        format: uuid
     EvidenceId:
       name: evidence_id
       in: path
       required: true
-      schema: { type: string, format: uuid }
+      schema:
+        type: string
+        format: uuid
     PageLimit:
       name: limit
       in: query
-      schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
     DashboardLimit:
       name: limit
       in: query
-      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
     PageOffset:
       name: offset
       in: query
-      schema: { type: integer, minimum: 0, default: 0 }
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
     DatasetVersion:
       name: dataset_version
       in: query
-      schema: { type: string }
+      schema:
+        type: string
     ContentLayers:
       name: layers
       in: query
@@ -1803,35 +3432,37 @@ components:
       in: query
       schema:
         type: string
-        enum: [minimal, summary, full, graph]
+        enum:
+        - minimal
+        - summary
+        - full
+        - graph
         default: summary
-
   responses:
     NotFound:
       description: Entity not found
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/HttpDetailError"
+            $ref: '#/components/schemas/HttpDetailError'
     Unauthorized:
       description: Authentication required
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/HttpDetailError"
+            $ref: '#/components/schemas/HttpDetailError'
     Forbidden:
       description: Missing required scope
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/HttpDetailError"
+            $ref: '#/components/schemas/HttpDetailError'
     BadRequest:
       description: Invalid request or workflow state
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/HttpDetailError"
-
+            $ref: '#/components/schemas/HttpDetailError'
   securitySchemes:
     BearerAuth:
       type: http
@@ -1841,15 +3472,17 @@ components:
       type: apiKey
       in: header
       name: X-API-Key
-
   schemas:
     TokenRequest:
       type: object
-      required: [grant_type]
+      required:
+      - grant_type
       properties:
         grant_type:
           type: string
-          enum: [password, api_key]
+          enum:
+          - password
+          - api_key
         username:
           type: string
           description: Email address for password grant
@@ -1858,28 +3491,41 @@ components:
           format: password
         api_key:
           type: string
-
     RefreshRequest:
       type: object
-      required: [refresh_token]
+      required:
+      - refresh_token
       properties:
         refresh_token:
           type: string
-
     TokenResponse:
       type: object
-      required: [access_token, refresh_token, token_type, expires_in]
+      required:
+      - access_token
+      - refresh_token
+      - token_type
+      - expires_in
       properties:
-        access_token: { type: string }
-        refresh_token: { type: string }
-        token_type: { type: string, example: bearer }
-        expires_in: { type: integer, description: Access token lifetime in seconds }
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        token_type:
+          type: string
+          example: bearer
+        expires_in:
+          type: integer
+          description: Access token lifetime in seconds
         scopes:
           type: array
-          items: { type: string }
-        email: { type: string, nullable: true }
-        name: { type: string, nullable: true }
-
+          items:
+            type: string
+        email:
+          type: string
+          nullable: true
+        name:
+          type: string
+          nullable: true
     IntrospectRequest:
       type: object
       properties:
@@ -1889,501 +3535,792 @@ components:
         access_token:
           type: string
           description: JWT when not sent via Authorization header
-
     IntrospectResponse:
       type: object
-      required: [active, scopes, roles, token_type, auth_method]
+      required:
+      - active
+      - scopes
+      - roles
+      - token_type
+      - auth_method
       properties:
-        active: { type: boolean, example: true }
+        active:
+          type: boolean
+          example: true
         scopes:
           type: array
-          items: { type: string }
+          items:
+            type: string
         roles:
           type: array
-          items: { type: string }
-        user_id: { type: string, format: uuid, nullable: true }
-        organization_id: { type: string, format: uuid, nullable: true }
-        workspace_id: { type: string, format: uuid, nullable: true }
+          items:
+            type: string
+        user_id:
+          type: string
+          format: uuid
+          nullable: true
+        organization_id:
+          type: string
+          format: uuid
+          nullable: true
+        workspace_id:
+          type: string
+          format: uuid
+          nullable: true
         token_type:
           type: string
-          enum: [bearer, api_key]
+          enum:
+          - bearer
+          - api_key
         auth_method:
           type: string
-          enum: [jwt, api_key]
+          enum:
+          - jwt
+          - api_key
         expires_at:
           type: integer
           nullable: true
           description: Unix timestamp when the credential expires
-        email: { type: string, nullable: true }
-        name: { type: string, nullable: true }
-
+        email:
+          type: string
+          nullable: true
+        name:
+          type: string
+          nullable: true
     HttpDetailError:
       type: object
       properties:
         detail:
           oneOf:
-            - type: string
-            - type: array
-              items:
-                type: object
-
+          - type: string
+          - type: array
+            items:
+              type: object
     HealthEnvelopeResponse:
       type: object
       properties:
-        data: { $ref: "#/components/schemas/HealthData" }
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+        data:
+          $ref: '#/components/schemas/HealthData'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
     InfoEnvelopeResponse:
       type: object
       properties:
-        data: { type: object, additionalProperties: true }
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+        data:
+          type: object
+          additionalProperties: true
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
     DashboardResponse:
       type: object
       properties:
-        data: { type: object, additionalProperties: true }
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+        data:
+          type: object
+          additionalProperties: true
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
     AuditLogListResponse:
       type: object
       properties:
-        data: { type: array, items: { type: object } }
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+        data:
+          type: array
+          items:
+            type: object
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
     JobListResponse:
       type: object
       properties:
-        data: { type: array, items: { type: object } }
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+        data:
+          type: array
+          items:
+            type: object
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
     SnapshotItem:
       type: object
       properties:
-        id: { type: string, format: uuid }
-        version_tag: { type: string }
-        module: { type: string, nullable: true }
-        status: { type: string }
-        ontology_version: { type: string }
-        api_version: { type: string }
-        entity_count: { type: integer }
-        relationship_count: { type: integer }
-        evidence_count: { type: integer }
-        manifest: { type: object, additionalProperties: true }
-        released_at: { type: string, format: date-time, nullable: true }
-        released_by: { type: string, format: uuid, nullable: true }
-        created_at: { type: string, format: date-time, nullable: true }
-        updated_at: { type: string, format: date-time, nullable: true }
-
+        id:
+          type: string
+          format: uuid
+        version_tag:
+          type: string
+        module:
+          type: string
+          nullable: true
+        status:
+          type: string
+        ontology_version:
+          type: string
+        api_version:
+          type: string
+        entity_count:
+          type: integer
+        relationship_count:
+          type: integer
+        evidence_count:
+          type: integer
+        manifest:
+          type: object
+          additionalProperties: true
+        released_at:
+          type: string
+          format: date-time
+          nullable: true
+        released_by:
+          type: string
+          format: uuid
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
     SnapshotListResponse:
       type: object
       properties:
         data:
           type: array
-          items: { $ref: "#/components/schemas/SnapshotItem" }
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+          items:
+            $ref: '#/components/schemas/SnapshotItem'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
     SnapshotDetailResponse:
       type: object
       properties:
-        data: { $ref: "#/components/schemas/SnapshotItem" }
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+        data:
+          $ref: '#/components/schemas/SnapshotItem'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
     CuratorDrugListResponse:
       type: object
       properties:
-        data: { type: array, items: { type: object } }
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+        data:
+          type: array
+          items:
+            type: object
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
     CuratorDiseaseListResponse:
       type: object
       properties:
-        data: { type: array, items: { type: object } }
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+        data:
+          type: array
+          items:
+            type: object
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
     DrugWorkflowOpenResponse:
       type: object
       properties:
         data:
           type: object
           properties:
-            workflow: { type: object }
-            package: { type: object }
-            validation: { type: object }
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+            workflow:
+              type: object
+            package:
+              type: object
+            validation:
+              type: object
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
     DrugPackageResponse:
       type: object
       properties:
-        data: { type: object }
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+        data:
+          type: object
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
     DiseaseWorkflowOpenResponse:
       type: object
       properties:
         data:
           type: object
           properties:
-            workflow: { type: object }
-            package: { type: object }
-            validation: { type: object }
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+            workflow:
+              type: object
+            package:
+              type: object
+            validation:
+              type: object
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
     DiseasePackageResponse:
       type: object
       properties:
-        data: { type: object }
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+        data:
+          type: object
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
     EntityWorkflowStateResponse:
       type: object
       properties:
         data:
           type: object
           properties:
-            slug: { type: string }
-            entity_id: { type: string, format: uuid }
-            workflow_id: { type: string, format: uuid, nullable: true }
-            status: { type: string, nullable: true }
-            last_validation: { type: object }
-            publish_ready: { type: boolean }
-            allowed_transitions: { type: array, items: { type: string } }
-            package: { type: object, nullable: true }
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+            slug:
+              type: string
+            entity_id:
+              type: string
+              format: uuid
+            workflow_id:
+              type: string
+              format: uuid
+              nullable: true
+            status:
+              type: string
+              nullable: true
+            last_validation:
+              type: object
+            publish_ready:
+              type: boolean
+            allowed_transitions:
+              type: array
+              items:
+                type: string
+            package:
+              type: object
+              nullable: true
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
     CreateWorkflowRequest:
       type: object
-      required: [entity_id, entity_type]
+      required:
+      - entity_id
+      - entity_type
       properties:
-        entity_id: { type: string, format: uuid }
-        entity_type: { type: string }
-        notes: { type: string, nullable: true }
-
+        entity_id:
+          type: string
+          format: uuid
+        entity_type:
+          type: string
+        notes:
+          type: string
+          nullable: true
     WorkflowItem:
       type: object
       properties:
-        id: { type: string, format: uuid }
-        entity_id: { type: string }
-        entity_type: { type: string }
-        state: { type: string }
-
+        id:
+          type: string
+          format: uuid
+        entity_id:
+          type: string
+        entity_type:
+          type: string
+        state:
+          type: string
     WorkflowEnvelopeResponse:
       type: object
       properties:
-        data: { $ref: "#/components/schemas/WorkflowItem" }
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+        data:
+          $ref: '#/components/schemas/WorkflowItem'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
     WorkflowTimelineEntry:
       type: object
       properties:
-        id: { type: string, format: uuid }
-        kind: { type: string }
-        action: { type: string }
-        timestamp: { type: string, format: date-time, nullable: true }
-        actor_id: { type: string, format: uuid, nullable: true }
-        detail: { type: string, nullable: true }
-        diff: { type: object, additionalProperties: true }
-
+        id:
+          type: string
+          format: uuid
+        kind:
+          type: string
+        action:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+          nullable: true
+        actor_id:
+          type: string
+          format: uuid
+          nullable: true
+        detail:
+          type: string
+          nullable: true
+        diff:
+          type: object
+          additionalProperties: true
     WorkflowTimelineResponse:
       type: object
       properties:
         data:
           type: array
-          items: { $ref: "#/components/schemas/WorkflowTimelineEntry" }
+          items:
+            $ref: '#/components/schemas/WorkflowTimelineEntry'
         meta:
           type: object
           properties:
-            api_version: { type: string }
-            count: { type: integer }
-            workflow_id: { type: string, format: uuid }
-            limit: { type: integer }
-            offset: { type: integer }
-
+            api_version:
+              type: string
+            count:
+              type: integer
+            workflow_id:
+              type: string
+              format: uuid
+            limit:
+              type: integer
+            offset:
+              type: integer
     GraphWriteResult:
       type: object
       properties:
-        available: { type: boolean }
-        status: { type: string }
-
+        available:
+          type: boolean
+        status:
+          type: string
     PublishValidationSummary:
       type: object
       properties:
-        valid: { type: boolean }
-        publish_ready: { type: boolean }
-
+        valid:
+          type: boolean
+        publish_ready:
+          type: boolean
     WorkflowSnapshotRef:
       type: object
       properties:
-        id: { type: string, format: uuid, nullable: true }
-        version_tag: { type: string, nullable: true }
-        status: { type: string, nullable: true }
-        module: { type: string, nullable: true }
-        released_at: { type: string, format: date-time, nullable: true }
-        entity_count: { type: integer, nullable: true }
-        relationship_count: { type: integer, nullable: true }
-
+        id:
+          type: string
+          format: uuid
+          nullable: true
+        version_tag:
+          type: string
+          nullable: true
+        status:
+          type: string
+          nullable: true
+        module:
+          type: string
+          nullable: true
+        released_at:
+          type: string
+          format: date-time
+          nullable: true
+        entity_count:
+          type: integer
+          nullable: true
+        relationship_count:
+          type: integer
+          nullable: true
     PublishResultData:
       type: object
       properties:
-        workflow: { $ref: "#/components/schemas/WorkflowItem" }
-        published_slug: { type: string, nullable: true }
-        dataset_version: { type: string, nullable: true }
-        published_at: { type: string, format: date-time, nullable: true }
-        graph_write: { $ref: "#/components/schemas/GraphWriteResult" }
-        snapshot: { $ref: "#/components/schemas/WorkflowSnapshotRef", nullable: true }
-        validation_summary: { $ref: "#/components/schemas/PublishValidationSummary" }
-
+        workflow:
+          $ref: '#/components/schemas/WorkflowItem'
+        published_slug:
+          type: string
+          nullable: true
+        dataset_version:
+          type: string
+          nullable: true
+        published_at:
+          type: string
+          format: date-time
+          nullable: true
+        graph_write:
+          $ref: '#/components/schemas/GraphWriteResult'
+        snapshot:
+          $ref: '#/components/schemas/WorkflowSnapshotRef'
+          nullable: true
+        validation_summary:
+          $ref: '#/components/schemas/PublishValidationSummary'
     PublishWorkflowResponse:
       type: object
       properties:
-        data: { $ref: "#/components/schemas/PublishResultData" }
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+        data:
+          $ref: '#/components/schemas/PublishResultData'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
     PublishRequest:
       type: object
-      required: [entity_payload]
+      required:
+      - entity_payload
       properties:
-        entity_payload: { type: object }
-        related_entities: { type: array, items: { type: object } }
-        relationships: { type: array, items: { type: object } }
-        dataset_version: { type: string }
-        module: { type: string, nullable: true }
-        create_snapshot: { type: boolean, default: false }
-
+        entity_payload:
+          type: object
+        related_entities:
+          type: array
+          items:
+            type: object
+        relationships:
+          type: array
+          items:
+            type: object
+        dataset_version:
+          type: string
+        module:
+          type: string
+          nullable: true
+        create_snapshot:
+          type: boolean
+          default: false
     WorkflowSaveResponse:
       type: object
       properties:
         data:
           type: object
           properties:
-            workflow: { $ref: "#/components/schemas/WorkflowItem" }
-            validation: { type: object }
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+            workflow:
+              $ref: '#/components/schemas/WorkflowItem'
+            validation:
+              type: object
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
     WorkflowListResponse:
       type: object
       properties:
         data:
           type: array
-          items: { $ref: "#/components/schemas/WorkflowItem" }
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+          items:
+            $ref: '#/components/schemas/WorkflowItem'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
     ValidationResultResponse:
       type: object
-      required: [data, meta]
+      required:
+      - data
+      - meta
       properties:
         data:
           type: object
-          required: [valid, issues]
+          required:
+          - valid
+          - issues
           properties:
-            valid: { type: boolean }
+            valid:
+              type: boolean
             issues:
               type: array
               items:
                 type: object
                 properties:
-                  constraint_id: { type: string, nullable: true }
-                  level: { type: string }
-                  severity: { type: string }
-                  message: { type: string }
-                  field: { type: string, nullable: true }
-                  entity_id: { type: string, nullable: true }
-                  relationship_type: { type: string, nullable: true }
+                  constraint_id:
+                    type: string
+                    nullable: true
+                  level:
+                    type: string
+                  severity:
+                    type: string
+                  message:
+                    type: string
+                  field:
+                    type: string
+                    nullable: true
+                  entity_id:
+                    type: string
+                    nullable: true
+                  relationship_type:
+                    type: string
+                    nullable: true
         meta:
           type: object
           properties:
-            api_version: { type: string }
-            error_count: { type: integer }
-
+            api_version:
+              type: string
+            error_count:
+              type: integer
     ValidationSummaryResponse:
       type: object
-      required: [data, meta]
+      required:
+      - data
+      - meta
       properties:
         data:
           type: object
-          required: [failed_count, pending_count, recent_failures]
+          required:
+          - failed_count
+          - pending_count
+          - recent_failures
           properties:
-            failed_count: { type: integer }
-            pending_count: { type: integer }
+            failed_count:
+              type: integer
+            pending_count:
+              type: integer
             recent_failures:
               type: array
-              items: { type: object, additionalProperties: true }
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+              items:
+                type: object
+                additionalProperties: true
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
     StubPackageResponse:
       type: object
       properties:
-        data: { type: object }
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+        data:
+          type: object
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
     ResponseMeta:
       type: object
-      required: [api_version]
+      required:
+      - api_version
       properties:
-        dataset_version: { type: string, example: "2026.1.0" }
-        ontology_version: { type: string, example: "1.0.0" }
-        query_time_ms: { type: integer }
+        dataset_version:
+          type: string
+          example: 2026.1.0
+        ontology_version:
+          type: string
+          example: 1.0.0
+        query_time_ms:
+          type: integer
         content_layers:
           type: array
           items:
             type: string
-            enum: [biomedical, education, learning]
-        language: { type: string, default: en }
-        api_version: { type: string, example: v1 }
-        count: { type: integer }
-        total: { type: integer }
-        limit: { type: integer }
-        offset: { type: integer }
-
+            enum:
+            - biomedical
+            - education
+            - learning
+        language:
+          type: string
+          default: en
+        api_version:
+          type: string
+          example: v1
+        provenance:
+          type: string
+          description: Data origin marker, e.g. staging-fallback when served from curator staging files instead of the graph.
+        count:
+          type: integer
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
     EntitySummary:
       type: object
-      required: [id, type, slug, label]
+      required:
+      - id
+      - type
+      - slug
+      - label
       properties:
-        id: { type: string, format: uuid }
-        type: { type: string }
-        slug: { type: string }
-        label: { type: string }
-        status: { type: string }
-        confidence_score: { type: number, minimum: 0, maximum: 1 }
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+        slug:
+          type: string
+        label:
+          type: string
+        status:
+          type: string
+        confidence_score:
+          type: number
+          minimum: 0
+          maximum: 1
         content_layer:
           type: string
-          enum: [biomedical, education, learning]
-        external_ids: { type: object, additionalProperties: true }
-
+          enum:
+          - biomedical
+          - education
+          - learning
+        external_ids:
+          type: object
+          additionalProperties: true
     HealthData:
       type: object
-      required: [status, checks]
+      required:
+      - status
+      - checks
       properties:
         status:
           type: string
-          enum: [ok, degraded]
+          enum:
+          - ok
+          - degraded
         checks:
           type: object
           properties:
-            postgresql: { type: string }
-            neo4j: { type: string }
-            latest_snapshot: { type: string, nullable: true }
-        dataset_version: { type: string, nullable: true }
-
+            postgresql:
+              type: string
+            neo4j:
+              type: string
+            latest_snapshot:
+              type: string
+              nullable: true
+        dataset_version:
+          type: string
+          nullable: true
     DrugListResponse:
       type: object
       properties:
         data:
           type: array
-          items: { $ref: "#/components/schemas/EntitySummary" }
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+          items:
+            $ref: '#/components/schemas/EntitySummary'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
     DrugDetailResponse:
       type: object
       properties:
-        data: { type: object, additionalProperties: true }
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+        data:
+          type: object
+          additionalProperties: true
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
     EntityListResponse:
       type: object
       properties:
         data:
           type: array
-          items: { $ref: "#/components/schemas/EntitySummary" }
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+          items:
+            $ref: '#/components/schemas/EntitySummary'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
     EntityDetailResponse:
       type: object
       properties:
-        data: { type: object }
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+        data:
+          type: object
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
     GraphResponse:
       type: object
       properties:
         data:
           type: object
           properties:
-            nodes: { type: array, items: { type: object } }
-            edges: { type: array, items: { type: object } }
-            layout_hint: { type: string }
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+            nodes:
+              type: array
+              items:
+                type: object
+            edges:
+              type: array
+              items:
+                type: object
+            layout_hint:
+              type: string
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
     MechanismDAGResponse:
       type: object
       properties:
         data:
           type: object
           properties:
-            drug_id: { type: string, format: uuid }
-            root_fragment_id: { type: string, format: uuid }
-            nodes: { type: array, items: { type: object } }
-            edges: { type: array, items: { type: object } }
-            is_acyclic: { type: boolean }
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+            drug_id:
+              type: string
+              format: uuid
+            root_fragment_id:
+              type: string
+              format: uuid
+            nodes:
+              type: array
+              items:
+                type: object
+            edges:
+              type: array
+              items:
+                type: object
+            is_acyclic:
+              type: boolean
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
     LearningGraphResponse:
       type: object
       properties:
         data:
           type: object
           properties:
-            entity_id: { type: string, format: uuid }
-            prerequisites: { type: array, items: { type: object } }
-            missing_topics: { type: array, items: { type: string, format: uuid } }
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+            entity_id:
+              type: string
+              format: uuid
+            prerequisites:
+              type: array
+              items:
+                type: object
+            missing_topics:
+              type: array
+              items:
+                type: string
+                format: uuid
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
     StudyViewResponse:
       type: object
       properties:
         data:
           type: object
           properties:
-            drug: { type: object }
+            drug:
+              type: object
             education:
               type: array
-              items: { type: object }
+              items:
+                type: object
             flashcards:
               type: array
-              items: { type: object }
+              items:
+                type: object
             prerequisites:
               type: array
-              items: { type: object }
+              items:
+                type: object
             study_plan:
               type: array
-              items: { type: object }
+              items:
+                type: object
             content_layers:
               type: array
               items:
                 type: string
-                enum: [biomedical, education, learning]
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+                enum:
+                - biomedical
+                - education
+                - learning
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
     ExplainResponse:
       type: object
       properties:
         data:
           type: object
           properties:
-            question: { type: string }
-            answer_summary: { type: string }
-            reasoning_chain: { type: array, items: { type: object } }
-            confidence: { type: number }
-            evidence_level: { type: string }
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+            question:
+              type: string
+            answer_summary:
+              type: string
+            reasoning_chain:
+              type: array
+              items:
+                type: object
+            confidence:
+              type: number
+            evidence_level:
+              type: string
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
     CompareRequest:
       type: object
-      required: [drug_ids]
+      required:
+      - drug_ids
       properties:
         drug_ids:
           type: array
-          items: { type: string, format: uuid }
+          items:
+            type: string
+            format: uuid
           minItems: 2
           maxItems: 10
         dimensions:
           type: array
-          items: { type: string }
-        include_education: { type: boolean, default: false }
+          items:
+            type: string
+        include_education:
+          type: boolean
+          default: false
         response_mode:
           type: string
-          enum: [minimal, summary, full, graph]
-
+          enum:
+          - minimal
+          - summary
+          - full
+          - graph
     CompareResponse:
       type: object
       properties:
@@ -2392,26 +4329,35 @@ components:
           properties:
             drug_ids:
               type: array
-              items: { type: string, format: uuid }
+              items:
+                type: string
+                format: uuid
             dimensions:
               type: array
-              items: { type: string }
-            comparison: { type: object }
-            subgraph: { type: object }
+              items:
+                type: string
+            comparison:
+              type: object
+            subgraph:
+              type: object
             education:
               type: object
               additionalProperties:
                 type: array
-                items: { type: object }
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+                items:
+                  type: object
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
     GraphQueryRequest:
       type: object
-      required: [template, params]
+      required:
+      - template
+      - params
       properties:
-        template: { type: string }
-        params: { type: object }
-
+        template:
+          type: string
+        params:
+          type: object
     SearchResponse:
       type: object
       properties:
@@ -2420,156 +4366,253 @@ components:
           items:
             type: object
             properties:
-              entity: { $ref: "#/components/schemas/EntitySummary" }
-              score: { type: number }
-              snippet: { type: string }
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+              entity:
+                $ref: '#/components/schemas/EntitySummary'
+              score:
+                type: number
+              snippet:
+                type: string
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
     EducationListResponse:
       type: object
       properties:
-        data: { type: array, items: { type: object } }
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+        data:
+          type: array
+          items:
+            type: object
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
     EducationDetailResponse:
       type: object
       properties:
-        data: { type: object }
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+        data:
+          type: object
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
     EvidenceType:
       type: string
       enum:
-        - pubmed_article
-        - fda_label
-        - ema_smpc
-        - who_guideline
-        - nice_guideline
-        - rct
-        - meta_analysis
-        - systematic_review
-        - review_article
-        - clinical_guideline
-        - expert_consensus
-        - textbook
-
+      - pubmed_article
+      - fda_label
+      - ema_smpc
+      - who_guideline
+      - nice_guideline
+      - rct
+      - meta_analysis
+      - systematic_review
+      - review_article
+      - clinical_guideline
+      - expert_consensus
+      - textbook
     EvidenceListResponse:
       type: object
       properties:
         data:
           type: array
-          items: { type: object, additionalProperties: true }
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+          items:
+            type: object
+            additionalProperties: true
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
     EvidenceDetailResponse:
       type: object
       properties:
-        data: { type: object, additionalProperties: true }
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+        data:
+          type: object
+          additionalProperties: true
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
     CreateEvidenceRequest:
       type: object
-      required: [title, evidence_type]
+      required:
+      - title
+      - evidence_type
       properties:
-        title: { type: string, minLength: 1, maxLength: 500 }
-        evidence_type: { $ref: "#/components/schemas/EvidenceType" }
+        title:
+          type: string
+          minLength: 1
+          maxLength: 500
+        evidence_type:
+          $ref: '#/components/schemas/EvidenceType'
         slug:
           type: string
-          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
-        quality_score: { type: number, minimum: 0, maximum: 1, default: 0.5 }
-        extract: { type: string, nullable: true }
-        supports_claim: { type: string, nullable: true }
-        journal: { type: string, nullable: true }
-        year: { type: integer, minimum: 1800, maximum: 2100, nullable: true }
+          pattern: ^[a-z0-9]+(?:-[a-z0-9]+)*$
+        quality_score:
+          type: number
+          minimum: 0
+          maximum: 1
+          default: 0.5
+        extract:
+          type: string
+          nullable: true
+        supports_claim:
+          type: string
+          nullable: true
+        journal:
+          type: string
+          nullable: true
+        year:
+          type: integer
+          minimum: 1800
+          maximum: 2100
+          nullable: true
         authors:
           type: array
-          items: { type: string }
-        dataset_version: { type: string, nullable: true }
-
+          items:
+            type: string
+        dataset_version:
+          type: string
+          nullable: true
     UpdateEvidenceRequest:
       type: object
       properties:
-        title: { type: string, minLength: 1, maxLength: 500 }
-        evidence_type: { $ref: "#/components/schemas/EvidenceType" }
+        title:
+          type: string
+          minLength: 1
+          maxLength: 500
+        evidence_type:
+          $ref: '#/components/schemas/EvidenceType'
         slug:
           type: string
-          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
-        quality_score: { type: number, minimum: 0, maximum: 1 }
-        extract: { type: string, nullable: true }
-        supports_claim: { type: string, nullable: true }
-        journal: { type: string, nullable: true }
-        year: { type: integer, minimum: 1800, maximum: 2100, nullable: true }
+          pattern: ^[a-z0-9]+(?:-[a-z0-9]+)*$
+        quality_score:
+          type: number
+          minimum: 0
+          maximum: 1
+        extract:
+          type: string
+          nullable: true
+        supports_claim:
+          type: string
+          nullable: true
+        journal:
+          type: string
+          nullable: true
+        year:
+          type: integer
+          minimum: 1800
+          maximum: 2100
+          nullable: true
         authors:
           type: array
-          items: { type: string }
-        dataset_version: { type: string, nullable: true }
-
+          items:
+            type: string
+        dataset_version:
+          type: string
+          nullable: true
     AttachDrugEvidenceRequest:
       type: object
-      required: [evidence_id]
+      required:
+      - evidence_id
       properties:
-        evidence_id: { type: string, format: uuid }
-
+        evidence_id:
+          type: string
+          format: uuid
     AttachAssertionRequest:
       type: object
-      required: [source_id, source_type, relationship_type, target_id, target_type]
+      required:
+      - source_id
+      - source_type
+      - relationship_type
+      - target_id
+      - target_type
       properties:
-        source_id: { type: string, format: uuid }
-        source_type: { type: string, description: "Neo4j label, e.g. Drug" }
-        relationship_type: { type: string, description: "Clinical relationship type, e.g. TREATS" }
-        target_id: { type: string, format: uuid }
-        target_type: { type: string, description: "Neo4j label, e.g. Disease" }
-
+        source_id:
+          type: string
+          format: uuid
+        source_type:
+          type: string
+          description: Neo4j label, e.g. Drug
+        relationship_type:
+          type: string
+          description: Clinical relationship type, e.g. TREATS
+        target_id:
+          type: string
+          format: uuid
+        target_type:
+          type: string
+          description: Neo4j label, e.g. Disease
     EvidenceDrugLinkData:
       type: object
-      required: [evidence_id, drug_id]
+      required:
+      - evidence_id
+      - drug_id
       properties:
-        evidence_id: { type: string, format: uuid }
-        drug_id: { type: string, format: uuid }
-        attached: { type: boolean }
-        detached: { type: boolean }
-
+        evidence_id:
+          type: string
+          format: uuid
+        drug_id:
+          type: string
+          format: uuid
+        attached:
+          type: boolean
+        detached:
+          type: boolean
     EvidenceDrugLinkResponse:
       type: object
       properties:
-        data: { $ref: "#/components/schemas/EvidenceDrugLinkData" }
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+        data:
+          $ref: '#/components/schemas/EvidenceDrugLinkData'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
     EvidenceAssertionLinkData:
       type: object
-      required: [evidence_id, source_id, relationship_type, target_id]
+      required:
+      - evidence_id
+      - source_id
+      - relationship_type
+      - target_id
       properties:
-        evidence_id: { type: string, format: uuid }
-        source_id: { type: string, format: uuid }
-        relationship_type: { type: string }
-        target_id: { type: string, format: uuid }
-        attached: { type: boolean }
-        detached: { type: boolean }
-
+        evidence_id:
+          type: string
+          format: uuid
+        source_id:
+          type: string
+          format: uuid
+        relationship_type:
+          type: string
+        target_id:
+          type: string
+          format: uuid
+        attached:
+          type: boolean
+        detached:
+          type: boolean
     EvidenceAssertionLinkResponse:
       type: object
       properties:
-        data: { $ref: "#/components/schemas/EvidenceAssertionLinkData" }
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+        data:
+          $ref: '#/components/schemas/EvidenceAssertionLinkData'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
     FlashcardListResponse:
       type: object
       properties:
-        data: { type: array, items: { type: object } }
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+        data:
+          type: array
+          items:
+            type: object
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
     CaseListResponse:
       type: object
       properties:
-        data: { type: array, items: { type: object } }
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+        data:
+          type: array
+          items:
+            type: object
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
     InteractionListResponse:
       type: object
       properties:
-        data: { type: array, items: { type: object } }
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+        data:
+          type: array
+          items:
+            type: object
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
     ModuleListResponse:
       type: object
       properties:
@@ -2578,29 +4621,490 @@ components:
           items:
             type: object
             properties:
-              slug: { type: string }
-              name: { type: string }
-              status: { type: string, enum: [planned, in_progress, complete] }
-              drug_count: { type: integer }
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+              slug:
+                type: string
+              name:
+                type: string
+              status:
+                type: string
+                enum:
+                - planned
+                - in_progress
+                - complete
+              drug_count:
+                type: integer
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
     StatisticsResponse:
       type: object
       properties:
         data:
           type: object
           properties:
-            entity_count: { type: integer }
-            relationship_count: { type: integer }
-            evidence_count: { type: integer }
-            module_stats: { type: object }
-        meta: { $ref: "#/components/schemas/ResponseMeta" }
-
+            entity_count:
+              type: integer
+            relationship_count:
+              type: integer
+            evidence_count:
+              type: integer
+            module_stats:
+              type: object
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    InteractionResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            interactions:
+              type: array
+              items:
+                $ref: '#/components/schemas/DrugInteractionItem'
+            checked_drugs:
+              type: array
+              items:
+                $ref: '#/components/schemas/EntitySummary'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    DrugInteractionItem:
+      type: object
+      required:
+      - drug_a_id
+      - drug_b_id
+      - severity
+      - title
+      - mechanism_explanation
+      - clinical_action
+      properties:
+        drug_a_id:
+          type: string
+        drug_b_id:
+          type: string
+        severity:
+          type: string
+          enum:
+          - contraindicated
+          - major
+          - moderate
+          - minor
+          - beneficial_synergy
+        title:
+          type: string
+        mechanism_explanation:
+          type: string
+        clinical_action:
+          type: string
+        pathway_overlap:
+          type: array
+          items:
+            type: string
+        source:
+          type: string
+          enum:
+          - curator
+          - rules
+          default: rules
+          description: "Provenance of this interaction: curator-entered edge or rule-engine heuristic."
+        evidence_ids:
+          type: array
+          items:
+            type: string
     ErrorResponse:
       type: object
       properties:
         error:
           type: object
           properties:
-            code: { type: string }
-            message: { type: string }
+            code:
+              type: string
+            message:
+              type: string
+    CreateApiKeyRequest:
+      properties:
+        name:
+          type: string
+          title: Name
+        scopes:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Scopes
+        expires_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Expires At
+      type: object
+      required:
+      - name
+      title: CreateApiKeyRequest
+    CreateDiseaseRequest:
+      properties:
+        slug:
+          type: string
+          title: Slug
+          description: Lowercase kebab-case disease slug, e.g. heart-failure
+        label:
+          type: string
+          title: Label
+          description: Display label
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        icd10:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Icd10
+          description: Optional ICD-10 code
+        mesh:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Mesh
+          description: Optional MeSH identifier
+      type: object
+      required:
+      - slug
+      - label
+      title: CreateDiseaseRequest
+    CreateDrugRequest:
+      properties:
+        slug:
+          type: string
+          title: Slug
+          description: Lowercase kebab-case drug slug, e.g. ramipril
+        label:
+          type: string
+          title: Label
+          description: Display label / generic name
+        drug_class_slug:
+          type: string
+          title: Drug Class Slug
+          description: DrugClass slug from nodes index, e.g. ace-inhibitors
+        module:
+          type: string
+          title: Module
+          description: Module registry slug, e.g. cardiovascular, endocrinology
+          default: cardiovascular
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+      type: object
+      required:
+      - slug
+      - label
+      - drug_class_slug
+      title: CreateDrugRequest
+    CreateMechanismFragmentRequest:
+      properties:
+        slug:
+          type: string
+          title: Slug
+          description: Lowercase kebab-case fragment slug, e.g. ace-inhibition
+        label:
+          type: string
+          title: Label
+          description: Display label
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+      type: object
+      required:
+      - slug
+      - label
+      title: CreateMechanismFragmentRequest
+    CreateTargetRequest:
+      properties:
+        entity_type:
+          type: string
+          title: Entity Type
+          description: TargetProtein, Receptor, or Enzyme
+          default: TargetProtein
+        slug:
+          type: string
+          title: Slug
+          description: Lowercase kebab-case target slug, e.g. adrb1, cyp2d6
+        label:
+          type: string
+          title: Label
+          description: Display label, e.g. Beta-1 Adrenergic Receptor
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        gene_symbol:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Gene Symbol
+        is_cyp:
+          type: boolean
+          title: Is Cyp
+          default: false
+        cyp_family:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cyp Family
+        family:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Family
+      type: object
+      required:
+      - slug
+      - label
+      title: CreateTargetRequest
+    CreateUserRequest:
+      properties:
+        email:
+          type: string
+          title: Email
+        password:
+          type: string
+          minLength: 12
+          title: Password
+        full_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Full Name
+        role:
+          type: string
+          title: Role
+          default: curator
+        scopes:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Scopes
+        is_active:
+          type: boolean
+          title: Is Active
+          default: true
+      type: object
+      required:
+      - email
+      - password
+      title: CreateUserRequest
+    DemoAccessRequestBody:
+      properties:
+        email:
+          type: string
+          maxLength: 320
+          title: Email
+        full_name:
+          type: string
+          maxLength: 255
+          minLength: 2
+          title: Full Name
+        organization:
+          anyOf:
+          - type: string
+            maxLength: 255
+          - type: 'null'
+          title: Organization
+        intended_use:
+          type: string
+          maxLength: 2000
+          minLength: 10
+          title: Intended Use
+        website:
+          type: string
+          maxLength: 0
+          title: Website
+          default: ''
+      type: object
+      required:
+      - email
+      - full_name
+      - intended_use
+      title: DemoAccessRequestBody
+    EnterpriseInquiryRequest:
+      properties:
+        company_name:
+          type: string
+          maxLength: 200
+          minLength: 2
+          title: Company Name
+        contact_name:
+          type: string
+          maxLength: 100
+          minLength: 2
+          title: Contact Name
+        work_email:
+          type: string
+          maxLength: 320
+          title: Work Email
+        use_case:
+          type: string
+          maxLength: 2000
+          minLength: 20
+          title: Use Case
+          description: EMR, CDSS, simulation, or cohort details
+        estimated_monthly_volume:
+          type: string
+          enum:
+          - <50k
+          - 50k-500k
+          - 500k-5M
+          - 5M+
+          title: Estimated Monthly Volume
+        needs_on_premise:
+          type: boolean
+          title: Needs On Premise
+          default: false
+      type: object
+      required:
+      - company_name
+      - contact_name
+      - work_email
+      - use_case
+      - estimated_monthly_volume
+      title: EnterpriseInquiryRequest
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    InstantKeyRequest:
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          minLength: 2
+          title: Name
+          description: Developer or application name
+        email:
+          type: string
+          maxLength: 320
+          title: Email
+          description: Contact email address
+        organization:
+          anyOf:
+          - type: string
+            maxLength: 200
+          - type: 'null'
+          title: Organization
+          description: Company or university
+        intended_use:
+          type: string
+          enum:
+          - education
+          - research
+          - healthtech_demo
+          - student_project
+          - ai_agent
+          title: Intended Use
+          description: Primary intended usage
+      type: object
+      required:
+      - name
+      - email
+      - intended_use
+      title: InstantKeyRequest
+    RejectUnpublishRequestBody:
+      properties:
+        notes:
+          anyOf:
+          - type: string
+            maxLength: 2000
+          - type: 'null'
+          title: Notes
+          description: Optional admin rejection reason
+      type: object
+      title: RejectUnpublishRequestBody
+    UnpublishRequestBody:
+      properties:
+        notes:
+          type: string
+          maxLength: 2000
+          minLength: 1
+          title: Notes
+          description: Reason the published package should be unpublished
+      type: object
+      required:
+      - notes
+      title: UnpublishRequestBody
+    UpdateUserRequest:
+      properties:
+        email:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Email
+        password:
+          anyOf:
+          - type: string
+            minLength: 12
+          - type: 'null'
+          title: Password
+        full_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Full Name
+        role:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Role
+        scopes:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Scopes
+        is_active:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Is Active
+      type: object
+      title: UpdateUserRequest
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+        input:
+          title: Input
+        ctx:
+          type: object
+          title: Context
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError

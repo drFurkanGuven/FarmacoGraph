@@ -62,7 +62,7 @@ export interface EvidenceSearchOptions extends PaginationParams {
 export function searchEvidence(
   client: FarmacoGraphClient,
   query: string,
-  options?: EvidenceSearchOptions,
+  options?: EvidenceSearchOptions
 ) {
   const { datasetVersion, ...pagination } = options ?? {};
   return client.request<EvidenceSearchHit[]>("/search", {
@@ -116,7 +116,7 @@ export function createEvidence(client: FarmacoGraphClient, body: CreateEvidenceB
 export function updateEvidence(
   client: FarmacoGraphClient,
   evidenceId: string,
-  body: UpdateEvidenceBody,
+  body: UpdateEvidenceBody
 ) {
   const normalizedId = evidenceId.includes(":") ? evidenceId.split(":").pop()! : evidenceId;
   return client.request<EvidenceRecord>(`/evidence/${normalizedId}`, {

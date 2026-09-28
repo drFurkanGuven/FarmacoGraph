@@ -1,4 +1,9 @@
-import type { FarmacoGraphClient, PackageValidation, PublishPackageInput, WorkflowItem } from "@/lib/api";
+import type {
+  FarmacoGraphClient,
+  PackageValidation,
+  PublishPackageInput,
+  WorkflowItem,
+} from "@/lib/api";
 
 export async function loadCuratorDiseasePackage(client: FarmacoGraphClient, slug: string) {
   const opened = await client.openDiseaseWorkflow(slug);
@@ -17,7 +22,7 @@ export async function validateDiseasePackage(client: FarmacoGraphClient, pkg: Pu
 export async function saveDiseasePackage(
   client: FarmacoGraphClient,
   workflowId: string,
-  pkg: PublishPackageInput,
+  pkg: PublishPackageInput
 ): Promise<{ validation: PackageValidation | null; savedAt: string }> {
   const envelope = await client.saveWorkflowPackage(workflowId, pkg);
   return {

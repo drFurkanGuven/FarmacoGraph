@@ -7,7 +7,7 @@ from uuid import UUID
 from pydantic import Field
 
 from farmacograph.models.base import BiomedicalEntity
-from farmacograph.models.enums import EntityType, EvidenceType
+from farmacograph.models.enums import EntityType, EvidenceType, FragmentType
 
 
 class Disease(BiomedicalEntity):
@@ -37,7 +37,7 @@ class ClinicalScenario(BiomedicalEntity):
 class MechanismFragment(BiomedicalEntity):
     entity_type: EntityType = EntityType.MECHANISM_FRAGMENT
     is_reusable: bool = True
-    fragment_type: str = "molecular"
+    fragment_type: FragmentType
     direction: str = "unknown"
 
 

@@ -3,7 +3,7 @@ import type { WorkflowTimelineEvent } from "@/lib/api";
 import { sortTimelineEvents, timelineLabel, toTimelinePresentation } from "../timeline-utils";
 
 function event(
-  overrides: Partial<WorkflowTimelineEvent> & Pick<WorkflowTimelineEvent, "id" | "kind">,
+  overrides: Partial<WorkflowTimelineEvent> & Pick<WorkflowTimelineEvent, "id" | "kind">
 ): WorkflowTimelineEvent {
   return {
     action: overrides.action ?? `curator.${overrides.kind}`,
@@ -27,7 +27,7 @@ describe("timeline-utils", () => {
         id: "1",
         kind: "validation_run",
         detail: "Validation failed (2 errors)",
-      }),
+      })
     );
     expect(presentation.title).toBe("Validation run");
     expect(presentation.description).toBe("Validation failed (2 errors)");

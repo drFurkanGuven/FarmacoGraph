@@ -48,6 +48,9 @@ export interface CreateEvidenceInput {
   evidence_type: string;
   quality_score: number;
   year?: number | null;
+  authors?: string[];
+  journal?: string | null;
+  supports_claim?: string | null;
   extract?: string | null;
 }
 

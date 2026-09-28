@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Loader2, Rocket, RotateCcw, Send, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ErrorState } from "@/components/ui/error-state";
+import { useLanguage } from "@/lib/i18n/context";
 import { WorkflowStatePanel } from "./workflow-state-panel";
 import type { PublishWizardAction } from "./validation";
 import { PublishConfirmation, PublishResult } from "./publish-phases";
@@ -85,14 +86,22 @@ export function PublishWizard({
     enabled: open,
   });
 
+  // Latest wizard callbacks without re-subscribing the open-change effect:
+  // depending on `wizard` identity here would re-fire ensureWorkflow on every
+  // render (the hook returns a new object), spamming workflow bootstrap calls.
+  const wizardRef = useRef(wizard);
+  wizardRef.current = wizard;
+
   useEffect(() => {
     if (!open) {
-      wizard.reset();
+      wizardRef.current.reset();
       return;
     }
 
-    void wizard.ensureWorkflow();
+    void wizardRef.current.ensureWorkflow();
   }, [open]);
+
+  const { t } = useLanguage();
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen && wizard.isExecuting) return;
@@ -102,10 +111,10 @@ export function PublishWizard({
 
   const title =
     wizard.phase === "confirm"
-      ? "Confirm action"
+      ? t("wizard.confirm", "Confirm action")
       : wizard.phase === "result"
-        ? "Workflow update"
-        : "Publish wizard";
+        ? t("wizard.result", "Workflow update")
+        : t("wizard.title", "Publish wizard");
 
   const primaryAction = wizard.availableAction;
   const primaryBlockers = primaryAction ? wizard.getActionBlockers(primaryAction) : [];
@@ -123,8 +132,8 @@ export function PublishWizard({
             <DialogHeader>
               <DialogTitle>{title}</DialogTitle>
               <DialogDescription>
-                Review workflow state, validation readiness, and advance the package through submit, approve, and
-                publish.
+                Review workflow state, validation readiness, and advance the package through submit,
+                approve, and publish.
               </DialogDescription>
             </DialogHeader>
 
@@ -139,12 +148,17 @@ export function PublishWizard({
               )}
 
               {wizard.ensureError && (
-                <ErrorState title="Workflow unavailable" message={wizard.ensureError} className="py-4" />
+                <ErrorState
+                  title="Workflow unavailable"
+                  message={wizard.ensureError}
+                  className="py-4"
+                />
               )}
 
               {wizard.hasUnsavedChanges && (
                 <div className="rounded-md border border-amber-500/40 bg-amber-500/5 px-3 py-2 text-sm text-amber-900 dark:text-amber-200">
-                  Autosave is still in progress. Wait for changes to save before submitting or publishing.
+                  Autosave is still in progress. Wait for changes to save before submitting or
+                  publishing.
                 </div>
               )}
 
@@ -156,7 +170,10 @@ export function PublishWizard({
                 onNavigateSection={onNavigateSection}
               />
 
-              <MissingRequirementsPanel readiness={wizard.readiness} onNavigateSection={onNavigateSection} />
+              <MissingRequirementsPanel
+                readiness={wizard.readiness}
+                onNavigateSection={onNavigateSection}
+              />
 
               <div className="rounded-lg border p-4">
                 <p className="text-sm font-medium">Next step</p>

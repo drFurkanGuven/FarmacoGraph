@@ -95,7 +95,9 @@ describe("ValidationCenterView", () => {
     expect(screen.getByText("Missing evidence")).toBeInTheDocument();
     expect(screen.getByText("Publish readiness")).toBeInTheDocument();
     expect(screen.getAllByText("Provenance metadata is required").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText(/forbidden: drug -\[targets\]-> disease/i).length).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getAllByText(/forbidden: drug -\[targets\]-> disease/i).length
+    ).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Ramipril draft")).toBeInTheDocument();
   });
 });

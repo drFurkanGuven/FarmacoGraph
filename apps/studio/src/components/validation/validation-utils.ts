@@ -12,7 +12,14 @@ import type {
 const LEVELS = new Set<ValidationLevel>(["schema", "ontology", "biomedical", "educational"]);
 const SEVERITIES = new Set<ValidationSeverity>(["error", "warning", "info"]);
 
-const EVIDENCE_CONSTRAINT_IDS = new Set(["FG-C012", "FG-C018", "FG-C019", "FG-C020", "FG-C026", "FG-C028"]);
+const EVIDENCE_CONSTRAINT_IDS = new Set([
+  "FG-C012",
+  "FG-C018",
+  "FG-C019",
+  "FG-C020",
+  "FG-C026",
+  "FG-C028",
+]);
 const EVIDENCE_KEYWORDS = /\b(evidence|provenance|attestation|source)\b/i;
 
 /** Map drug relationship keys to ontology target entity types. */
@@ -22,14 +29,14 @@ const RELATIONSHIP_TARGET_TYPES: Record<string, string> = {
   TREATS: "Disease",
   PREVENTS: "Disease",
   HAS_MECHANISM_ROOT: "MechanismFragment",
-  TARGETS: "Target",
-  INHIBITS: "Target",
+  TARGETS: "TargetProtein",
+  INHIBITS: "Enzyme",
   CAUSES: "SideEffect",
   CONTRAINDICATED_IN: "Disease",
   INTERACTS_WITH: "Drug",
   AVOID_WITH: "Drug",
   METABOLIZED_BY: "Enzyme",
-  COVERS: "Pathogen",
+  COVERS: "Microorganism",
   FIRST_LINE_FOR: "Disease",
 };
 
@@ -98,7 +105,9 @@ export function categorizeIssues(issues: ValidationIssue[]): CategorizedIssues {
   return { errors, warnings, ontologyViolations, missingEvidence };
 }
 
-export function buildRelationshipsFromDrug(drug: Record<string, unknown>): Record<string, unknown>[] {
+export function buildRelationshipsFromDrug(
+  drug: Record<string, unknown>
+): Record<string, unknown>[] {
   const drugId = String(drug.id ?? "");
   const relationships = drug.relationships;
 
@@ -133,14 +142,14 @@ export function aggregateQueueIssues(items: QueueValidationItem[]): ValidationIs
     item.issues.map((issue) => ({
       ...issue,
       entity_id: issue.entity_id ?? item.entityId,
-    })),
+    }))
   );
 }
 
 export function computePublishReadiness(
   summary: ValidationSummaryData | undefined,
   queueItems: QueueValidationItem[],
-  categorized: CategorizedIssues,
+  categorized: CategorizedIssues
 ): PublishReadiness {
   const draftCount = queueItems.filter((item) => item.workflowState === "draft").length;
   const reviewCount = queueItems.filter((item) => item.workflowState === "review").length;
@@ -158,7 +167,9 @@ export function computePublishReadiness(
     status = "blocked";
     const parts: string[] = [];
     if (categorized.errors.length > 0) {
-      parts.push(`${categorized.errors.length} publish error${categorized.errors.length === 1 ? "" : "s"}`);
+      parts.push(
+        `${categorized.errors.length} publish error${categorized.errors.length === 1 ? "" : "s"}`
+      );
     }
     if (graphFailures > 0) {
       parts.push(`${graphFailures} graph validation failure${graphFailures === 1 ? "" : "s"}`);
