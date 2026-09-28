@@ -167,68 +167,72 @@ async def execute_import(
         raise HTTPException(status_code=500, detail=f"Failed to read package: {e}")
 
     interactions = data.get("interactions", [])
+    unique_interactions = {}
+    for item in interactions:
+        item_id = item.get("id")
+        if item_id and item_id not in unique_interactions:
+            unique_interactions[item_id] = item
+
     imported = 0
     skipped = 0
     errors = 0
 
     session_factory = container.session_factory
+    from sqlalchemy import text
 
     async with session_factory() as session:
-        from sqlalchemy import text
+        # Check existing entity_ids in a single fast query
+        check_sql = text("SELECT entity_id FROM curator_workflows WHERE entity_type = 'Interaction'")
+        result = await session.execute(check_sql)
+        existing_ids = {row[0] for row in result.fetchall()}
 
-        for interaction in interactions:
-            try:
-                # Check if already exists in curator_workflows
-                check_sql = text("""
-                    SELECT id FROM curator_workflows
-                    WHERE entity_id = :entity_id
-                """)
+        to_insert = [
+            item for item_id, item in unique_interactions.items()
+            if item_id not in existing_ids
+        ]
+        skipped = len(interactions) - len(to_insert)
 
-                result = await session.execute(check_sql, {
-                    "entity_id": interaction["id"],
-                })
+        insert_sql = text("""
+            INSERT INTO curator_workflows (
+                id, entity_id, entity_type, state, draft_package_json,
+                created_at, updated_at
+            ) VALUES (
+                :id, :entity_id, 'Interaction', 'draft', :draft_package,
+                CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+            )
+            ON CONFLICT (id) DO NOTHING
+        """)
 
-                if result.fetchone():
-                    skipped += 1
-                    continue
-
-                # Create curator workflow entry
-                draft_package = {
-                    "entity_payload": {
-                        "id": interaction["id"],
-                        "drug_a_name": interaction["drug_a_name"],
-                        "drug_b_name": interaction["drug_b_name"],
-                        "severity": interaction["severity"],
-                        "title": interaction["title"],
-                        "mechanism_explanation": interaction["mechanism_explanation"],
-                        "clinical_action": interaction["clinical_action"],
-                    },
-                    "source": interaction["source"],
-                    "source_doi": interaction.get("source_doi"),
-                    "import_batch": package_id,
-                }
-
-                insert_sql = text("""
-                    INSERT INTO curator_workflows (
-                        id, entity_id, entity_type, state, draft_package_json,
-                        created_at, updated_at
-                    ) VALUES (
-                        :id, :entity_id, 'Interaction', 'draft', :draft_package,
-                        NOW(), NOW()
-                    )
-                """)
-
-                await session.execute(insert_sql, {
+        BATCH_SIZE = 1000
+        for i in range(0, len(to_insert), BATCH_SIZE):
+            chunk = to_insert[i : i + BATCH_SIZE]
+            batch_params = [
+                {
                     "id": interaction["id"],
                     "entity_id": interaction["id"],
-                    "draft_package": json.dumps(draft_package),
-                })
-
-                imported += 1
-
+                    "draft_package": json.dumps({
+                        "entity_payload": {
+                            "id": interaction["id"],
+                            "drug_a_name": interaction["drug_a_name"],
+                            "drug_b_name": interaction["drug_b_name"],
+                            "severity": interaction["severity"],
+                            "title": interaction["title"],
+                            "mechanism_explanation": interaction["mechanism_explanation"],
+                            "clinical_action": interaction["clinical_action"],
+                        },
+                        "source": interaction["source"],
+                        "source_doi": interaction.get("source_doi"),
+                        "import_batch": package_id,
+                    }),
+                }
+                for interaction in chunk
+            ]
+            try:
+                await session.execute(insert_sql, batch_params)
+                imported += len(chunk)
             except Exception as e:
-                errors += 1
-                print(f"Error importing {interaction['id']}: {e}")
+                errors += len(chunk)
+                print(f"Error importing batch: {e}")
 
         await session.commit()
 
@@ -384,63 +388,66 @@ async def execute_chembl_moa_import(
         raise HTTPException(status_code=500, detail=f"Failed to read package: {e}")
 
     moa_entries = data.get("moa_entries", [])
+    unique_entries = {}
+    for entry in moa_entries:
+        entry_id = entry.get("id")
+        if entry_id and entry_id not in unique_entries:
+            unique_entries[entry_id] = entry
+
     imported = 0
     skipped = 0
     errors = 0
 
     session_factory = container.session_factory
+    from sqlalchemy import text
 
     async with session_factory() as session:
-        from sqlalchemy import text
+        check_sql = text("SELECT entity_id FROM curator_workflows WHERE entity_type = 'MechanismOfAction'")
+        result = await session.execute(check_sql)
+        existing_ids = {row[0] for row in result.fetchall()}
 
-        for entry in moa_entries:
-            try:
-                # Check if already exists
-                check_sql = text("""
-                    SELECT id FROM curator_workflows
-                    WHERE entity_id = :entity_id
-                """)
+        to_insert = [
+            entry for entry_id, entry in unique_entries.items()
+            if entry_id not in existing_ids
+        ]
+        skipped = len(moa_entries) - len(to_insert)
 
-                result = await session.execute(check_sql, {
-                    "entity_id": entry["id"],
-                })
+        insert_sql = text("""
+            INSERT INTO curator_workflows (
+                id, entity_id, entity_type, state, draft_package_json,
+                created_at, updated_at
+            ) VALUES (
+                :id, :entity_id, 'MechanismOfAction', 'draft', :draft_package,
+                CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+            )
+            ON CONFLICT (id) DO NOTHING
+        """)
 
-                if result.fetchone():
-                    skipped += 1
-                    continue
-
-                # Create curator workflow entry for MoA
-                draft_package = {
-                    "entity_payload": {
-                        "id": entry["id"],
-                        "smiles": entry["smiles"],
-                        "mechanism_of_action": entry["mechanism_of_action"],
-                    },
-                    "source": entry.get("source", "ChEMBL"),
-                    "import_batch": "chembl-moa-2023",
-                }
-
-                insert_sql = text("""
-                    INSERT INTO curator_workflows (
-                        id, entity_id, entity_type, state, draft_package_json,
-                        created_at, updated_at
-                    ) VALUES (
-                        :id, :entity_id, 'MechanismOfAction', 'draft', :draft_package,
-                        NOW(), NOW()
-                    )
-                """)
-
-                await session.execute(insert_sql, {
+        BATCH_SIZE = 1000
+        for i in range(0, len(to_insert), BATCH_SIZE):
+            chunk = to_insert[i : i + BATCH_SIZE]
+            batch_params = [
+                {
                     "id": entry["id"],
                     "entity_id": entry["id"],
-                    "draft_package": json.dumps(draft_package),
-                })
-
-                imported += 1
-
+                    "draft_package": json.dumps({
+                        "entity_payload": {
+                            "id": entry["id"],
+                            "smiles": entry["smiles"],
+                            "mechanism_of_action": entry["mechanism_of_action"],
+                        },
+                        "source": entry.get("source", "ChEMBL"),
+                        "import_batch": "chembl-moa-2023",
+                    }),
+                }
+                for entry in chunk
+            ]
+            try:
+                await session.execute(insert_sql, batch_params)
+                imported += len(chunk)
             except Exception as e:
-                errors += 1
-                print(f"Error importing MoA {entry['id']}: {e}")
+                errors += len(chunk)
+                print(f"Error importing MoA batch: {e}")
 
         await session.commit()
 

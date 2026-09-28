@@ -167,60 +167,66 @@ async def execute_bulk_import(
     
     session_factory = container.session_factory
     imported = 0
+    unique_items = {}
+    for item in valid_items:
+        if item.id and item.id not in unique_items:
+            unique_items[item.id] = item
+
+    imported = 0
     skipped = 0
     errors = 0
     
     async with session_factory() as session:
         from sqlalchemy import text
         
-        for item in valid_items:
-            try:
-                # Check if already exists
-                check_sql = text("""
-                    SELECT id FROM curator_workflows
-                    WHERE entity_id = :entity_id
-                """)
-                
-                result = await session.execute(check_sql, {"entity_id": item.id})
-                
-                if result.fetchone():
-                    skipped += 1
-                    continue
-                
-                # Create curator workflow entry
-                draft_package = {
-                    "entity_payload": {
-                        "id": item.id,
-                        "drug_a_name": item.drug_a,
-                        "drug_b_name": item.drug_b,
-                        "severity": item.severity,
-                        "interaction_description": item.interaction,
-                    },
-                    "source": "bulk-import",
-                    "imported_by": str(auth.user_id) if auth.user_id else None,
-                }
-                
-                insert_sql = text("""
-                    INSERT INTO curator_workflows (
-                        id, entity_id, entity_type, state, draft_package_json,
-                        created_at, updated_at
-                    ) VALUES (
-                        :id, :entity_id, 'Interaction', 'draft', :draft_package,
-                        NOW(), NOW()
-                    )
-                """)
-                
-                await session.execute(insert_sql, {
+        check_sql = text("SELECT entity_id FROM curator_workflows WHERE entity_type = 'Interaction'")
+        result = await session.execute(check_sql)
+        existing_ids = {row[0] for row in result.fetchall()}
+
+        to_insert = [
+            item for item_id, item in unique_items.items()
+            if item_id not in existing_ids
+        ]
+        skipped = len(valid_items) - len(to_insert)
+
+        insert_sql = text("""
+            INSERT INTO curator_workflows (
+                id, entity_id, entity_type, state, draft_package_json,
+                created_at, updated_at
+            ) VALUES (
+                :id, :entity_id, 'Interaction', 'draft', :draft_package,
+                CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+            )
+            ON CONFLICT (id) DO NOTHING
+        """)
+
+        BATCH_SIZE = 1000
+        for i in range(0, len(to_insert), BATCH_SIZE):
+            chunk = to_insert[i : i + BATCH_SIZE]
+            batch_params = [
+                {
                     "id": item.id,
                     "entity_id": item.id,
-                    "draft_package": json.dumps(draft_package),
-                })
-                
-                imported += 1
-                
+                    "draft_package": json.dumps({
+                        "entity_payload": {
+                            "id": item.id,
+                            "drug_a_name": item.drug_a,
+                            "drug_b_name": item.drug_b,
+                            "severity": item.severity,
+                            "interaction_description": item.interaction,
+                        },
+                        "source": "bulk-import",
+                        "imported_by": str(auth.user_id) if auth.user_id else None,
+                    }),
+                }
+                for item in chunk
+            ]
+            try:
+                await session.execute(insert_sql, batch_params)
+                imported += len(chunk)
             except Exception as e:
-                errors += 1
-                print(f"Error importing {item.id}: {e}")
+                errors += len(chunk)
+                print(f"Error bulk importing batch: {e}")
         
         await session.commit()
     
