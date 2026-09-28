@@ -122,6 +122,7 @@ setup_environment_file() {
   set_env_val "FG_PUBLIC_URL" "https://${DOMAIN}"
   set_env_val "FG_STUDIO_API_URL" "https://${DOMAIN}/api/v1"
   set_env_val "FG_STUDIO_BASE_PATH" "/studio"
+  set_env_val "FG_ALLOW_ANONYMOUS_READ" "true"
 
   # JWT Secret
   local current_jwt

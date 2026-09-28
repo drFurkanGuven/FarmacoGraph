@@ -52,6 +52,7 @@ services:
       FG_NEO4J_USER: ${FG_NEO4J_USER:-neo4j}
       FG_NEO4J_PASSWORD: ${FG_NEO4J_PASSWORD:-farmacograph}
       FG_LOG_JSON: ${FG_LOG_JSON:-false}
+      FG_ALLOW_ANONYMOUS_READ: ${FG_ALLOW_ANONYMOUS_READ:-true}
       FG_JWT_SECRET_KEY: ${FG_JWT_SECRET_KEY:-dev-secret-change-in-production-32chars}
       # staging/ is mounted :ro — curator runtime catalogs must live on a writable volume
       FG_DISEASE_CATALOG_PATH: ${FG_DISEASE_CATALOG_PATH:-/app/data/catalog/diseases.runtime.json}

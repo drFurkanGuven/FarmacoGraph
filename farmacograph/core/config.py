@@ -158,7 +158,7 @@ class Settings(BaseSettings):
             secret = (self.jwt_secret_key or "").strip()
             if not secret or secret in insecure_defaults:
                 raise ValueError("FG_JWT_SECRET_KEY must be set to a secure value in production")
-        if self.environment == "production":
+        if self.environment == "production" and "allow_anonymous_read" not in self.model_fields_set:
             object.__setattr__(self, "allow_anonymous_read", False)
         return self
 
