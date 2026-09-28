@@ -1,5 +1,4 @@
-# FarmacoGraph local development stack
-# Usage: docker compose up -d
+name: farmacograph
 
 services:
   postgres:
