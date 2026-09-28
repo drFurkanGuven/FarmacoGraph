@@ -179,56 +179,56 @@ async def execute_import(
 
     session_factory = container.session_factory
     from sqlalchemy import text
+    from uuid import UUID
+    from farmacograph.db.postgres.models import CuratorWorkflow
 
     async with session_factory() as session:
         # Check existing entity_ids in a single fast query
         check_sql = text("SELECT entity_id FROM curator_workflows WHERE entity_type = 'Interaction'")
         result = await session.execute(check_sql)
-        existing_ids = {row[0] for row in result.fetchall()}
+        existing_ids = {str(row[0]) for row in result.fetchall()}
 
         to_insert = [
             item for item_id, item in unique_interactions.items()
-            if item_id not in existing_ids
+            if str(item_id) not in existing_ids
         ]
         skipped = len(interactions) - len(to_insert)
 
-        insert_sql = text("""
-            INSERT INTO curator_workflows (
-                id, entity_id, entity_type, state, draft_package_json,
-                created_at, updated_at
-            ) VALUES (
-                :id, :entity_id, 'Interaction', 'draft', :draft_package,
-                CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-            )
-            ON CONFLICT (id) DO NOTHING
-        """)
+        is_pg = session.bind.dialect.name == "postgresql" if session.bind else True
+        if is_pg:
+            from sqlalchemy.dialects.postgresql import insert as dialect_insert
+        else:
+            from sqlalchemy.dialects.sqlite import insert as dialect_insert
 
         BATCH_SIZE = 1000
         for i in range(0, len(to_insert), BATCH_SIZE):
             chunk = to_insert[i : i + BATCH_SIZE]
             batch_params = [
                 {
-                    "id": interaction["id"],
-                    "entity_id": interaction["id"],
-                    "draft_package": json.dumps({
+                    "id": UUID(str(interaction["id"])),
+                    "entity_id": str(interaction["id"]),
+                    "entity_type": "Interaction",
+                    "state": "draft",
+                    "draft_package_json": {
                         "entity_payload": {
-                            "id": interaction["id"],
-                            "drug_a_name": interaction["drug_a_name"],
-                            "drug_b_name": interaction["drug_b_name"],
-                            "severity": interaction["severity"],
-                            "title": interaction["title"],
-                            "mechanism_explanation": interaction["mechanism_explanation"],
-                            "clinical_action": interaction["clinical_action"],
+                            "id": str(interaction["id"]),
+                            "drug_a_name": interaction.get("drug_a_name", ""),
+                            "drug_b_name": interaction.get("drug_b_name", ""),
+                            "severity": interaction.get("severity", "moderate"),
+                            "title": interaction.get("title", ""),
+                            "mechanism_explanation": interaction.get("mechanism_explanation", ""),
+                            "clinical_action": interaction.get("clinical_action", ""),
                         },
-                        "source": interaction["source"],
+                        "source": interaction.get("source", "FDA DailyMed 2026"),
                         "source_doi": interaction.get("source_doi"),
                         "import_batch": package_id,
-                    }),
+                    },
                 }
                 for interaction in chunk
             ]
             try:
-                await session.execute(insert_sql, batch_params)
+                stmt = dialect_insert(CuratorWorkflow).values(batch_params).on_conflict_do_nothing(index_elements=["id"])
+                await session.execute(stmt)
                 imported += len(chunk)
             except Exception as e:
                 errors += len(chunk)
@@ -236,20 +236,23 @@ async def execute_import(
 
         await session.commit()
 
-    # Update package status
-    status_file = IMPORT_DIR / f"{package_id}.status.json"
-    from datetime import datetime
+    # Update package status safely (won't crash if staging is mounted :ro)
+    from datetime import datetime, timezone
     status_data = {
         "status": "completed" if errors == 0 else "partial",
-        "imported_at": datetime.utcnow().isoformat(),
+        "imported_at": datetime.now(timezone.utc).isoformat(),
         "imported_count": imported,
         "skipped_count": skipped,
         "error_count": errors,
         "imported_by": str(auth.user_id) if auth.user_id else None,
     }
 
-    with open(status_file, "w") as f:
-        json.dump(status_data, f, indent=2)
+    try:
+        status_file = IMPORT_DIR / f"{package_id}.status.json"
+        with open(status_file, "w") as f:
+            json.dump(status_data, f, indent=2)
+    except (OSError, PermissionError) as e:
+        print(f"Notice: status file could not be written to read-only staging: {e}")
 
     return {
         "data": {
@@ -400,50 +403,54 @@ async def execute_chembl_moa_import(
 
     session_factory = container.session_factory
     from sqlalchemy import text
+    from uuid import UUID, uuid5
+    from farmacograph.db.postgres.models import CuratorWorkflow
 
     async with session_factory() as session:
         check_sql = text("SELECT entity_id FROM curator_workflows WHERE entity_type = 'MechanismOfAction'")
         result = await session.execute(check_sql)
-        existing_ids = {row[0] for row in result.fetchall()}
+        existing_ids = {str(row[0]) for row in result.fetchall()}
 
         to_insert = [
             entry for entry_id, entry in unique_entries.items()
-            if entry_id not in existing_ids
+            if str(entry_id) not in existing_ids
         ]
         skipped = len(moa_entries) - len(to_insert)
 
-        insert_sql = text("""
-            INSERT INTO curator_workflows (
-                id, entity_id, entity_type, state, draft_package_json,
-                created_at, updated_at
-            ) VALUES (
-                :id, :entity_id, 'MechanismOfAction', 'draft', :draft_package,
-                CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-            )
-            ON CONFLICT (id) DO NOTHING
-        """)
+        is_pg = session.bind.dialect.name == "postgresql" if session.bind else True
+        if is_pg:
+            from sqlalchemy.dialects.postgresql import insert as dialect_insert
+        else:
+            from sqlalchemy.dialects.sqlite import insert as dialect_insert
 
         BATCH_SIZE = 1000
         for i in range(0, len(to_insert), BATCH_SIZE):
             chunk = to_insert[i : i + BATCH_SIZE]
-            batch_params = [
-                {
-                    "id": entry["id"],
-                    "entity_id": entry["id"],
-                    "draft_package": json.dumps({
+            batch_params = []
+            for entry in chunk:
+                raw_id = str(entry["id"])
+                try:
+                    entry_uuid = UUID(raw_id)
+                except ValueError:
+                    entry_uuid = uuid5(UUID("fda0dd12-0260-0000-0000-000000000000"), raw_id)
+                batch_params.append({
+                    "id": entry_uuid,
+                    "entity_id": raw_id,
+                    "entity_type": "MechanismOfAction",
+                    "state": "draft",
+                    "draft_package_json": {
                         "entity_payload": {
-                            "id": entry["id"],
-                            "smiles": entry["smiles"],
-                            "mechanism_of_action": entry["mechanism_of_action"],
+                            "id": raw_id,
+                            "smiles": entry.get("smiles", ""),
+                            "mechanism_of_action": entry.get("mechanism_of_action", ""),
                         },
                         "source": entry.get("source", "ChEMBL"),
                         "import_batch": "chembl-moa-2023",
-                    }),
-                }
-                for entry in chunk
-            ]
+                    },
+                })
             try:
-                await session.execute(insert_sql, batch_params)
+                stmt = dialect_insert(CuratorWorkflow).values(batch_params).on_conflict_do_nothing(index_elements=["id"])
+                await session.execute(stmt)
                 imported += len(chunk)
             except Exception as e:
                 errors += len(chunk)
@@ -451,20 +458,23 @@ async def execute_chembl_moa_import(
 
         await session.commit()
 
-    # Update status
-    status_file = CHEMBL_IMPORT_DIR / "chembl-moa-2023.status.json"
-    from datetime import datetime
+    # Update status safely
+    from datetime import datetime, timezone
     status_data = {
         "status": "completed" if errors == 0 else "partial",
-        "imported_at": datetime.utcnow().isoformat(),
+        "imported_at": datetime.now(timezone.utc).isoformat(),
         "imported_count": imported,
         "skipped_count": skipped,
         "error_count": errors,
         "imported_by": str(auth.user_id) if auth.user_id else None,
     }
 
-    with open(status_file, "w") as f:
-        json.dump(status_data, f, indent=2)
+    try:
+        status_file = CHEMBL_IMPORT_DIR / "chembl-moa-2023.status.json"
+        with open(status_file, "w") as f:
+            json.dump(status_data, f, indent=2)
+    except (OSError, PermissionError) as e:
+        print(f"Notice: status file could not be written to read-only staging: {e}")
 
     return {
         "data": {

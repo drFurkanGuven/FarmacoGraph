@@ -189,27 +189,27 @@ async def execute_bulk_import(
         ]
         skipped = len(valid_items) - len(to_insert)
 
-        insert_sql = text("""
-            INSERT INTO curator_workflows (
-                id, entity_id, entity_type, state, draft_package_json,
-                created_at, updated_at
-            ) VALUES (
-                :id, :entity_id, 'Interaction', 'draft', :draft_package,
-                CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-            )
-            ON CONFLICT (id) DO NOTHING
-        """)
+        from uuid import UUID
+        from farmacograph.db.postgres.models import CuratorWorkflow
+
+        is_pg = session.bind.dialect.name == "postgresql" if session.bind else True
+        if is_pg:
+            from sqlalchemy.dialects.postgresql import insert as dialect_insert
+        else:
+            from sqlalchemy.dialects.sqlite import insert as dialect_insert
 
         BATCH_SIZE = 1000
         for i in range(0, len(to_insert), BATCH_SIZE):
             chunk = to_insert[i : i + BATCH_SIZE]
             batch_params = [
                 {
-                    "id": item.id,
-                    "entity_id": item.id,
-                    "draft_package": json.dumps({
+                    "id": UUID(str(item.id)),
+                    "entity_id": str(item.id),
+                    "entity_type": "Interaction",
+                    "state": "draft",
+                    "draft_package_json": {
                         "entity_payload": {
-                            "id": item.id,
+                            "id": str(item.id),
                             "drug_a_name": item.drug_a,
                             "drug_b_name": item.drug_b,
                             "severity": item.severity,
@@ -217,12 +217,13 @@ async def execute_bulk_import(
                         },
                         "source": "bulk-import",
                         "imported_by": str(auth.user_id) if auth.user_id else None,
-                    }),
+                    },
                 }
                 for item in chunk
             ]
             try:
-                await session.execute(insert_sql, batch_params)
+                stmt = dialect_insert(CuratorWorkflow).values(batch_params).on_conflict_do_nothing(index_elements=["id"])
+                await session.execute(stmt)
                 imported += len(chunk)
             except Exception as e:
                 errors += len(chunk)
