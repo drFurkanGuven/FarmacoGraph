@@ -223,11 +223,24 @@ server {
 }
 NGINX_CONF
 
-  cp "/tmp/${DOMAIN}.conf" "${vhost_file}"
+  if [[ -d /etc/nginx/conf.d ]]; then
+    local vhost_file="/etc/nginx/conf.d/${DOMAIN}.conf"
+    cp "/tmp/${DOMAIN}.conf" "${vhost_file}"
+    log_info "Fedora/RHEL Nginx konfigürasyonu yazıldı: ${vhost_file}"
+  elif [[ -d /etc/nginx/sites-available ]]; then
+    local vhost_file="/etc/nginx/sites-available/${DOMAIN}.conf"
+    local vhost_link="/etc/nginx/sites-enabled/${DOMAIN}.conf"
+    cp "/tmp/${DOMAIN}.conf" "${vhost_file}"
+    mkdir -p /etc/nginx/sites-enabled
+    ln -sf "${vhost_file}" "${vhost_link}"
+    log_info "Debian/Ubuntu Nginx konfigürasyonu yazıldı: ${vhost_file}"
+  else
+    local vhost_file="/etc/nginx/conf.d/${DOMAIN}.conf"
+    mkdir -p /etc/nginx/conf.d
+    cp "/tmp/${DOMAIN}.conf" "${vhost_file}"
+    log_info "Nginx konfigürasyonu yazıldı: ${vhost_file}"
+  fi
   rm -f "/tmp/${DOMAIN}.conf"
-
-  mkdir -p /etc/nginx/sites-enabled
-  ln -sf "${vhost_file}" "${vhost_link}"
 
   # Test Nginx syntax safely BEFORE applying
   log_info "Nginx konfigürasyonu test ediliyor (nginx -t)..."
@@ -283,18 +296,28 @@ cmd_install() {
   echo "=================================================================="
   echo -e "${RESET}"
 
-  # 1. System packages if apt is available
-  if command -v apt-get >/dev/null 2>&1; then
-    log_info "Gerekli sistem paketleri kontrol ediliyor..."
+  # 1. System packages
+  if command -v dnf >/dev/null 2>&1; then
+    log_info "Fedora/RHEL (dnf) paketleri kontrol ediliyor..."
+    dnf install -y -q curl git openssl jq nginx certbot python3-certbot-nginx >/dev/null 2>&1 || true
+  elif command -v apt-get >/dev/null 2>&1; then
+    log_info "Debian/Ubuntu (apt) paketleri kontrol ediliyor..."
     apt-get update -qq >/dev/null 2>&1 || true
     apt-get install -y -qq curl git openssl jq nginx certbot python3-certbot-nginx >/dev/null 2>&1 || true
   fi
 
   # 2. Check Docker
   if ! command -v docker >/dev/null 2>&1; then
-    log_info "Docker bulunamadı, resmi Docker Engine kuruluyor..."
-    curl -fsSL https://get.docker.com | bash
-    systemctl enable --now docker
+    log_info "Docker bulunamadı, kuruluyor..."
+    if command -v dnf >/dev/null 2>&1; then
+      dnf -y install dnf-plugins-core
+      dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
+      dnf install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+      systemctl enable --now docker
+    else
+      curl -fsSL https://get.docker.com | bash
+      systemctl enable --now docker
+    fi
   fi
 
   # 3. Setup Ports without collision
