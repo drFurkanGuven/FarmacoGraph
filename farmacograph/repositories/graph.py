@@ -61,7 +61,9 @@ class GraphRepository:
         RETURN d.id AS id, d.slug AS slug,
                coalesce(d.generic_name, d.label, d.slug, d.name) AS label,
                coalesce(d.status, 'published') AS status,
-               coalesce(d.dataset_version, '2026.1.0') AS dataset_version
+               coalesce(d.dataset_version, '2026.1.0') AS dataset_version,
+               d.curation_status AS curation_status,
+               d.source AS source
         ORDER BY coalesce(d.generic_name, d.label, d.slug)
         SKIP $offset LIMIT $limit
         """
@@ -75,6 +77,37 @@ class GraphRepository:
                 "search": search.strip() if search else None,
             },
         )
+
+    async def count_listed_drugs(
+        self,
+        *,
+        module: str | None = None,
+        dataset_version: str | None = None,
+        search: str | None = None,
+    ) -> int:
+        """Total matches for the list_drugs filter, ignoring limit/offset."""
+        if not self.is_available:
+            return 0
+        rows = await self._driver.run_query(
+            """
+            MATCH (d:Drug)
+            WHERE ($module IS NULL OR d.module = $module)
+              AND ($dataset_version IS NULL OR d.dataset_version = $dataset_version OR d.source = 'primekg')
+              AND (d.status = 'published' OR d.status IS NULL)
+              AND (
+                $search IS NULL
+                OR toLower(d.slug) CONTAINS toLower($search)
+                OR toLower(coalesce(d.generic_name, d.label, d.name, '')) CONTAINS toLower($search)
+              )
+            RETURN count(d) AS count
+            """,
+            {
+                "module": module,
+                "dataset_version": dataset_version,
+                "search": search.strip() if search else None,
+            },
+        )
+        return int(rows[0]["count"]) if rows else 0
 
     async def get_drug_by_id(
         self, drug_id: UUID, dataset_version: str | None = None

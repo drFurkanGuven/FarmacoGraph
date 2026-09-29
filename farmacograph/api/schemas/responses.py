@@ -22,6 +22,10 @@ class ResponseMeta(BaseModel):
     content_layers: list[ContentLayer] = Field(default_factory=lambda: [ContentLayer.BIOMEDICAL])
     language: str = "en"
     api_version: str = "v1"
+    total: int | None = Field(
+        default=None,
+        description="Total number of matches for list endpoints, ignoring limit/offset.",
+    )
     provenance: str | None = Field(
         default=None,
         description="Data origin marker, e.g. staging-fallback when served from curator staging files instead of the graph.",
@@ -42,6 +46,17 @@ class EntitySummary(BaseModel):
     confidence_score: float | None = None
     external_ids: dict[str, Any] = Field(default_factory=dict)
     content_layer: ContentLayer = ContentLayer.BIOMEDICAL
+    curation_status: str | None = Field(
+        default=None,
+        description=(
+            "'curated' for curator-authored content, 'external' for imported "
+            "datasets (e.g. PrimeKG) that carry no curator review. Clients must "
+            "not present external entities as reviewed product content."
+        ),
+    )
+    source: str | None = Field(
+        default=None, description="Ingestion source, e.g. 'primekg'."
+    )
 
 
 class RelationshipDTO(BaseModel):

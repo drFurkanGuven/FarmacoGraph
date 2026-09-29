@@ -55,6 +55,14 @@ export default function SearchPage() {
               <li key={item.id} className="rounded-md border px-3 py-2 text-sm">
                 <span className="font-medium">{item.label}</span>
                 <span className="ml-2 font-mono text-xs text-muted-foreground">{item.slug}</span>
+                {"curation_status" in item && item.curation_status === "external" ? (
+                  <span
+                    className="ml-2 align-middle text-[9px] font-semibold uppercase tracking-wide text-warning-foreground bg-warning/15 border border-warning/30 rounded px-1 py-0.5"
+                    title="PrimeKG'den içe aktarıldı. Küratör incelemesi yoktur. / Imported from PrimeKG: no curator review."
+                  >
+                    PrimeKG
+                  </span>
+                ) : null}
               </li>
             ))}
           </ul>

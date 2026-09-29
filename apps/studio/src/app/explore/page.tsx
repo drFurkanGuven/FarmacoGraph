@@ -64,6 +64,8 @@ interface DrugListItem {
   id: string;
   slug: string;
   name: string;
+  curationStatus?: string | null;
+  source?: string | null;
 }
 
 const KNOWN_LEVELS: MechanismLevel[] = ["molecular", "cellular", "tissue", "organ", "clinical"];
@@ -173,6 +175,8 @@ function ExplorePageInner() {
           id: String(item.id),
           slug: String(item.slug),
           name: String(item.label || item.slug),
+          curationStatus: item.curation_status ?? null,
+          source: item.source ?? null,
         }));
         setAvailableDrugs(items);
         setActiveSlug((current) => current ?? items[0]?.slug ?? null);
@@ -366,6 +370,14 @@ function ExplorePageInner() {
                 }`}
               >
                 {d.name}
+                {d.curationStatus === "external" || d.source === "primekg" ? (
+                  <span
+                    className="ml-1.5 align-middle text-[9px] font-semibold uppercase tracking-wide text-warning-foreground bg-warning/15 border border-warning/30 rounded px-1 py-0.5"
+                    title="PrimeKG'den içe aktarıldı. Küratör incelemesi yoktur, kanıt bağlı değildir. / Imported from PrimeKG: no curator review, no evidence linkage."
+                  >
+                    PrimeKG
+                  </span>
+                ) : null}
               </button>
             ))}
           </div>

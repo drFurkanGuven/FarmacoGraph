@@ -22,6 +22,7 @@ class DrugService:
         dataset_version: str | None = None,
         query_time_ms: int | None = None,
         provenance: str | None = None,
+        total: int | None = None,
     ) -> ResponseMeta:
         return ResponseMeta(
             dataset_version=dataset_version
@@ -29,6 +30,7 @@ class DrugService:
             or "unpublished",
             ontology_version=self._settings.ontology_version,
             query_time_ms=query_time_ms,
+            total=total,
             content_layers=[ContentLayer.BIOMEDICAL],
             provenance=provenance,
         )
@@ -79,6 +81,9 @@ class DrugService:
         rows = await self._graph.list_drugs(
             module=module, limit=limit, offset=offset, dataset_version=dataset_version
         )
+        total = await self._graph.count_listed_drugs(
+            module=module, dataset_version=dataset_version
+        )
         provenance: str | None = None
         if not rows:
             from farmacograph.curator.drug_package import CV_DRUGS_DIR, load_package
@@ -104,6 +109,8 @@ class DrugService:
                         continue
                 if filled:
                     provenance = "staging-fallback"
+                if total == 0:
+                    total = len(rows)
                 if offset:
                     rows = rows[offset:]
                 if limit:
@@ -117,10 +124,12 @@ class DrugService:
                 label=row.get("label", ""),
                 status=row.get("status", "published"),
                 content_layer=ContentLayer.BIOMEDICAL,
+                curation_status=row.get("curation_status"),
+                source=row.get("source"),
             )
             for row in rows
         ]
-        return summaries, self._meta(dataset_version, elapsed, provenance)
+        return summaries, self._meta(dataset_version, elapsed, provenance, total)
 
     async def get_drug(
         self,

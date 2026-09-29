@@ -355,6 +355,10 @@ export interface DrugSummary {
   label: string;
   generic_name?: string;
   module?: string;
+  /** 'external' for imported datasets (PrimeKG) with no curator review. */
+  curation_status?: string | null;
+  /** Ingestion source, e.g. 'primekg'. */
+  source?: string | null;
 }
 
 export interface CreateWorkflowInput {

@@ -16,6 +16,9 @@ class EmptyGraphRepository:
     async def list_drugs(self, **kwargs: Any) -> list[dict[str, Any]]:
         return []
 
+    async def count_listed_drugs(self, **kwargs: Any) -> int:
+        return 0
+
     async def get_drug_by_id(self, drug_id: UUID, dataset_version: str | None = None) -> dict[str, Any] | None:
         return None
 
@@ -81,3 +84,54 @@ async def test_drug_service_list_drugs_fallback() -> None:
     slugs = {d.slug for d in drugs}
     assert "ramipril" in slugs
     assert "metoprolol" in slugs
+
+
+class PrimeKGGraphRepository:
+    """Graph stub returning ingested (external) and curated drugs."""
+
+    is_available = True
+
+    async def list_drugs(self, **kwargs: Any) -> list[dict[str, Any]]:
+        return [
+            {
+                "id": "11111111-1111-5111-8111-111111111111",
+                "slug": "aspirin",
+                "label": "Aspirin",
+                "status": "published",
+                "dataset_version": "2026.1.0",
+                "curation_status": "external",
+                "source": "primekg",
+            },
+            {
+                "id": "22222222-2222-5222-8222-222222222222",
+                "slug": "metoprolol",
+                "label": "Metoprolol",
+                "status": "published",
+                "dataset_version": "2026.1.0",
+                "curation_status": None,
+                "source": None,
+            },
+        ]
+
+    async def count_listed_drugs(self, **kwargs: Any) -> int:
+        return 2
+
+
+@pytest.mark.asyncio
+async def test_list_drugs_exposes_curation_provenance_and_total() -> None:
+    """Ingested drugs must be distinguishable from curator-authored ones.
+
+    PrimeKG nodes carry curation_status='external'; clients render a badge from
+    it so unvetted imported data is never presented as reviewed content.
+    """
+    from farmacograph.core.config import Settings
+
+    service = DrugService(PrimeKGGraphRepository(), Settings())  # type: ignore[arg-type]
+    drugs, meta = await service.list_drugs()
+
+    by_slug = {d.slug: d for d in drugs}
+    assert by_slug["aspirin"].curation_status == "external"
+    assert by_slug["aspirin"].source == "primekg"
+    assert by_slug["metoprolol"].curation_status is None
+    assert by_slug["metoprolol"].source is None
+    assert meta.total == 2

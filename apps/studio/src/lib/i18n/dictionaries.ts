@@ -149,6 +149,12 @@ const tr = {
   "fallback.draftBadge": "Taslak / çevrimdışı örnek — küratör onayı yok",
   "fallback.variableEmpty": "Küratör girişi bekleniyor",
 
+  "provenance.externalBadge": "Harici veri",
+  "provenance.externalTitle":
+    "PrimeKG'den içe aktarıldı. Küratör incelemesi yoktur, kanıt bağlı değildir ve klinik karar için kullanılmamalıdır.",
+  "provenance.curatedBadge": "Küratör onaylı",
+  "provenance.curatedTitle": "Küratör tarafından hazırlanmış ve gözden geçirilmiş içerik.",
+
   "mechanism.fragmentType": "Fragman düzeyi",
   "mechanism.direction": "Yön",
   "mechanism.newFragment": "Yeni fragman",
@@ -381,6 +387,12 @@ const en: Record<keyof TrDict, string> = {
 
   "fallback.draftBadge": "Draft / offline sample — no curator approval",
   "fallback.variableEmpty": "Awaiting curator input",
+
+  "provenance.externalBadge": "External data",
+  "provenance.externalTitle":
+    "Imported from PrimeKG. No curator review, no evidence linkage, not for clinical decisions.",
+  "provenance.curatedBadge": "Curator reviewed",
+  "provenance.curatedTitle": "Authored and reviewed by a curator.",
 
   "mechanism.fragmentType": "Fragment level",
   "mechanism.direction": "Direction",
