@@ -8,6 +8,13 @@ from uuid import UUID
 from farmacograph.db.neo4j.driver import Neo4jDriver
 
 
+# Sentinel module slug for published drugs that carry no curriculum module.
+# Ingested PrimeKG drugs land here: PrimeKG has no clinical module field, so
+# they are reported explicitly instead of silently disappearing from every
+# module count.
+UNCLASSIFIED_MODULE = "unclassified"
+
+
 def _unwrap_single_node(rows: list[dict[str, Any]]) -> dict[str, Any] | None:
     """Unwrap ``RETURN d`` rows shaped ``{"d": {...node props...}}``.
 
@@ -131,12 +138,14 @@ class GraphRepository:
             WHERE d.status = 'published'
               AND (
                 toLower(d.slug) CONTAINS $q
-                OR toLower(d.generic_name) CONTAINS $q
-                OR toLower(d.label) CONTAINS $q
+                OR toLower(coalesce(d.generic_name, '')) CONTAINS $q
+                OR toLower(coalesce(d.label, '')) CONTAINS $q
+                OR toLower(coalesce(d.name, '')) CONTAINS $q
               )
-            RETURN d.id AS id, d.slug AS slug, d.generic_name AS label,
+            RETURN d.id AS id, d.slug AS slug,
+                   coalesce(d.generic_name, d.label, d.name) AS label,
                    d.module AS module, d.status AS status, 'Drug' AS type
-            ORDER BY d.generic_name
+            ORDER BY coalesce(d.generic_name, d.label, d.name)
             LIMIT $limit
             """,
             {"q": q, "limit": limit},
@@ -145,8 +154,15 @@ class GraphRepository:
     async def count_entities(self) -> dict[str, int]:
         if not self.is_available:
             return {"entities": 0, "relationships": 0}
+        # Curator-published nodes carry the :BiomedicalEntity label (graph_writer),
+        # ingested PrimeKG nodes carry farmacograph_type instead. Counting only
+        # :BiomedicalEntity reported 0 entities after ingestion.
         entity_result = await self._driver.run_query(
-            "MATCH (n:BiomedicalEntity) RETURN count(n) AS count"
+            """
+            MATCH (n)
+            WHERE n:BiomedicalEntity OR n.farmacograph_type IS NOT NULL
+            RETURN count(DISTINCT n) AS count
+            """
         )
         rel_result = await self._driver.run_query("MATCH ()-[r]->() RETURN count(r) AS count")
         return {
@@ -161,10 +177,14 @@ class GraphRepository:
             """
             MATCH (d:Drug)
             WHERE d.status = 'published'
-              AND ($module IS NULL OR d.module = $module)
+              AND (
+                    $module IS NULL
+                 OR ($module = $unclassified AND d.module IS NULL)
+                 OR ($module <> $unclassified AND d.module = $module)
+              )
             RETURN count(d) AS count
             """,
-            {"module": module},
+            {"module": module, "unclassified": UNCLASSIFIED_MODULE},
         )
         return int(results[0]["count"]) if results else 0
 

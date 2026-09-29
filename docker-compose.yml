@@ -71,6 +71,9 @@ services:
       - ./ontology:/app/ontology:ro
       - ./staging:/app/staging:ro
       - catalogdata:/app/data/catalog
+      # PrimeKG raw + parsed parquet (~2.6 GB) must survive image rebuilds,
+      # otherwise every `docker compose up --build` re-downloads the dataset.
+      - primekgdata:/app/data/primekg
 
   # Studio: NEXT_PUBLIC_* are baked at *build* time into JS chunks.
   # Changing FG_STUDIO_API_URL / FG_STUDIO_BASE_PATH requires rebuilding the image
@@ -121,3 +124,4 @@ volumes:
   pgdata:
   neo4jdata:
   catalogdata:
+  primekgdata:

@@ -6,7 +6,7 @@ from typing import Any
 
 from farmacograph.api.schemas.responses import ResponseMeta
 from farmacograph.models.enums import ContentLayer
-from farmacograph.repositories.graph import GraphRepository
+from farmacograph.repositories.graph import UNCLASSIFIED_MODULE, GraphRepository
 from farmacograph.repositories.snapshots import SnapshotRepository
 
 MODULE_REGISTRY: list[dict[str, Any]] = [
@@ -56,6 +56,26 @@ class ModuleService:
             if mod["slug"] == "cardiovascular" and mod["drug_count"] > 0:
                 mod["status"] = "in_progress"
             modules.append(mod)
+
+        # Published drugs with no curriculum module (PrimeKG). Reported as an
+        # explicit bucket so the explorer does not show 0 for every module
+        # while thousands of discoverable drugs sit outside the registry.
+        unclassified = await self._graph.count_drugs(module=UNCLASSIFIED_MODULE)
+        if unclassified > 0:
+            modules.append(
+                {
+                    "slug": UNCLASSIFIED_MODULE,
+                    "name": "Unclassified (PrimeKG)",
+                    "status": "external",
+                    "drug_count": unclassified,
+                    "is_bucket": True,
+                    "curation_note": (
+                        "External PrimeKG drugs. Not curator-reviewed and not "
+                        "assigned to a curriculum module; discoverable via search "
+                        "and the global catalog."
+                    ),
+                }
+            )
 
         meta = ResponseMeta(
             dataset_version=dataset_version,

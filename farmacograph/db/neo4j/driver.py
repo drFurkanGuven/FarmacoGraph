@@ -28,6 +28,11 @@ class Neo4jDriver:
             self._driver = AsyncGraphDatabase.driver(
                 self._settings.neo4j_uri,
                 auth=(self._settings.neo4j_user, self._settings.neo4j_password),
+                # Schema-hint notifications (e.g. UnknownPropertyKeyWarning for
+                # properties no node carries yet) are emitted per statement and
+                # flooded the log on every request. Application errors are still
+                # surfaced through our own error handling.
+                notifications_min_severity="OFF",
             )
             await self._driver.verify_connectivity()
             logger.info("neo4j_connected", uri=self._settings.neo4j_uri)

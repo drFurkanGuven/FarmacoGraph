@@ -456,15 +456,24 @@ cmd_logs() {
 # Action: PrimeKG Ingestion
 cmd_ingest() {
   log_info "PrimeKG (~128K düğüm, ~2M ilişki) veri aktarımı başlatılıyor..."
-  if docker compose ps 2>/dev/null | grep -q "farmacograph-api.*running"; then
-    log_info "farmacograph-api konteyneri içinde çalıştırılıyor..."
-    docker compose exec -T api bash scripts/ingestion/run_full_ingestion.sh "$@"
-  elif [[ -f "${ROOT_DIR}/scripts/ingestion/run_full_ingestion.sh" ]]; then
-    bash "${ROOT_DIR}/scripts/ingestion/run_full_ingestion.sh" "$@"
-  else
-    log_error "scripts/ingestion/run_full_ingestion.sh bulunamadı!"
+
+  # Ingestion MUST run inside the api container: the pipeline needs pandas,
+  # pyarrow, tqdm and the neo4j driver, which are only installed in the image.
+  # Falling back to the host interpreter silently produced
+  # "ModuleNotFoundError: No module named 'tqdm'" on the server.
+  if ! docker compose version >/dev/null 2>&1; then
+    log_error "docker compose kullanılamıyor. Ingestion yalnızca konteyner içinde çalışır."
+    log_error "Kök kullanıcı ile çalıştırıyorsanız: docker compose plugin'i root için kurulmamış olabilir."
     exit 1
   fi
+
+  if ! docker compose ps --status running --services 2>/dev/null | grep -qx "api"; then
+    log_error "api konteyneri çalışmıyor. Önce '${0} up' ile stack'i başlatın."
+    exit 1
+  fi
+
+  log_info "farmacograph-api konteyneri içinde çalıştırılıyor..."
+  docker compose exec -T api bash scripts/ingestion/run_full_ingestion.sh "$@"
 }
 
 # Action: Sync FDA DDI Dataset

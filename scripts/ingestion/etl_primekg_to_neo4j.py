@@ -12,7 +12,7 @@ Usage:
 import argparse
 import sys
 from pathlib import Path
-from typing import Iterator
+from typing import Iterable, Iterator
 
 import pandas as pd
 from neo4j import GraphDatabase
@@ -47,13 +47,16 @@ def ingest_nodes(driver, node_type: str, df: pd.DataFrame, batch_size: int) -> i
     total_ingested = 0
     
     # Cypher query for MERGE nodes
+    # SET (not ON CREATE SET) so re-running ingestion repairs properties on
+    # nodes that already exist; ON CREATE SET silently keeps stale values.
     cypher = f"""
     UNWIND $batch AS row
     MERGE (n:{label} {{id: row.id}})
-    ON CREATE SET
+    SET
         n.slug = row.slug,
-        n.name = row.raw_id,
+        n.name = coalesce(row.name, row.raw_id),
         n.status = row.status,
+        n.curation_status = row.curation_status,
         n.source = row.source,
         n.external_ids = row.external_ids,
         n.farmacograph_type = row.farmacograph_type
@@ -73,11 +76,18 @@ def ingest_nodes(driver, node_type: str, df: pd.DataFrame, batch_size: int) -> i
     return total_ingested
 
 
-def ingest_edges(driver, df: pd.DataFrame, batch_size: int, clinical_only: bool = False) -> int:
-    """Ingest edges into Neo4j using indexed labels and canonical directions."""
-    if df.empty:
-        return 0
+def ingest_edges(
+    driver,
+    batches: "Iterable[pd.DataFrame]",
+    batch_size: int,
+    clinical_only: bool = False,
+) -> int:
+    """Ingest edges into Neo4j using indexed labels and canonical directions.
 
+    ``batches`` is an iterator of edge chunks (Parquet row groups). Filtering
+    per canonical config happens inside each chunk, so the 8.1M-row table is
+    never held in memory and no per-config full-table copy is materialised.
+    """
     total_ingested = 0
 
     # Canonical edge configurations: (relation_name, source_type, target_type, cypher_rel_type)
@@ -104,52 +114,56 @@ def ingest_edges(driver, df: pd.DataFrame, batch_size: int, clinical_only: bool 
         "DISEASE_PROTEIN", "DISEASE_PHENOTYPE_POSITIVE"
     }
 
-    for rel_name, s_type, t_type, cypher_rel in canonical_configs:
-        if clinical_only and rel_name not in clinical_rel_names:
-            continue
+    active_configs = [
+        c for c in canonical_configs if not clinical_only or c[0] in clinical_rel_names
+    ]
 
-        # Filter to matching rows
-        mask = (
-            (df["farmacograph_relation"] == rel_name)
-            & (df["source_type"] == s_type)
-            & (df["target_type"] == t_type)
-        )
-        group = df[mask]
+    # One session reused across all chunks/configs.
+    session = driver.session()
+    session_cache: dict[tuple[str, str, str, str], str] = {}
 
-        if group.empty:
-            continue
+    try:
+        for chunk in batches:
+            if chunk.empty:
+                continue
 
-        # For symmetric relations (Drug-Drug, Target-Target), filter to canonical pair (source_id < target_id)
-        if s_type == t_type:
-            group = group[group["source_id"] < group["target_id"]]
+            for rel_name, s_type, t_type, cypher_rel in active_configs:
+                key = (rel_name, s_type, t_type, cypher_rel)
+                cypher = session_cache.get(key)
+                if cypher is None:
+                    cypher = f"""
+                    UNWIND $batch AS row
+                    MATCH (a:{s_type} {{id: row.source_id}})
+                    MATCH (b:{t_type} {{id: row.target_id}})
+                    MERGE (a)-[r:{cypher_rel}]->(b)
+                    ON CREATE SET r.source = 'primekg'
+                    """
+                    session_cache[key] = cypher
 
-        extra_set = ""
-        if cypher_rel == "TREATS":
-            extra_set = ", r.approval_status = 'fda_approved'"
-        elif cypher_rel == "INTERACTS_WITH":
-            extra_set = ", r.severity = 'major'"
+                mask = (
+                    (chunk["farmacograph_relation"] == rel_name)
+                    & (chunk["source_type"] == s_type)
+                    & (chunk["target_type"] == t_type)
+                )
+                group = chunk[mask]
 
-        cypher = f"""
-        UNWIND $batch AS row
-        MATCH (a:{s_type} {{id: row.source_id}})
-        MATCH (b:{t_type} {{id: row.target_id}})
-        MERGE (a)-[r:{cypher_rel}]->(b)
-        ON CREATE SET r.source = 'primekg'{extra_set}
-        """
+                # For symmetric relations (Drug-Drug, Target-Target) keep one
+                # canonical direction so MERGE does not see the pair twice.
+                if s_type == t_type:
+                    group = group[group["source_id"] < group["target_id"]]
 
-        with driver.session() as session:
-            for batch in tqdm(
-                batch_iter(group, batch_size),
-                total=(len(group) + batch_size - 1) // batch_size,
-                desc=f"Ingesting {cypher_rel} ({s_type}->{t_type})",
-                unit="batch"
-            ):
-                batch_data = batch[["source_id", "target_id"]].to_dict("records")
-                try:
-                    session.run(cypher, batch=batch_data)
-                    total_ingested += len(batch)
-                except Exception as e:
-                    print(f"  ⚠ Error ingesting batch: {e}")
+                if group.empty:
+                    continue
+
+                for batch in batch_iter(group, batch_size):
+                    batch_data = batch[["source_id", "target_id"]].to_dict("records")
+                    try:
+                        session.run(cypher, batch=batch_data)
+                        total_ingested += len(batch)
+                    except Exception as e:
+                        print(f"  ⚠ Error ingesting batch: {e}")
+    finally:
+        session.close()
 
     return total_ingested
 
@@ -238,12 +252,40 @@ def main():
         print("-" * 40)
         
         edges_file = args.input / "edges_all.parquet"
-        
+
         if edges_file.exists():
-            print(f"\nLoading {edges_file.name}...")
-            edges_df = pd.read_parquet(edges_file)
-            
-            count = ingest_edges(driver, edges_df, args.batch_size, clinical_only=args.clinical_only)
+            print(f"\nStreaming {edges_file.name}...")
+
+            import pyarrow.parquet as pq
+
+            parquet_file = pq.ParquetFile(edges_file)
+            total_rows = parquet_file.metadata.num_rows
+            print(
+                f"  {total_rows:,} rows across "
+                f"{parquet_file.metadata.num_row_groups} row groups"
+            )
+
+            def edge_batches():
+                for batch in parquet_file.iter_batches(
+                    batch_size=args.batch_size,
+                    columns=["source_id", "target_id", "source_type",
+                             "target_type", "farmacograph_relation"],
+                ):
+                    yield batch.to_pandas()
+
+            with tqdm(total=total_rows, desc="Ingesting edges", unit="row") as bar:
+                counter = {"n": 0}
+
+                def counting_batches():
+                    for b in edge_batches():
+                        counter["n"] += len(b)
+                        bar.update(len(b))
+                        yield b
+
+                count = ingest_edges(
+                    driver, counting_batches(), args.batch_size,
+                    clinical_only=args.clinical_only,
+                )
             total_edges += count
             print(f"✓ Ingested {count:,} edges")
         else:
