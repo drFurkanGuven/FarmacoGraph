@@ -21,6 +21,7 @@ Usage:
 """
 
 import argparse
+import hashlib
 import sys
 import re
 from pathlib import Path
@@ -72,6 +73,30 @@ def generate_uuid(entity_type: str, entity_id: str) -> str:
     """Generate deterministic UUIDv5 for an entity."""
     key = f"{entity_type}:{entity_id}"
     return str(uuid5(PRIMEKG_NAMESPACE, key))
+
+
+def make_slugs_unique(slugs: pd.Series, raw_ids: pd.Series) -> pd.Series:
+    """Disambiguate slugs that collide after normalisation.
+
+    init.cypher enforces unique ``slug`` on Drug and Disease, and PrimeKG holds
+    distinct entities whose names normalise identically ("alopecia, intellectual
+    disability syndrome" vs "alopecia - intellectual disability syndrome"), plus
+    names that only differ beyond normalize_slug's 100-character cut. Appending a
+    short digest of the PrimeKG node id keeps every slug unique, stable across
+    re-parses, and short enough to respect the length limit.
+    """
+    dupes = slugs.duplicated(keep=False)
+    if not dupes.any():
+        return slugs
+
+    out = slugs.copy()
+    for idx in out.index[dupes]:
+        digest = hashlib.sha1(str(raw_ids.at[idx]).encode()).hexdigest()[:6]
+        base = out.at[idx][: 100 - len(digest) - 1].rstrip("-")
+        out.at[idx] = f"{base}-{digest}"
+
+    print(f"  Disambiguated {int(dupes.sum()):,} colliding slugs")
+    return out
 
 
 def normalize_slug(name: str) -> str:
@@ -218,18 +243,24 @@ def parse_nodes(nodes_df: pd.DataFrame) -> dict[str, pd.DataFrame]:
             lambda row: generate_uuid(fg_type, str(row["node_id"])), axis=1
         )
         
-        # Create slugs from names
-        type_nodes["slug"] = type_nodes["node_name"].apply(
-            lambda x: normalize_slug(x) if pd.notna(x) else normalize_slug(str(row.get("node_id", "")))
+        # Create slugs from names. Fall back to the PrimeKG id when a name is
+        # missing — the previous fallback referenced an undefined `row`.
+        slug_source = type_nodes["node_name"].where(
+            type_nodes["node_name"].notna(), type_nodes["node_id"].astype(str)
         )
-        
+        type_nodes["slug"] = slug_source.apply(normalize_slug)
+
         # Rename columns
         type_nodes = type_nodes.rename(columns={
             "node_name": "name",
             "node_id": "raw_id",
             "node_source": "source_db",
         })
-        
+
+        # Slug must be unique per label (init.cypher enforces it for Drug and
+        # Disease); PrimeKG contains names that normalise to the same slug.
+        type_nodes["slug"] = make_slugs_unique(type_nodes["slug"], type_nodes["raw_id"])
+
         # Add FarmacoGraph fields
         type_nodes["farmacograph_type"] = fg_type
         # PrimeKG drugs are published so learners can discover the full
