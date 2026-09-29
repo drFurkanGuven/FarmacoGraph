@@ -14,7 +14,7 @@ from neo4j import GraphDatabase
 import os
 
 # Default Neo4j connection
-DEFAULT_URI = os.environ.get("FG_NEO4J_URI", "bolt://localhost:7688")
+DEFAULT_URI = os.environ.get("FG_NEO4J_URI", "bolt://neo4j:7687")
 DEFAULT_USER = os.environ.get("FG_NEO4J_USER", "neo4j")
 DEFAULT_PASSWORD = os.environ.get("FG_NEO4J_PASSWORD", "farmacograph")
 

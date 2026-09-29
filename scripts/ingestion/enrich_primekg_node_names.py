@@ -10,7 +10,7 @@ from neo4j import GraphDatabase
 from tqdm import tqdm
 
 DEFAULT_INPUT_DIR = Path(__file__).parent.parent.parent / "data" / "primekg" / "parsed"
-URI = os.environ.get("FG_NEO4J_URI", "bolt://localhost:7688")
+URI = os.environ.get("FG_NEO4J_URI", "bolt://neo4j:7687")
 USER = os.environ.get("FG_NEO4J_USER", "neo4j")
 PASSWORD = os.environ.get("FG_NEO4J_PASSWORD", "farmacograph")
 

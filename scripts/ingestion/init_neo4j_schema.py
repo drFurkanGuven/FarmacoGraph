@@ -8,13 +8,16 @@ Usage:
 """
 
 import argparse
+import os
 import sys
 from neo4j import GraphDatabase
 
-# Default Neo4j connection
-DEFAULT_URI = "bolt://localhost:7688"
-DEFAULT_USER = "neo4j"
-DEFAULT_PASSWORD = "password"
+# Default Neo4j connection. Read from the same FG_NEO4J_* variables compose
+# injects into the api service, so the schema step reaches the containerised
+# Neo4j (bolt://neo4j:7687) instead of a host-side port that nothing listens on.
+DEFAULT_URI = os.environ.get("FG_NEO4J_URI", "bolt://neo4j:7687")
+DEFAULT_USER = os.environ.get("FG_NEO4J_USER", "neo4j")
+DEFAULT_PASSWORD = os.environ.get("FG_NEO4J_PASSWORD", "farmacograph")
 
 # Constraints and indexes to create
 SCHEMA_STATEMENTS = [
