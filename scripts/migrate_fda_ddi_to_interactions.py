@@ -37,6 +37,52 @@ def normalize_name(name: str) -> str:
     return s.strip("-")
 
 
+# FDA DailyMed labels name marketed products; PrimeKG names active ingredients.
+# Salt and formulation suffixes are stripped so "acebutolol hydrochloride"
+# matches the PrimeKG drug "acebutolol". Brand names (Abilify Maintena) and
+# combination products ("acetaminophen and codeine") have no single PrimeKG
+# counterpart and are deliberately left unresolved rather than fuzzily matched:
+# pairing the wrong drug in a DDI record is worse than omitting the record.
+SALT_SUFFIXES = (
+    "hydrochloride", "dihydrochloride", "trihydrochloride", "hcl",
+    "sulfate", "sulphate", "sodium", "potassium", "calcium", "magnesium",
+    "acetate", "succinate", "fumarate", "maleate", "tartrate", "citrate",
+    "phosphate", "mesylate", "mesylate", "besylate", "tosylate", "malate",
+    "lactate", "benzoate", "hydrobromide", "bromide", "chloride",
+    "hydroxide", "nitrate", "carbonate", "oxalate", "valerate", "caproate",
+    "dextrose", "hydrate", "anhydrous", "dihydrate", "monohydrate",
+    "er", "xr", "sr", "dr", "la", "xl", "cd",
+)
+
+
+def resolve_drug(slug: str, index: tuple[dict[str, str], dict[str, str]]) -> str | None:
+    """Conservative FDA-name -> Drug id resolution. None when ambiguous."""
+    by_slug, by_name = index
+    for table in (by_slug, by_name):
+        hit = table.get(slug)
+        if hit:
+            return hit
+
+    parts = slug.split("-")
+    # Drop trailing formulation tokens one at a time, longest first.
+    for suffix in sorted(SALT_SUFFIXES, key=len, reverse=True):
+        tail = f"-{suffix}"
+        if slug.endswith(tail):
+            trimmed = slug[: -len(tail)]
+            for table in (by_slug, by_name):
+                hit = table.get(trimmed)
+                if hit:
+                    return hit
+            # Multi-word suffixes: "acebutolol hydrochloride" -> "acebutolol"
+            if parts and parts[-1] == suffix:
+                trimmed2 = "-".join(parts[:-1])
+                for table in (by_slug, by_name):
+                    hit = table.get(trimmed2)
+                    if hit:
+                        return hit
+    return None
+
+
 async def load_drug_index() -> tuple[dict[str, str], dict[str, str]]:
     """Map normalized drug name -> (slug, uuid) from Neo4j.
 
@@ -123,10 +169,9 @@ async def main() -> int:
                 continue
             seen.add(key)
 
-            def resolve(slug: str) -> str | None:
-                return by_slug.get(slug) or by_name.get(slug)
-
-            uid_a, uid_b = resolve(a), resolve(b)
+            uid_a, uid_b = resolve_drug(a, (by_slug, by_name)), resolve_drug(
+                b, (by_slug, by_name)
+            )
             if uid_a is None:
                 unresolved_a += 1
             if uid_b is None:
@@ -159,7 +204,9 @@ async def main() -> int:
         print(f"unresolved drug_a: {unresolved_a:,}")
         print(f"unresolved drug_b: {unresolved_b:,}")
         both = sum(1 for r in insert_rows if r[1] is None and r[2] is None)
+        usable = sum(1 for r in insert_rows if r[1] is not None and r[2] is not None)
         print(f"pairs with NEITHER endpoint resolved: {both:,}")
+        print(f"pairs usable for pairwise lookup (both resolved): {usable:,}")
 
         if args.dry_run:
             print("\n--dry-run: nothing written")
