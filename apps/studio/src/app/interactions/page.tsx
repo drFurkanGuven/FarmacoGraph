@@ -5,6 +5,7 @@ import {
   AlertCircle,
   AlertTriangle,
   CheckCircle2,
+  FileWarning,
   Info,
   Plus,
   Search,
@@ -27,7 +28,7 @@ interface InteractionItem {
   mechanism_explanation: string;
   clinical_action: string;
   pathway_overlap: string[];
-  source?: "curator";
+  source?: "curator" | "rules" | "external";
   evidence_ids?: string[];
 }
 
@@ -388,9 +389,22 @@ export default function InteractionsPage() {
                           <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                             {getDrugName(item.drug_a_id)} + {getDrugName(item.drug_b_id)}
                           </span>
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-                            <CheckCircle2 className="w-3 h-3" /> Doğrulanmış Küratör Kaydı
-                          </span>
+                          {item.source === "curator" ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                              <CheckCircle2 className="w-3 h-3" /> Doğrulanmış Küratör Kaydı
+                            </span>
+                          ) : item.source === "external" ? (
+                            <span
+                              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/30"
+                              title="FDA DailyMed'den içe aktarılmış referans verisi. Küratör incelemesi yoktur, kanıt bağlantısı kurulmamıştır. / Imported FDA DailyMed reference data: no curator review, no evidence linkage."
+                            >
+                              <FileWarning className="w-3 h-3" /> Harici Referans Verisi · FDA DailyMed
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/30">
+                              <AlertTriangle className="w-3 h-3" /> Kural Motoru Ön Taraması (Doğrulanmamış)
+                            </span>
+                          )}
                         </div>
                         <h3 className="text-base font-semibold text-foreground mt-0.5">
                           {item.title}

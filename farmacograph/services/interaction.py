@@ -32,8 +32,13 @@ class InteractionServiceProtocol(Protocol):
 class InteractionService:
     """Mechanism-based drug-drug interaction engine."""
 
-    def __init__(self, graph_repo: GraphRepository) -> None:
+    def __init__(
+        self,
+        graph_repo: GraphRepository,
+        fda_repo: "FdaDdiRepository | None" = None,
+    ) -> None:
         self._graph = graph_repo
+        self._fda = fda_repo
 
     async def analyze(
         self,
@@ -122,9 +127,9 @@ class InteractionService:
                 )
             )
 
-        interactions: list[DrugInteractionItem] = await self._curated_interactions(
-            [str(p.get("id")) for p in profiles if p.get("id")]
-        )
+        checked_ids = [str(p.get("id")) for p in profiles if p.get("id")]
+        interactions: list[DrugInteractionItem] = await self._curated_interactions(checked_ids)
+        interactions.extend(await self._external_interactions(checked_ids, interactions))
 
         meta = ResponseMeta(
             dataset_version="2026.1.0",
@@ -134,6 +139,53 @@ class InteractionService:
         )
 
         return InteractionResponse(interactions=interactions, checked_drugs=checked_drugs), meta
+
+    async def _external_interactions(
+        self, checked_ids: list[str], existing: list[DrugInteractionItem]
+    ) -> list[DrugInteractionItem]:
+        """Imported FDA DailyMed pairs for the checked drugs, labeled source="external".
+
+        The rule engine is silenced for a pair that has any documented record, so
+        a pair never shows a synthesized heuristic alongside real reference data.
+        A pair already covered by a curator edge is skipped: the reviewed record
+        wins.
+        """
+        repo = self._fda
+        if repo is None:
+            return []
+
+        existing_pairs = {
+            tuple(sorted((str(d.drug_a_id), str(d.drug_b_id)))) for d in existing
+        }
+
+        try:
+            rows = await repo.find_by_drug_ids(checked_ids)
+        except Exception:
+            return []
+
+        items: list[DrugInteractionItem] = []
+        for row in rows:
+            id_a, id_b = row.get("drug_a_id"), row.get("drug_b_id")
+            if not id_a or not id_b:
+                continue
+            key = tuple(sorted((str(id_a), str(id_b))))
+            if key in existing_pairs:
+                continue
+            existing_pairs.add(key)
+            items.append(
+                DrugInteractionItem(
+                    drug_a_id=UUID(str(id_a)),
+                    drug_b_id=UUID(str(id_b)),
+                    severity=self._parse_severity(row.get("severity")),
+                    title=str(row.get("title") or ""),
+                    mechanism_explanation=str(row.get("mechanism_explanation") or ""),
+                    clinical_action=str(row.get("clinical_action") or ""),
+                    pathway_overlap=[],
+                    source="external",
+                    evidence_ids=[str(e) for e in (row.get("evidence_ids") or [])],
+                )
+            )
+        return items
 
     async def _curated_interactions(self, drug_ids: list[str]) -> list[DrugInteractionItem]:
         """Curator-entered INTERACTS_WITH edges, labeled source="curator".

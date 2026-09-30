@@ -122,9 +122,13 @@ class DrugInteractionItem(BaseModel):
     mechanism_explanation: str
     clinical_action: str
     pathway_overlap: list[str] = Field(default_factory=list)
-    source: Literal["curator", "rules"] = Field(
+    source: Literal["curator", "rules", "external"] = Field(
         default="rules",
-        description="Provenance of this interaction: curator-entered edge or rule-engine heuristic.",
+        description=(
+            "Provenance of this interaction: 'curator' for a curator-entered edge, "
+            "'external' for imported reference data (e.g. FDA DailyMed) that has no "
+            "curator review, 'rules' for a rule-engine heuristic."
+        ),
     )
     evidence_ids: list[str] = Field(default_factory=list)
 

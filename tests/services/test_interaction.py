@@ -173,3 +173,92 @@ async def test_interaction_by_slugs(
     assert len(response.checked_drugs) == 2
     assert len(response.interactions) == 1
     assert response.interactions[0].source == "curator"
+
+
+class FakeFdaRepo:
+    """Stands in for the FDA DailyMed table."""
+
+    def __init__(self, rows: list[dict]) -> None:
+        self._rows = rows
+        self.queried: list[str] = []
+
+    async def is_available(self) -> bool:
+        return True
+
+    async def find_by_drug_ids(self, drug_ids: list[str], **_kw) -> list[dict]:
+        self.queried = list(drug_ids)
+        return self._rows
+
+
+@pytest.mark.asyncio
+async def test_external_fda_pair_is_labelled_external_not_curator() -> None:
+    """Imported FDA pairs must be source="external", never source="curator".
+
+    A curator badge on unvetted imported data would misrepresent it as reviewed
+    product content.
+    """
+    from uuid import uuid4
+
+    from farmacograph.core.config import Settings
+    from farmacograph.services.interaction import InteractionService
+
+    a_id, b_id = uuid4(), uuid4()
+    repo = FakeFdaRepo(
+        [
+            {
+                "drug_a_id": a_id,
+                "drug_b_id": b_id,
+                "title": "Tolinase + Miconazole: Hypoglycemia",
+                "severity": "major",
+                "mechanism_explanation": "hypoglycemia",
+                "clinical_action": "Monitor patient for hypoglycemia.",
+                "evidence_ids": [],
+            }
+        ]
+    )
+    service = InteractionService(graph_repo=None, fda_repo=repo)  # type: ignore[arg-type]
+
+    items = await service._external_interactions([str(a_id), str(b_id)], [])
+
+    assert len(items) == 1
+    assert items[0].source == "external"
+    assert items[0].title.startswith("Tolinase + Miconazole")
+    assert items[0].drug_a_id == a_id
+
+
+@pytest.mark.asyncio
+async def test_curator_pair_wins_over_external_duplicate() -> None:
+    """A reviewed curator edge suppresses the imported row for the same pair."""
+    from uuid import uuid4
+
+    from farmacograph.core.config import Settings
+    from farmacograph.api.schemas.responses import DrugInteractionItem
+    from farmacograph.services.interaction import InteractionService
+
+    a_id, b_id = uuid4(), uuid4()
+    curator_item = DrugInteractionItem(
+        drug_a_id=a_id,
+        drug_b_id=b_id,
+        severity="major",
+        title="Curator record",
+        mechanism_explanation="m",
+        clinical_action="c",
+        source="curator",
+    )
+    repo = FakeFdaRepo(
+        [
+            {
+                "drug_a_id": a_id,
+                "drug_b_id": b_id,
+                "title": "FDA row",
+                "severity": "major",
+                "mechanism_explanation": "m",
+                "clinical_action": "c",
+            }
+        ]
+    )
+    service = InteractionService(graph_repo=None, fda_repo=repo)  # type: ignore[arg-type]
+
+    items = await service._external_interactions([str(a_id), str(b_id)], [curator_item])
+
+    assert items == []

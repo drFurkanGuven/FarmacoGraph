@@ -14,6 +14,7 @@ from farmacograph.events.bus import EventBus
 from farmacograph.repositories.audit import AuditRepository
 from farmacograph.repositories.curator import CuratorRepository
 from farmacograph.repositories.evidence import EvidenceRepository
+from farmacograph.repositories.fda_ddi import FdaDdiRepository
 from farmacograph.repositories.graph import GraphRepository
 from farmacograph.repositories.graph_writer import GraphWriter
 from farmacograph.repositories.jobs import JobRepository
@@ -113,7 +114,10 @@ class Container:
         )
         self.explain_service = ExplainService(graph_repo=self.graph_repo)
         self.compare_service = CompareService(graph_repo=self.graph_repo)
-        self.interaction_service = InteractionService(graph_repo=self.graph_repo)
+        self.interaction_service = InteractionService(
+            graph_repo=self.graph_repo,
+            fda_repo=FdaDdiRepository(self.session_factory),
+        )
         self.learning_service = LearningService(graph_repo=self.graph_repo)
         self.reasoning_service = ReasoningService(
             explain_service=self.explain_service,
