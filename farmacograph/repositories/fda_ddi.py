@@ -37,6 +37,10 @@ class FdaDdiRepository:
         combination, so both endpoints must be selected. Matching either
         endpoint returned every documented interaction of a checked drug
         against unrelated drugs, which answers a different question.
+
+        Self-pairs are excluded: resolving salt suffixes maps "losartan
+        potassium" and "losartan" to the same Drug node, which would otherwise
+        surface a drug as interacting with itself.
         """
         if not drug_ids:
             return []
@@ -59,6 +63,7 @@ class FdaDdiRepository:
                            curation_status, source, evidence_ids
                     FROM drug_drug_interactions
                     WHERE drug_a_id = ANY(:ids) AND drug_b_id = ANY(:ids)
+                      AND drug_a_id <> drug_b_id
                     ORDER BY severity, title
                     LIMIT :limit
                     """
