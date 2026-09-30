@@ -588,7 +588,7 @@ class CuratorService:
         items: list[dict[str, Any]] = []
         needle = search.strip().lower()
         seen_slugs: set[str] = set()
-        include_curriculum = module in ("cardiovascular", "all", "")
+        include_curriculum = module in ("cardiovascular", "all", "unclassified", "")
 
         if include_curriculum:
             for category in curriculum.get("categories", []):
@@ -640,7 +640,7 @@ class CuratorService:
                         }
                     )
 
-        runtime_module = None if module in ("all", "") else module
+        runtime_module = None if module in ("all", "unclassified", "") else module
         class_labels = {
             row["slug"]: row["label"] for row in list_drug_classes(module=runtime_module)
         }

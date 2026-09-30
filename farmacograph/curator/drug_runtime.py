@@ -335,10 +335,17 @@ def register_drug(
 
 
 def list_runtime_drug_entries(*, module: str | None = None) -> list[dict[str, Any]]:
+    """Runtime catalog drugs, optionally scoped to one module.
+
+    'all'/'unclassified' are filters, not modules, so they bypass the module
+    check instead of being rejected by it.
+    """
     rows = _load_runtime_drugs()
-    if not module or module == "all":
+    if not module or module in ("all", "unclassified"):
         return rows
     module_slug = validate_module_slug(module)
+    if module_slug == "unclassified":
+        return [row for row in rows if not row.get("module")]
     return [row for row in rows if (row.get("module") or "cardiovascular") == module_slug]
 
 
