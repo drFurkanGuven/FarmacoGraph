@@ -17,7 +17,9 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import json
 import os
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -30,8 +32,6 @@ sys.path.insert(0, str(ROOT))
 
 def normalize_name(name: str) -> str:
     """Fold a drug name to a slug-ish key for matching against Drug.slug."""
-    import re
-
     s = str(name or "").strip().lower()
     s = re.sub(r"[^a-z0-9]+", "-", s)
     return s.strip("-")
@@ -105,7 +105,12 @@ async def main() -> int:
         unresolved_a = unresolved_b = 0
 
         for r in rows:
-            p = r["payload"] or {}
+            # asyncpg returns jsonb as text unless a codec is registered.
+            p = r["payload"]
+            if isinstance(p, (str, bytes, bytearray)):
+                p = json.loads(p)
+            if not isinstance(p, dict):
+                continue
             ep = p.get("entity_payload") or {}
             a = normalize_name(ep.get("drug_a_name", ""))
             b = normalize_name(ep.get("drug_b_name", ""))
