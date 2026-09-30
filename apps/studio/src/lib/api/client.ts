@@ -34,6 +34,7 @@ import type {
   AdminUser,
   AdminApiKey,
   DemoAccessRequest,
+  UnclassifiedDrug,
 } from "./types";
 
 export interface ClientConfig {
@@ -192,6 +193,22 @@ export class FarmacoGraphClient {
     return this.request<JobItem[]>("/jobs", {
       params: { status, job_type: jobType, ...buildPaginationParams(pagination) },
     });
+  }
+
+  unclassifiedDrugs(params?: { search?: string; limit?: number; offset?: number }) {
+    const qs = new URLSearchParams();
+    if (params?.search) qs.set("search", params.search);
+    if (params?.limit != null) qs.set("limit", String(params.limit));
+    if (params?.offset != null) qs.set("offset", String(params.offset));
+    const suffix = qs.toString() ? `?${qs.toString()}` : "";
+    return this.request<UnclassifiedDrug[]>("/curator/drugs/unclassified" + suffix);
+  }
+
+  assignDrugModule(drugId: string, module: string) {
+    return this.request<{ id: string; slug: string; module: string; curation_status: string }>(
+      `/curator/drugs/${drugId}/module`,
+      { method: "POST", body: { module } }
+    );
   }
 
   curatorQueue(state = "review", options?: PaginationParams) {

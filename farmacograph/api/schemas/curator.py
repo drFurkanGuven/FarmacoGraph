@@ -197,3 +197,14 @@ class WorkflowResponse(BaseModel):
             unpublish_requested_by=getattr(w, "unpublish_requested_by", None),
             unpublish_request_notes=getattr(w, "unpublish_request_notes", None),
         )
+
+
+class AssignModuleRequest(BaseModel):
+    """Assign a curriculum module to a drug."""
+
+    module: str = Field(
+        ...,
+        min_length=1,
+        max_length=64,
+        description="Curriculum module slug, e.g. 'cardiovascular' or 'neurology'.",
+    )

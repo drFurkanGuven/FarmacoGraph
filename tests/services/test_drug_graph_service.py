@@ -135,3 +135,49 @@ async def test_list_drugs_exposes_curation_provenance_and_total() -> None:
     assert by_slug["metoprolol"].curation_status is None
     assert by_slug["metoprolol"].source is None
     assert meta.total == 2
+
+
+class UnclassifiedGraphRepository:
+    """Graph stub exposing the unclassified-drug worklist."""
+
+    is_available = True
+
+    def __init__(self) -> None:
+        self.assigned: list[tuple[str, str]] = []
+
+    async def list_unclassified_drugs(self, **kwargs: Any) -> list[dict[str, Any]]:
+        return [
+            {
+                "id": "33333333-3333-5333-8333-333333333333",
+                "slug": "atorvastatin",
+                "label": "Atorvastatin",
+                "source": "primekg",
+                "curation_status": "external",
+            }
+        ]
+
+    async def count_unclassified_drugs(self, **kwargs: Any) -> int:
+        return 1
+
+    async def assign_drug_module(self, drug_id: str, module: str) -> dict[str, Any]:
+        self.assigned.append((drug_id, module))
+        return {
+            "id": drug_id,
+            "slug": "atorvastatin",
+            "module": module,
+            "curation_status": "curated",
+        }
+
+
+@pytest.mark.asyncio
+async def test_module_assignment_marks_drug_curated() -> None:
+    """Assigning a module is the review act, so the external flag must clear."""
+    repo = UnclassifiedGraphRepository()
+    result = await repo.assign_drug_module(
+        "33333333-3333-5333-8333-333333333333", "cardiovascular"
+    )
+
+    assert result is not None
+    assert result["module"] == "cardiovascular"
+    assert result["curation_status"] == "curated"
+    assert repo.assigned == [("33333333-3333-5333-8333-333333333333", "cardiovascular")]

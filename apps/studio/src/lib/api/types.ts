@@ -574,3 +574,11 @@ export interface DemoAccessRequest {
 }
 
 export type { ApiError, ApiErrorBody } from "./errors";
+
+export interface UnclassifiedDrug {
+  id: string;
+  slug: string;
+  label: string;
+  source?: string | null;
+  curation_status?: string | null;
+}

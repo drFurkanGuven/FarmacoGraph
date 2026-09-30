@@ -78,6 +78,86 @@ class GraphRepository:
             },
         )
 
+    async def list_unclassified_drugs(
+        self,
+        *,
+        search: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> list[dict[str, Any]]:
+        """Published drugs with no curriculum module, oldest slug first.
+
+        PrimeKG carries no clinical module field, so ingested drugs land here
+        until a curator assigns one. Exposed as a curator worklist rather than
+        left to be discovered by noticing empty module counts.
+        """
+        if not self.is_available:
+            return []
+        return await self._driver.run_query(
+            """
+            MATCH (d:Drug)
+            WHERE d.status = 'published' AND d.module IS NULL
+              AND (
+                $search IS NULL
+                OR toLower(d.slug) CONTAINS toLower($search)
+                OR toLower(coalesce(d.generic_name, d.label, d.name, '')) CONTAINS toLower($search)
+              )
+            RETURN d.id AS id, d.slug AS slug,
+                   coalesce(d.generic_name, d.label, d.slug, d.name) AS label,
+                   d.source AS source,
+                   d.curation_status AS curation_status
+            ORDER BY coalesce(d.generic_name, d.label, d.slug)
+            SKIP $offset LIMIT $limit
+            """,
+            {"search": search.strip() if search else None, "offset": offset, "limit": limit},
+        )
+
+    async def count_unclassified_drugs(self, *, search: str | None = None) -> int:
+        if not self.is_available:
+            return 0
+        rows = await self._driver.run_query(
+            """
+            MATCH (d:Drug)
+            WHERE d.status = 'published' AND d.module IS NULL
+              AND (
+                $search IS NULL
+                OR toLower(d.slug) CONTAINS toLower($search)
+                OR toLower(coalesce(d.generic_name, d.label, d.name, '')) CONTAINS toLower($search)
+              )
+            RETURN count(d) AS count
+            """,
+            {"search": search.strip() if search else None},
+        )
+        return int(rows[0]["count"]) if rows else 0
+
+    async def assign_drug_module(
+        self, drug_id: str, module: str
+    ) -> dict[str, Any] | None:
+        """Set a drug's curriculum module.
+
+        This is a curator decision, so it also flips curation_status from
+        'external' to 'curated': assigning a module is the review act, and the
+        badge must stop claiming the record is unvetted afterwards.
+        """
+        if not self.is_available:
+            return None
+        try:
+            parsed = UUID(str(drug_id))
+        except (ValueError, AttributeError, TypeError):
+            return None
+        rows = await self._driver.run_query(
+            """
+            MATCH (d:Drug {id: $id})
+            SET d.module = $module,
+                d.curation_status = 'curated',
+                d.module_assigned_at = timestamp()
+            RETURN d.id AS id, d.slug AS slug, d.module AS module,
+                   d.curation_status AS curation_status
+            """,
+            {"id": str(parsed), "module": module},
+        )
+        return rows[0] if rows else None
+
     async def count_listed_drugs(
         self,
         *,

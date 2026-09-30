@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from farmacograph.api.deps import get_app_container, get_evidence_service, require_scope
 from farmacograph.api.schemas.curator import (
+    AssignModuleRequest,
     CreateDiseaseRequest,
     CreateDrugRequest,
     CreateMechanismFragmentRequest,
@@ -891,3 +892,64 @@ async def publish_workflow(
     except (ValidationError, NotFoundError, FarmacoGraphError) as exc:
         await service.log_publish_failure(workflow_id, exc.message, actor_id=auth.user_id)
         raise HTTPException(status_code=400, detail=exc.message) from exc
+
+
+@router.get("/drugs/unclassified")
+async def list_unclassified_drugs(
+    container: Annotated[Container, Depends(get_app_container)],
+    _auth: Annotated[AuthContext, Depends(require_scope("curator:write"))] = None,
+    search: str = Query("", description="Filter by name or slug"),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+) -> dict:
+    """Published drugs that have no curriculum module yet.
+
+    Ingested PrimeKG drugs arrive without a module because the dataset has no
+    such field. This worklist makes them assignable instead of invisible.
+    """
+    graph = container.graph_repo
+    if not graph.is_available:
+        raise HTTPException(status_code=503, detail="Neo4j unavailable")
+
+    rows = await graph.list_unclassified_drugs(search=search, limit=limit, offset=offset)
+    total = await graph.count_unclassified_drugs(search=search)
+    return {
+        "data": rows,
+        "meta": {"api_version": "v1", "total": total, "limit": limit, "offset": offset},
+    }
+
+
+@router.post("/drugs/{drug_id}/module")
+async def assign_drug_module(
+    body: AssignModuleRequest,
+    drug_id: UUID,
+    container: Annotated[Container, Depends(get_app_container)],
+    _auth: Annotated[AuthContext, Depends(require_scope("curator:write"))] = None,
+) -> dict:
+    """Assign a curriculum module to a drug.
+
+    Assigning a module is the curator review act, so the record stops being
+    flagged as unvetted external content.
+    """
+    from farmacograph.services.modules import validate_module_slug
+
+    try:
+        module = validate_module_slug(body.module)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    graph = container.graph_repo
+    if not graph.is_available:
+        raise HTTPException(status_code=503, detail="Neo4j unavailable")
+
+    updated = await graph.assign_drug_module(str(drug_id), module)
+    if updated is None:
+        raise HTTPException(status_code=404, detail=f"Drug not found: {drug_id}")
+
+    return {
+        "data": updated,
+        "meta": {
+            "api_version": "v1",
+            "note": "module assigned; curation_status moved to 'curated'",
+        },
+    }
