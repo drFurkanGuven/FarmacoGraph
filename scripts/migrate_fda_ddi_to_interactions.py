@@ -192,11 +192,14 @@ async def main() -> int:
                     p.get("source", "") or "",
                     p.get("source_doi"),
                     p.get("import_batch"),
-                    [],
-                    {
-                        "drug_a_name": ep.get("drug_a_name"),
-                        "drug_b_name": ep.get("drug_b_name"),
-                    },
+                    # jsonb columns must be serialized: asyncpg sends them as text.
+                    json.dumps([]),
+                    json.dumps(
+                        {
+                            "drug_a_name": ep.get("drug_a_name"),
+                            "drug_b_name": ep.get("drug_b_name"),
+                        }
+                    ),
                 )
             )
 
