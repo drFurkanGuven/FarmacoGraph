@@ -23,11 +23,44 @@ MODULE_REGISTRY: list[dict[str, Any]] = [
 ]
 
 
+# Slugs accepted as filters. 'all' means no module filter; 'unclassified' is
+# the explicit bucket for published drugs with no module (see UNCLASSIFIED_MODULE
+# in repositories/graph.py).
+FILTERABLE_MODULE_SLUGS: set[str] = {entry["slug"] for entry in MODULE_REGISTRY} | {
+    "all",
+    UNCLASSIFIED_MODULE,
+}
+
+
 def known_module_slugs() -> set[str]:
     return {entry["slug"] for entry in MODULE_REGISTRY}
 
 
 def validate_module_slug(module: str) -> str:
+    """Normalise and check a module filter.
+
+    Accepts 'all' and the 'unclassified' bucket alongside curriculum modules:
+    the module explorer offers both, and /modules reports 'unclassified' as a
+    real row, so rejecting them here made the explorer return 500 on the exact
+    values it advertises.
+
+    'unclassified' is a reporting bucket, not a curriculum module. It is never a
+    valid value for assigning a module, which validate_assignment_slug enforces.
+    """
+    slug = (module or "").strip().lower()
+    if slug in FILTERABLE_MODULE_SLUGS:
+        return slug
+    raise ValueError(
+        f"Unknown module: {module}. Expected one of: {', '.join(sorted(FILTERABLE_MODULE_SLUGS))}."
+    )
+
+
+def validate_assignment_slug(module: str) -> str:
+    """Check a module a curator is assigning to a drug.
+
+    Only real curriculum modules qualify; 'unclassified' and 'all' are filters,
+    not assignment targets.
+    """
     slug = (module or "").strip().lower()
     if slug not in known_module_slugs():
         raise ValueError(

@@ -931,10 +931,10 @@ async def assign_drug_module(
     Assigning a module is the curator review act, so the record stops being
     flagged as unvetted external content.
     """
-    from farmacograph.services.modules import validate_module_slug
+    from farmacograph.services.modules import validate_assignment_slug
 
     try:
-        module = validate_module_slug(body.module)
+        module = validate_assignment_slug(body.module)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 

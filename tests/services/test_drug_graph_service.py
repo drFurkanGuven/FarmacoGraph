@@ -181,3 +181,25 @@ async def test_module_assignment_marks_drug_curated() -> None:
     assert result["module"] == "cardiovascular"
     assert result["curation_status"] == "curated"
     assert repo.assigned == [("33333333-3333-5333-8333-333333333333", "cardiovascular")]
+
+
+def test_module_filter_accepts_explorer_values_but_assignment_does_not() -> None:
+    """The module explorer offers 'all' and 'unclassified' as filters.
+
+    validate_module_slug rejected the very values /modules reports, so
+    selecting them in the explorer returned 500. Assignment is separate: you
+    cannot assign a drug to a reporting bucket.
+    """
+    from farmacograph.services.modules import (
+        validate_assignment_slug,
+        validate_module_slug,
+    )
+
+    for value in ("cardiovascular", "neurology", "unclassified", "all"):
+        assert validate_module_slug(value) == value
+
+    for value in ("unclassified", "all", "astrology"):
+        with pytest.raises(ValueError):
+            validate_assignment_slug(value)
+
+    assert validate_assignment_slug("psychiatry") == "psychiatry"
