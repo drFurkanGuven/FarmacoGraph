@@ -280,7 +280,10 @@ class InteractionService:
                     mechanism_explanation=str(mechanism_exp),
                     clinical_action=str(clinical_act),
                     pathway_overlap=[],
-                    source="curator",
+                    # A graph edge is only curator content when a curator wrote
+                    # it. Ingested PrimeKG edges carry r.source='primekg' and
+                    # must not be presented as reviewed.
+                    source="external" if props.get("source") == "primekg" else "curator",
                     evidence_ids=[str(e) for e in evidence_ids]
                     if isinstance(evidence_ids, list)
                     else [],

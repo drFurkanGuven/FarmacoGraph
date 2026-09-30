@@ -31,10 +31,12 @@ class FdaDdiRepository:
     async def find_by_drug_ids(
         self, drug_ids: list[str], *, limit: int = 200
     ) -> list[dict[str, Any]]:
-        """Pairs where any checked drug appears as either endpoint.
+        """Pairs whose BOTH endpoints are among the checked drugs.
 
-        The relationship is symmetric, so both columns are matched and the
-        stored pair is returned in its canonical order.
+        The relationship is symmetric and the check is about a specific
+        combination, so both endpoints must be selected. Matching either
+        endpoint returned every documented interaction of a checked drug
+        against unrelated drugs, which answers a different question.
         """
         if not drug_ids:
             return []
@@ -45,7 +47,7 @@ class FdaDdiRepository:
                 uuids.append(UUID(str(value)))
             except (ValueError, AttributeError, TypeError):
                 continue
-        if not uuids:
+        if len(uuids) < 2:
             return []
 
         async with self._session_factory() as session:
@@ -56,7 +58,7 @@ class FdaDdiRepository:
                            title, severity, mechanism_explanation, clinical_action,
                            curation_status, source, evidence_ids
                     FROM drug_drug_interactions
-                    WHERE drug_a_id = ANY(:ids) OR drug_b_id = ANY(:ids)
+                    WHERE drug_a_id = ANY(:ids) AND drug_b_id = ANY(:ids)
                     ORDER BY severity, title
                     LIMIT :limit
                     """

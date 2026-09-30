@@ -262,3 +262,33 @@ async def test_curator_pair_wins_over_external_duplicate() -> None:
     items = await service._external_interactions([str(a_id), str(b_id)], [curator_item])
 
     assert items == []
+
+
+@pytest.mark.asyncio
+async def test_ingested_primekg_edge_is_not_labelled_curator() -> None:
+    """A graph INTERACTS_WITH edge written by ingestion is not curator content."""
+    from uuid import uuid4
+
+    from farmacograph.core.config import Settings
+    from farmacograph.services.interaction import InteractionService
+
+    a_id, b_id = uuid4(), uuid4()
+
+    class Graph:
+        def get_interactions_between(self, _ids):
+            async def _inner():
+                return [
+                    {
+                        "source_id": str(a_id),
+                        "target_id": str(b_id),
+                        "properties": {"source": "primekg"},
+                    }
+                ]
+
+            return _inner()
+
+    service = InteractionService(graph_repo=Graph())  # type: ignore[arg-type]
+    items = await service._curated_interactions([str(a_id), str(b_id)])
+
+    assert len(items) == 1
+    assert items[0].source == "external"
